@@ -93,6 +93,8 @@ python3 -m http.server 18866 --bind 127.0.0.1 --directory _site
 
 这里只管理已登记的 WFM 挂单；上 / 下架控制显隐，不删除、不标记成交。新建挂单仍在 WFM 官网操作。真实账号 API 联调需使用者在本机自行授权；仓库测试使用模拟会话。[设计、验证与限制](docs/wfm-integration.md)。
 
-### 免安装书签面板（只读试验）
+### 免安装书签面板（v0.2，写入待实测）
 
-[打开书签设置页](https://vizards8.github.io/warframe-market-dashboard/wfm-bookmark.html)，把按钮拖到书签栏，在 WFM 官网登录后点击书签，再点「读取我的挂单」。不读取 JWT，不启动本机服务，只请求官方 `/me` 与 `/orders/my`，结果留在 WFM 页面。当前尚未验证真人会话兼容性，改价 / 数量 / 显隐尚未开放；自动化浏览器禁止执行 `javascript:` 书签，需使用者在普通浏览器验证。测试：`node tests/test_wfm_bookmark.js`。
+[打开书签设置页](https://vizards8.github.io/warframe-market-dashboard/wfm-bookmark.html)，把按钮拖到书签栏，在 WFM 官网登录后点击书签，再点「同步我的挂单」。旧书签需重新拖入替换，并刷新 WFM 后打开新版。它不读取 JWT，不启动本机服务，只请求官方 API，私人数据留在 WFM 页面。支持官方中文目录、搜索筛选、逐条改价与数量、逐条和勾选批量上下架；先生成 5 分钟预览，再确认、执行前检查、提交后回读，不自动重试写入。
+
+真人账号读取已由使用者反馈通过（含隐藏单）；写入仍待用户在浏览器验证，可能被权限 / CSRF 校验拒绝，拒绝时停止。新建挂单仍在官网操作。仅模拟验证写入流程，不声称已完成真实写入。测试：`node tests/test_wfm_bookmark.js`（也纳入 `node tests/test_stats.js`）。
