@@ -1,6 +1,6 @@
 'use strict';
 (()=>{
-  let rivenQuery='',rivenScope='candidates',rivenCategory='all',rivenSort='reference';
+  let rivenQuery='',rivenScope='all',rivenCategory='all',rivenSort='reference';
   let relicData=null,itemData=null,relicIndex=new Map(),itemIndex=new Map(),relicLoading=null;
   let rivenBuilt=false,relicBuilt=false,detailRiven=null;
   const grades=[['intact','完整'],['exceptional','优良'],['flawless','无暇'],['radiant','光辉']];
@@ -13,8 +13,9 @@
   }
   function buildRivens(){
     if(rivenBuilt)return;rivenBuilt=true;
-    $('riven-section').innerHTML=`<div class="feature-intro"><div><h2>高价 0 洗候选 <span class="pill">按武器家族</span></h2><p>当前 30 种是 2026-10-19 扫描选出的候选，不是实时全市场前 30。未列出 ≠ 低于 20p；${window.Hosted?'切到全部武器可跳转 WFM 查询。':'切到全部武器可逐个查。'}</p></div><span class="riven-pill">RE-ROLLS = 0</span></div><div class="riven-notes"><span>0 洗 ≠ 0 级，升级过但未循环的卡也在内。</span><span>只看 PC 公开直售、近 30 天更新的挂单。</span></div><div class="toolbar"><label class="search"><span>⌕</span><input id="riven-search" type="search" aria-label="搜索紫卡武器" placeholder="搜索中文 / 英文武器名…"></label><div class="toolbar-filters"><select id="riven-scope" aria-label="紫卡范围"><option value="candidates">高价候选</option><option value="all">全部武器</option></select><select id="riven-category" aria-label="紫卡武器类型"><option value="all">所有武器类型</option>${Object.entries(categories).map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><select id="riven-sort" aria-label="紫卡排序"><option value="reference">低价参考 ↓</option><option value="online_floor">在线最低 ↓</option><option value="floor">最低挂价 ↓</option></select></div></div><div class="table-scroll"><table><thead><tr><th>武器</th><th>低价卖家参考</th><th>最低挂价</th><th>在线最低</th><th>返回样本</th><th>查询时间</th><th></th></tr></thead><tbody id="riven-rows"></tbody></table></div><div class="feature-foot"><span id="riven-count"></span><span>参考 = 不同卖家最低三份的中位数 · 非成交价</span></div>`;
+    $('riven-section').innerHTML=`<div class="feature-intro"><div><h2>零洗紫卡查价 <span class="pill">按武器家族</span></h2><p>默认搜索全部武器。高价候选随已覆盖样本更新，并非全市场排名；未查询不代表低于 20p。${window.Hosted?'切到全部武器可跳转 WFM 查询。':'切到全部武器可逐个查。'}</p></div><span class="riven-pill">RE-ROLLS = 0</span></div><div class="riven-notes"><span>0 洗 ≠ 0 级，升级过但未循环的卡也在内。</span><span>只看 PC 公开直售、近 30 天更新的挂单。</span></div><div class="toolbar"><label class="search"><span>⌕</span><input id="riven-search" type="search" aria-label="搜索紫卡武器" placeholder="搜索中文 / 英文武器名…"></label><div class="toolbar-filters"><select id="riven-scope" aria-label="紫卡范围"><option value="all">全部武器</option><option value="candidates">已覆盖高价候选</option></select><select id="riven-category" aria-label="紫卡武器类型"><option value="all">所有武器类型</option>${Object.entries(categories).map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><select id="riven-sort" aria-label="紫卡排序"><option value="reference">低价参考 ↓</option><option value="online_floor">在线最低 ↓</option><option value="floor">最低挂价 ↓</option></select></div></div><div class="table-scroll"><table><thead><tr><th>武器</th><th>低价卖家参考</th><th>最低挂价</th><th>在线最低</th><th>返回样本</th><th>查询时间</th><th></th></tr></thead><tbody id="riven-rows"></tbody></table></div><div class="feature-foot"><span id="riven-count"></span><span>参考 = 不同卖家最低三份的中位数 · 非成交价</span></div>`;
     $('riven-search').oninput=e=>{rivenQuery=e.target.value.trim().toLowerCase();renderRivens();};
+    $('riven-scope').value=rivenScope;
     $('riven-scope').onchange=e=>{rivenScope=e.target.value;renderRivens();};
     $('riven-category').onchange=e=>{rivenCategory=e.target.value;renderRivens();};
     $('riven-sort').onchange=e=>{rivenSort=e.target.value;renderRivens();};
@@ -28,7 +29,7 @@
     const rows=rivenRows();$('riven-count').textContent=`${rows.length} 种武器 · ${rows.filter(x=>rquote(x.slug).at).length} 种有查询记录`;
     $('riven-rows').innerHTML=rows.length?rows.map(x=>{
       const q=rquote(x.slug),url=`https://warframe.market/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(x.slug)}&re_rolls_min=0&re_rolls_max=0&sort_by=price_asc`;
-      return `<tr><td><div class="item-cell">${itemImage(x)}<div><button class="item-name" data-riven-detail="${esc(x.slug)}">${esc(x.name)}</button><div class="item-meta">${esc(x.english)} · ${esc(categories[x.category]||x.category)}</div></div></div></td><td><span class="price purple">${price(q.reference)}</span><div class="subline">${q.reference_n?`最低 ${q.reference_n} 位卖家`:q.at?'暂无合格样本':'待查询'}</div></td><td><span class="price">${price(q.floor)}</span></td><td><span class="price">${price(q.online_floor)}</span><div class="subline">${q.at?`${q.online_sellers} 位在线卖家`:'待查询'}</div></td><td><span>${q.sellers??'—'} 位卖家</span><div class="subline">${q.at?`从 ${q.returned} 份返回结果筛选`:'尚未抓取样本'}</div></td><td><div class="subline ${q.error?'negative':stale(q.at)?'':'positive'}">${q.error?'刷新失败 · 旧值':stale(q.at)?'● '+timeLabel(q.at):timeLabel(q.at)}</div></td><td><a class="market-link" href="${esc(url)}" target="_blank" rel="noopener">WFM ↗</a><button class="detail-btn" data-riven-refresh="${esc(x.slug)}" aria-label="刷新 ${esc(x.name)} 0 洗行情" ${state.riven_job?.running||window.Portable||window.Hosted?'disabled':''}>↻</button></td></tr>`;
+      return `<tr><td><div class="item-cell">${itemImage(x)}<div><button class="item-name" data-riven-detail="${esc(x.slug)}">${esc(x.name)}</button><div class="item-meta">${esc(x.english)} · ${esc(categories[x.category]||x.category)}</div></div></div></td><td><span class="price purple">${price(q.reference)}</span><div class="subline">${q.reference_n?`最低 ${q.reference_n} 位卖家`:q.error?'查询失败，保留旧值':q.at?'无合格挂单':'未查询，不代表低价'}</div></td><td><span class="price">${price(q.floor)}</span></td><td><span class="price">${price(q.online_floor)}</span><div class="subline">${q.at?`${q.online_sellers} 位在线卖家`:'待查询'}</div></td><td><span>${q.sellers??'—'} 位卖家</span><div class="subline">${q.at?`从 ${q.returned} 份返回结果筛选${q.sellers<3?' · 样本少':''}`:'尚未覆盖'}</div></td><td><div class="subline ${q.error?'negative':stale(q.at)?'':'positive'}">${q.error?'刷新失败 · 旧值':stale(q.at)?'● '+timeLabel(q.at):timeLabel(q.at)}</div></td><td><a class="market-link" href="${esc(url)}" target="_blank" rel="noopener">WFM ↗</a><button class="detail-btn" data-riven-refresh="${esc(x.slug)}" aria-label="刷新 ${esc(x.name)} 0 洗行情" ${state.riven_job?.running||window.Portable||window.Hosted?'disabled':''}>↻</button></td></tr>`;
     }).join(''):'<tr><td colspan="7" class="empty">没有匹配的武器；可以切换“全部武器”搜索。</td></tr>';
     renderProgress();
   }
@@ -66,7 +67,7 @@
   function persistRelics(){queueSave();renderRelicBodies();}
   function buildRelics(){
     if(relicBuilt)return;relicBuilt=true;
-    $('relic-section').innerHTML=`<div class="relic-controls"><div><h2>四遗物掉落对照 <span>输入中英文遗物名，例如 古纪 A1 / Lith A1</span></h2><p>开之前查一次，奖励选择时直接看图和名称。</p></div><div class="relic-buttons"><button id="relic-example" class="plain-button">载入示例</button><button id="relic-clear" class="plain-button">清空</button><button id="relic-focus" class="plain-button">⛶ 全屏对照</button><button id="relic-query" class="primary">查询掉落价格</button></div></div><div class="relic-options"><div class="segmented" aria-label="掉落排序"><button data-relic-sort="price" class="active">按白金价格 ↓</button><button data-relic-sort="rarity">按金银铜顺序</button></div><span id="relic-status">先输入遗物，回车选择候选。</span></div><div id="relic-columns" class="relic-columns">${[0,1,2,3].map(i=>`<article class="relic-card" data-slot-card="${i}"><div class="relic-card-head"><span class="slot-number">${i+1}</span><div class="relic-select"><label for="relic-input-${i}">第 ${i+1} 个遗物</label><input id="relic-input-${i}" data-relic-input="${i}" type="text" autocomplete="off" placeholder="搜索遗物，如 后纪 A1" aria-label="第 ${i+1} 个遗物" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="relic-menu-${i}"><div id="relic-menu-${i}" class="relic-menu" role="listbox" hidden></div></div><button data-clear-relic="${i}" class="clear-relic" aria-label="清除第 ${i+1} 个遗物">×</button></div><div class="relic-grade"><select id="relic-grade-${i}" data-relic-grade="${i}" aria-label="第 ${i+1} 个遗物精炼等级">${grades.map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><span id="relic-estimate-${i}"></span></div><div id="relic-drops-${i}" class="relic-drops"></div></article>`).join('')}</div><div class="relic-footer"><span id="relic-source">掉落来源：WFCD / Warframe Items</span><span>白金按在线最低卖单估算 · 不可交易物品单独标注</span></div>`;
+    $('relic-section').innerHTML=`<div class="relic-controls"><div><h2>四遗物掉落对照 <span>输入中英文遗物名，例如 古纪 A1 / Lith A1</span></h2><p>开之前查一次，奖励选择时直接看图和名称。</p></div><div class="relic-buttons"><button id="relic-example" class="plain-button">载入示例</button><button id="relic-clear" class="plain-button">清空</button><button id="relic-focus" class="plain-button">⛶ 战斗视图</button><button id="relic-query" class="primary">查询掉落价格</button></div></div><div class="relic-combinations"><button id="relic-same" class="plain-button">四人同第一个遗物</button><label>统一精炼 <select id="relic-all-grade" aria-label="统一精炼等级"><option value="">分别设置</option>${grades.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><select id="relic-presets" aria-label="已保存遗物组合"><option value="">选择常用组合</option></select><input id="relic-preset-name" aria-label="遗物组合名称" maxlength="40" placeholder="例如：本周四人光辉"><button id="relic-save-preset" class="plain-button">保存组合</button><button id="relic-delete-preset" class="plain-button">删除组合</button></div><div class="relic-options"><div class="segmented" aria-label="掉落排序"><button data-relic-sort="price" class="active">按白金价格 ↓</button><button data-relic-sort="rarity">按金银铜顺序</button></div><span id="relic-status">先输入遗物，回车选择候选。</span></div><div id="relic-columns" class="relic-columns">${[0,1,2,3].map(i=>`<article class="relic-card" data-slot-card="${i}"><div class="relic-card-head"><span class="slot-number">${i+1}</span><div class="relic-select"><label for="relic-input-${i}">第 ${i+1} 个遗物</label><input id="relic-input-${i}" data-relic-input="${i}" type="text" autocomplete="off" placeholder="搜索遗物，如 后纪 A1" aria-label="第 ${i+1} 个遗物" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="relic-menu-${i}"><div id="relic-menu-${i}" class="relic-menu" role="listbox" hidden></div></div><button data-clear-relic="${i}" class="clear-relic" aria-label="清除第 ${i+1} 个遗物">×</button></div><div class="relic-grade"><select id="relic-grade-${i}" data-relic-grade="${i}" aria-label="第 ${i+1} 个遗物精炼等级">${grades.map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><span id="relic-estimate-${i}"></span></div><div id="relic-drops-${i}" class="relic-drops"></div></article>`).join('')}</div><div class="relic-footer"><span id="relic-source">掉落来源：WFCD / Warframe Items</span><span>白金按在线最低卖单估算 · 不可交易物品单独标注</span></div>`;
     const panel=$('relic-section');
     panel.addEventListener('input',e=>{
       if(e.target.dataset.relicInput===undefined)return;
@@ -90,6 +91,12 @@
       const sortButton=e.target.closest('[data-relic-sort]');if(sortButton){settings.relicSort=sortButton.dataset.relicSort;persistRelics();}
     });
     panel.addEventListener('change',e=>{if(e.target.dataset.relicGrade!==undefined){const i=Number(e.target.dataset.relicGrade);if(selections()[i]){settings.relics[i].grade=e.target.value;persistRelics();}}});
+    $('relic-same').onclick=()=>{const first=selections()[0];if(!first)return notify('先选择第一个遗物。');settings.relics=Array.from({length:4},()=>({...first}));syncRelicFields();persistRelics();};
+    $('relic-all-grade').onchange=e=>{if(!e.target.value)return;for(const choice of selections())if(choice)choice.grade=e.target.value;syncRelicFields();persistRelics();};
+    const presets=()=>{$('relic-presets').innerHTML='<option value="">选择常用组合</option>'+(settings.relicPresets||[]).map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');};presets();
+    $('relic-save-preset').onclick=()=>{if(!selections().some(Boolean))return notify('先选择至少一个遗物。');const name=$('relic-preset-name').value.trim();if(!name)return notify('请为组合起一个名称。');settings.relicPresets||=[];const old=settings.relicPresets.findIndex(p=>p.name===name),row={name,relics:structuredClone(selections())};if(old>=0)settings.relicPresets[old]=row;else settings.relicPresets.unshift(row);settings.relicPresets=settings.relicPresets.slice(0,12);queueSave();presets();notify('组合已记住，同名组合会更新。',true);};
+    $('relic-presets').onchange=e=>{const p=settings.relicPresets?.[Number(e.target.value)];if(e.target.value===''||!p)return;settings.relics=structuredClone(p.relics);$('relic-preset-name').value=p.name;syncRelicFields();persistRelics();};
+    $('relic-delete-preset').onclick=()=>{const v=$('relic-presets').value;if(v==='')return notify('先选择需要删除的组合。');settings.relicPresets.splice(Number(v),1);queueSave();presets();notify('组合已删除；当前四个遗物保持不变。',true);};
     $('relic-query').onclick=()=>queryRelics(true);
     $('relic-focus').onclick=toggleFocus;
     $('relic-clear').onclick=()=>{settings.relics=[null,null,null,null];[0,1,2,3].forEach(i=>{$('relic-input-'+i).value='';$('relic-menu-'+i).hidden=true;});persistRelics();};
@@ -110,6 +117,9 @@
     if(i<3&&!selections()[i+1])$('relic-input-'+(i+1)).focus();
   }
   function syncRelicFields(){
+    const presetValue=$('relic-presets').value;
+    $('relic-presets').innerHTML='<option value="">选择常用组合</option>'+(settings.relicPresets||[]).map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');
+    $('relic-presets').value=presetValue;
     [0,1,2,3].forEach(i=>{const s=selections()[i],r=s&&relicIndex.get(s.id);$('relic-input-'+i).value=r?.zh||'';$('relic-grade-'+i).value=s?.grade||'intact';});
   }
   function renderRelicBodies(){
@@ -129,8 +139,8 @@
       const sorted=[...rows].sort((a,b)=>(settings.relicSort||'price')==='price'?(quote(b)??-1)-(quote(a)??-1)||rarityOrder[a.rarity]-rarityOrder[b.rarity]:rarityOrder[a.rarity]-rarityOrder[b.rarity]);
       container.innerHTML=sorted.map(r=>{
         const p=quote(r),item=r.item||{name:r.name.startsWith('2X')?'Forma 蓝图 ×2':'Forma 蓝图',kind:'forma'},rarity=r.rarity;
-        const display=item.name.replace(/ 蓝图/g,'').replace(/Blueprint/g,'').trim(),isTop=p!=null&&p===max;
-        return `<div class="drop-row ${rarity} ${isTop?'best-drop':''}" title="${esc(item.name)}${r.slug?' · 查询 '+timeLabel(mrow(r.slug).orders_at):' · 不可交易'}"><span class="drop-rarity"></span>${itemImage(item)}<div class="drop-name"><div>${esc(display)}</div><small>${number(r.chance,2)}%${item.ducats?' · '+number(item.ducats)+' 杜卡德':''}</small></div><div class="drop-price">${r.tradable?(p==null?'<span class="missing-price">待查询</span>':`<strong>${number(p)}</strong><small>p</small>`):'<span class="not-tradable">不可交易</span>'}${r.tradable&&p!=null?`<span class="drop-buy">收 ${number(bid(mrow(r.slug)))}p</span>`:''}</div></div>`;
+        const display=item.name,isTop=p!=null&&p===max;
+        return `<div class="drop-row ${rarity} ${isTop?'best-drop':''}" title="${esc(item.name)}${r.slug?' · 查询 '+timeLabel(mrow(r.slug).orders_at):' · 不可交易'}"><span class="drop-rarity"></span>${itemImage(item)}<div class="drop-name"><div>${esc(display)}</div><small>${number(r.chance,2)}%${item.ducats?' · '+number(item.ducats)+' 杜卡德':''}</small></div><div class="drop-price">${r.tradable?(p==null?'<span class="missing-price">待查询</span>':`<strong>${number(p)}</strong><small>p</small>`):'<span class="not-tradable">不可交易</span>'}${r.tradable&&p!=null?`<span class="drop-buy">${DeskCore.fresh(mrow(r.slug).orders_at,mrow(r.slug).orders_error)?'快照 '+timeLabel(mrow(r.slug).orders_at):'旧价 / 查询失败 · '+timeLabel(mrow(r.slug).orders_at)}</span>`:''}</div></div>`;
       }).join('');
     });
     $('relic-source').textContent=`掉落表 ${relicData.as_of} · WFCD / Warframe Items`;
@@ -143,15 +153,16 @@
     try{state.compare_job={running:true,done:0,total:slugs.length,errors:[],current:'准备查询掉落价格…'};renderJob();await request('/api/compare',{slugs,force});$('notice').hidden=true;await loadState();}catch(error){notify(error.message);await loadState().catch(()=>{});}
   }
   function toggleFocus(){
-    const enabled=document.body.classList.toggle('relic-focus');$('relic-focus').textContent=enabled?'⛶ 退出对照':'⛶ 全屏对照';
+    const enabled=document.body.classList.toggle('relic-focus');$('relic-focus').textContent=enabled?'⛶ 返回准备':'⛶ 战斗视图';
+    if(enabled){settings.relicSortBeforeBattle=settings.relicSort||'price';settings.relicSort='rarity';}else settings.relicSort=settings.relicSortBeforeBattle||'price';renderRelicBodies();
     window.scrollTo(0,0);
   }
   function renderProgress(){
     if(tab==='rivens'&&rivenBuilt){const job=state.riven_job;const count=rivenRows().length;$('refresh').querySelector('span').textContent=window.Hosted?'获取最新已发布行情':window.Portable?'快照版 · 可点 WFM 查价':job?.running?`更新中 ${Math.round(job.done/job.total*100)}%`:`刷新当前列表（${count}）`;}
-    if(tab==='relics'&&relicBuilt){const job=state.compare_job,button=$('relic-query');button.disabled=!!job?.running||!!window.Portable;button.textContent=window.Hosted?'获取最新掉落快照':window.Portable?'行情快照':job?.running?`查询中 ${Math.round(job.done/job.total*100)}%`:'查询掉落价格';}
+    if(tab==='relics'&&relicBuilt){const job=state.compare_job,button=$('relic-query');button.disabled=!!job?.running||!!window.Portable;button.textContent=window.Hosted?'检查掉落行情更新':window.Portable?'行情快照':job?.running?`查询中 ${Math.round(job.done/job.total*100)}%`:'查询掉落价格';}
   }
   async function activate(next){
-    if(next!=='relics')document.body.classList.remove('relic-focus');
+    if(next!=='relics'){if(document.body.classList.contains('relic-focus'))toggleFocus();}
     if(next==='rivens'){buildRivens();renderRivens();}
     if(next==='relics'){
       if(!Array.isArray(settings.relics))settings.relics=[null,null,null,null];

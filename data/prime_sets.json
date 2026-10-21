@@ -1,0 +1,1128 @@
+{
+  "as_of": "2026-10-21",
+  "source": "WFM tradable component directory; warframe blueprint recipes",
+  "sets": [
+    {
+      "slug": "frost_prime_set",
+      "name": "Frost Prime",
+      "parts": [
+        {
+          "slug": "frost_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "frost_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "frost_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "frost_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "hydroid_prime_set",
+      "name": "Hydroid Prime",
+      "parts": [
+        {
+          "slug": "hydroid_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "hydroid_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "hydroid_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "hydroid_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "saryn_prime_set",
+      "name": "Saryn Prime",
+      "parts": [
+        {
+          "slug": "saryn_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "saryn_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "saryn_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "saryn_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "rhino_prime_set",
+      "name": "Rhino Prime",
+      "parts": [
+        {
+          "slug": "rhino_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "rhino_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "rhino_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "rhino_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "wukong_prime_set",
+      "name": "Wukong Prime",
+      "parts": [
+        {
+          "slug": "wukong_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "wukong_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "wukong_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "wukong_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "ember_prime_set",
+      "name": "Ember Prime",
+      "parts": [
+        {
+          "slug": "ember_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ember_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ember_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ember_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "mag_prime_set",
+      "name": "Mag Prime",
+      "parts": [
+        {
+          "slug": "mag_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mag_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mag_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mag_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "oberon_prime_set",
+      "name": "Oberon Prime",
+      "parts": [
+        {
+          "slug": "oberon_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "oberon_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "oberon_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "oberon_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "trinity_prime_set",
+      "name": "Trinity Prime",
+      "parts": [
+        {
+          "slug": "trinity_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "trinity_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "trinity_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "trinity_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "volt_prime_set",
+      "name": "Volt Prime",
+      "parts": [
+        {
+          "slug": "volt_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "volt_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "volt_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "volt_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "titania_prime_set",
+      "name": "Titania Prime",
+      "parts": [
+        {
+          "slug": "titania_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "titania_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "titania_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "titania_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "inaros_prime_set",
+      "name": "Inaros Prime",
+      "parts": [
+        {
+          "slug": "inaros_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "inaros_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "inaros_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "inaros_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "valkyr_prime_set",
+      "name": "Valkyr Prime",
+      "parts": [
+        {
+          "slug": "valkyr_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "valkyr_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "valkyr_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "valkyr_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "limbo_prime_set",
+      "name": "Limbo Prime",
+      "parts": [
+        {
+          "slug": "limbo_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "limbo_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "limbo_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "limbo_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "atlas_prime_set",
+      "name": "Atlas Prime",
+      "parts": [
+        {
+          "slug": "atlas_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "atlas_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "atlas_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "atlas_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "chroma_prime_set",
+      "name": "Chroma Prime",
+      "parts": [
+        {
+          "slug": "chroma_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "chroma_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "chroma_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "chroma_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "banshee_prime_set",
+      "name": "Banshee Prime",
+      "parts": [
+        {
+          "slug": "banshee_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "banshee_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "banshee_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "banshee_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "vauban_prime_set",
+      "name": "Vauban Prime",
+      "parts": [
+        {
+          "slug": "vauban_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "vauban_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "vauban_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "vauban_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "loki_prime_set",
+      "name": "Loki Prime",
+      "parts": [
+        {
+          "slug": "loki_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "loki_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "loki_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "loki_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "nova_prime_set",
+      "name": "Nova Prime",
+      "parts": [
+        {
+          "slug": "nova_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nova_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nova_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nova_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "nyx_prime_set",
+      "name": "Nyx Prime",
+      "parts": [
+        {
+          "slug": "nyx_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nyx_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nyx_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nyx_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "zephyr_prime_set",
+      "name": "Zephyr Prime",
+      "parts": [
+        {
+          "slug": "zephyr_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "zephyr_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "zephyr_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "zephyr_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "ivara_prime_set",
+      "name": "Ivara Prime",
+      "parts": [
+        {
+          "slug": "ivara_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ivara_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ivara_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ivara_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "mirage_prime_set",
+      "name": "Mirage Prime",
+      "parts": [
+        {
+          "slug": "mirage_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mirage_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mirage_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mirage_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "equinox_prime_set",
+      "name": "Equinox Prime",
+      "parts": [
+        {
+          "slug": "equinox_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "equinox_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "equinox_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "equinox_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "ash_prime_set",
+      "name": "Ash Prime",
+      "parts": [
+        {
+          "slug": "ash_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ash_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ash_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "ash_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "mesa_prime_set",
+      "name": "Mesa Prime",
+      "parts": [
+        {
+          "slug": "mesa_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mesa_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mesa_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "mesa_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "nekros_prime_set",
+      "name": "Nekros Prime",
+      "parts": [
+        {
+          "slug": "nekros_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nekros_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nekros_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nekros_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "nezha_prime_set",
+      "name": "Nezha Prime",
+      "parts": [
+        {
+          "slug": "nezha_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nezha_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nezha_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nezha_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "octavia_prime_set",
+      "name": "Octavia Prime",
+      "parts": [
+        {
+          "slug": "octavia_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "octavia_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "octavia_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "octavia_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "gara_prime_set",
+      "name": "Gara Prime",
+      "parts": [
+        {
+          "slug": "gara_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gara_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gara_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gara_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "nidus_prime_set",
+      "name": "Nidus Prime",
+      "parts": [
+        {
+          "slug": "nidus_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nidus_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nidus_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "nidus_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "harrow_prime_set",
+      "name": "Harrow Prime",
+      "parts": [
+        {
+          "slug": "harrow_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "harrow_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "harrow_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "harrow_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "garuda_prime_set",
+      "name": "Garuda Prime",
+      "parts": [
+        {
+          "slug": "garuda_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "garuda_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "garuda_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "garuda_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "khora_prime_set",
+      "name": "Khora Prime",
+      "parts": [
+        {
+          "slug": "khora_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "khora_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "khora_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "khora_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "revenant_prime_set",
+      "name": "Revenant Prime",
+      "parts": [
+        {
+          "slug": "revenant_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "revenant_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "revenant_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "revenant_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "baruuk_prime_set",
+      "name": "Baruuk Prime",
+      "parts": [
+        {
+          "slug": "baruuk_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "baruuk_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "baruuk_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "baruuk_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "hildryn_prime_set",
+      "name": "Hildryn Prime",
+      "parts": [
+        {
+          "slug": "hildryn_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "hildryn_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "hildryn_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "hildryn_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "wisp_prime_set",
+      "name": "Wisp Prime",
+      "parts": [
+        {
+          "slug": "wisp_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "wisp_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "wisp_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "wisp_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "grendel_prime_set",
+      "name": "Grendel Prime",
+      "parts": [
+        {
+          "slug": "grendel_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "grendel_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "grendel_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "grendel_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "gauss_prime_set",
+      "name": "Gauss Prime",
+      "parts": [
+        {
+          "slug": "gauss_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gauss_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gauss_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gauss_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "protea_prime_set",
+      "name": "Protea Prime",
+      "parts": [
+        {
+          "slug": "protea_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "protea_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "protea_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "protea_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "sevagoth_prime_set",
+      "name": "Sevagoth Prime",
+      "parts": [
+        {
+          "slug": "sevagoth_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "sevagoth_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "sevagoth_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "sevagoth_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "xaku_prime_set",
+      "name": "Xaku Prime",
+      "parts": [
+        {
+          "slug": "xaku_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "xaku_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "xaku_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "xaku_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "lavos_prime_set",
+      "name": "Lavos Prime",
+      "parts": [
+        {
+          "slug": "lavos_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "lavos_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "lavos_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "lavos_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "yareli_prime_set",
+      "name": "Yareli Prime",
+      "parts": [
+        {
+          "slug": "yareli_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "yareli_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "yareli_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "yareli_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "caliban_prime_set",
+      "name": "Caliban Prime",
+      "parts": [
+        {
+          "slug": "caliban_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "caliban_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "caliban_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "caliban_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "gyre_prime_set",
+      "name": "Gyre Prime",
+      "parts": [
+        {
+          "slug": "gyre_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gyre_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gyre_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "gyre_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "voruna_prime_set",
+      "name": "Voruna Prime",
+      "parts": [
+        {
+          "slug": "voruna_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "voruna_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "voruna_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "voruna_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "styanax_prime_set",
+      "name": "Styanax Prime",
+      "parts": [
+        {
+          "slug": "styanax_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "styanax_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "styanax_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "styanax_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "citrine_prime_set",
+      "name": "Citrine Prime",
+      "parts": [
+        {
+          "slug": "citrine_prime_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "citrine_prime_neuroptics_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "citrine_prime_chassis_blueprint",
+          "quantity": 1
+        },
+        {
+          "slug": "citrine_prime_systems_blueprint",
+          "quantity": 1
+        }
+      ]
+    }
+  ]
+}

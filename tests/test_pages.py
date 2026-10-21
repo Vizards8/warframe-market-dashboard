@@ -22,14 +22,18 @@ class PagesTests(unittest.TestCase):
             state = build_pages.build(tmp)
             out = Path(tmp)
             self.assertEqual(state['initial_settings']['items'], {})
-            self.assertEqual(set(p.name for p in (out / 'data').iterdir()), {'state.json', 'items.json', 'relics.json'})
+            self.assertEqual(set(p.name for p in (out / 'data').iterdir()), {'state.json', 'items.json', 'relics.json', 'history.json'})
             self.assertFalse((out / 'data/initial_holdings.json').exists())
             html = (out / 'index.html').read_text()
             self.assertNotIn('src="/', html)
             self.assertNotIn('href="/', html)
             self.assertIn('./hosted.js', html)
             self.assertNotIn('portable.js', html)
-            self.assertEqual(len(json.loads((out / 'data/state.json').read_text())['catalog']), 143)
+            self.assertGreater(len(state['catalog']), 700)
+            self.assertEqual(len(state['prime_sets']), 51)
+            self.assertIn('./desk.js', html)
+            self.assertIn('./desk-core.js', html)
+            self.assertTrue(all(p['slug'] in {x['slug'] for x in state['catalog']} for r in state['prime_sets'] for p in r['parts']))
 
 
 if __name__ == '__main__':

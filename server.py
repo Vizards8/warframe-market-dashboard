@@ -18,6 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 import features
 import portable
+import public_data
 import webbrowser
 
 ROOT = Path(__file__).resolve().parent
@@ -234,7 +235,7 @@ class Handler(BaseHTTPRequestHandler):
             with LOCK:
                 state = copy.deepcopy({'catalog': CATALOG, 'market': CACHE, 'initial_settings': INITIAL_SETTINGS,
                                        'job': JOB, 'riven_job': features.RIVEN_JOB, 'compare_job': features.COMPARE_JOB,
-                                       'weapons': features.WEAPONS, 'rivens': features.RIVENS, 'server_time': now()})
+                                       **public_data.public_state(), 'weapons': features.WEAPONS, 'rivens': features.RIVENS, 'server_time': now()})
             if path == '/portable.html':
                 return self.respond(portable.build(state, features.ITEMS, features.RELICS).encode(), content_type='text/html; charset=utf-8')
             return self.respond(state)
@@ -242,7 +243,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(features.ITEMS)
         if path == '/api/relics':
             return self.respond(features.RELICS)
-        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js')}}
+        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js')}}
         if path in files:
             file = ROOT / 'static' / files[path]
             mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css'}[file.suffix]

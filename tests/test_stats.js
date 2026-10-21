@@ -6,3 +6,4 @@ assert.equal(stats.window(m,30).price,330/14);assert.equal(stats.window(m,90).ch
 const sparse={stats:{end:'2026-10-20',history:[{date:'2026-10-07',price:10,volume:2},{date:'2026-10-14',price:20,volume:1}]}};
 assert.equal(stats.window(sparse,7).change,100);assert.equal(stats.window(sparse,7).days,1);
 console.log('统计窗口：量加权、日历边界、缺记录、快照截止日及前窗测试通过');
+require('./test_desk.js');
