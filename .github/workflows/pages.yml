@@ -1,0 +1,67 @@
+name: Publish market dashboard
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      refresh:
+        description: Refresh WFM prices before publishing (about 15 minutes)
+        type: boolean
+        default: true
+  schedule:
+    - cron: '23 */6 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore public market cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/market.json
+            data/riven_market.json
+          key: market-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: market-v1-
+      - name: Validate calculations and public export
+        run: |
+          python -m unittest discover -s tests -v
+          node tests/test_stats.js
+      - name: Refresh public prices
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.refresh)
+        run: python scripts/refresh_market.py
+      - name: Cache successful public prices
+        if: success() && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.refresh))
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/market.json
+            data/riven_market.json
+          key: market-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Build static site
+        run: python scripts/build_pages.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
