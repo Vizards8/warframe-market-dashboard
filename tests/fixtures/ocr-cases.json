@@ -1,0 +1,11 @@
+[
+  {"text":"ASH PRIME SYSTEMS BLUEPRINT","slug":"ash_prime_systems_blueprint","status":"exact"},
+  {"text":"Ash Prime Systems","slug":"ash_prime_systems_blueprint","status":"exact"},
+  {"text":"ASH  PRIME — SYSTEMS BLUEPRINT","slug":"ash_prime_systems_blueprint","status":"exact"},
+  {"text":"Ash Prime Systerns Blueprint","slug":"ash_prime_systems_blueprint","status":"probable"},
+  {"text":"Ash Prime","slug":null,"status":"ambiguous"},
+  {"text":"请选择奖励","slug":null,"status":"unknown"},
+  {"text":"Forma Blueprint","slug":"forma_blueprint","status":"exact"},
+  {"text":"2X Forma Blueprint","slug":"forma_blueprint_x2","status":"exact"},
+  {"text":"伯斯顿 Prime 枪管","slug":"burston_prime_barrel","status":"exact"}
+]

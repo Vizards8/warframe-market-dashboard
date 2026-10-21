@@ -169,17 +169,17 @@
     if(tab==='relics'&&relicBuilt){const job=state.compare_job,button=$('relic-query');button.disabled=!!job?.running||!!window.Portable;button.textContent=window.Hosted?'检查掉落行情更新':window.Portable?'行情快照':job?.running?`查询中 ${Math.round(job.done/job.total*100)}%`:'查询掉落价格';}
   }
   async function activate(next){
-    if(next!=='relics'){if(document.body.classList.contains('relic-focus'))toggleFocus();}
+    if(next!=='relics'){window.RewardOcr?.leave();if(document.body.classList.contains('relic-focus'))toggleFocus();}
     if(next==='rivens'){buildRivens();renderRivens();}
     if(next==='relics'){
       if(!Array.isArray(settings.relics))settings.relics=[null,null,null,null];
       buildRelics();$('relic-status').textContent='正在加载遗物与物品目录…';
-      try{await ensureRelics();syncRelicFields();renderRelicBodies();}catch(error){notify('遗物目录加载失败：'+error.message+'。重新点击开核桃助手可重试。');}
+      try{await ensureRelics();window.RewardOcr?.mount(itemData,relicData);syncRelicFields();renderRelicBodies();}catch(error){notify('遗物目录加载失败：'+error.message+'。重新点击开核桃助手可重试。');}
     }
   }
   function update(){
     if(tab==='rivens')renderRivens();
-    if(tab==='relics'&&relicData)renderRelicBodies();
+    if(tab==='relics'&&relicData){renderRelicBodies();window.RewardOcr?.update();}
   }
   window.Extras={activate,update,refreshRivens,renderProgress,ready:()=>{}};
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('relic-focus'))toggleFocus();});

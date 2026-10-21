@@ -31,6 +31,11 @@ class PagesTests(unittest.TestCase):
             self.assertRegex(html, r'\./hosted\.[0-9a-f]{12}\.js')
             self.assertNotIn('portable.js', html)
             self.assertFalse((out / 'wfm-bookmark.html').exists())
+            self.assertRegex(html, r'\./reward-ocr\.[0-9a-f]{12}\.js')
+            for asset in json.loads((ROOT / 'static/ocr/v5/manifest.json').read_text()):
+                import hashlib
+                content = (out / 'ocr/v5' / asset['file']).read_bytes()
+                self.assertEqual(hashlib.sha256(content).hexdigest(), asset['sha256'])
             self.assertNotIn('wfm-open', html)
             self.assertNotIn('welcome-wfm', html)
             self.assertIn('查看交易账本', html)

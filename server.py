@@ -245,7 +245,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(features.ITEMS)
         if path == '/api/relics':
             return self.respond(features.RELICS)
-        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js', 'welcome.js')}}
+        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'reward-ocr-core.js', 'reward-ocr.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js', 'welcome.js')}}
+        if path.startswith('/ocr/'):
+            # Serve only checked-in OCR assets, with no path traversal or directory listing.
+            assets = ROOT / 'static/ocr'
+            known = {'/ocr/' + p.relative_to(assets).as_posix(): p for p in assets.rglob('*') if p.is_file()}
+            file = known.get(path)
+            if file:
+                mime = 'text/javascript' if file.suffix == '.js' else 'application/gzip' if file.suffix == '.gz' else 'text/plain; charset=utf-8'
+                return self.respond(file.read_bytes(), content_type=mime)
         if path in files:
             file = ROOT / 'static' / files[path]
             mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css'}[file.suffix]

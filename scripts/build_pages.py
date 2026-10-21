@@ -7,6 +7,7 @@ import datetime as dt
 import json
 from pathlib import Path
 import sys
+import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -42,7 +43,7 @@ def build(output):
     html = (ROOT / 'static/index.html').read_text()
     html = html.replace('<script src="/portable.js"></script>', '')
     html = html.replace('<script src="/stats.js"></script>', '<script src="/hosted.js"></script>\n<script src="/stats.js"></script>')
-    for name in ('style.css', 'hosted.js', 'stats.js', 'desk-core.js', 'app.js', 'extras.js', 'inventory.js', 'desk.js', 'welcome.js'):
+    for name in ('style.css', 'hosted.js', 'stats.js', 'desk-core.js', 'app.js', 'reward-ocr-core.js', 'reward-ocr.js', 'extras.js', 'inventory.js', 'desk.js', 'welcome.js'):
         content = (ROOT / 'static' / name).read_bytes()
         asset = Path(name)
         versioned = asset.stem + '.' + hashlib.sha256(content).hexdigest()[:12] + asset.suffix
@@ -50,6 +51,15 @@ def build(output):
         (output / versioned).write_bytes(content)
     html = html.replace('href="/"', 'href="./"')
     (output / 'index.html').write_text(html)
+    ocr_root = ROOT / 'static/ocr'
+    ocr_out = output / 'ocr/v5'
+    ocr_out.mkdir(parents=True, exist_ok=True)
+    manifest = json.loads((ocr_root / 'v5/manifest.json').read_text())
+    for name in [x['file'] for x in manifest] + ['manifest.json']:
+        if Path(name).name != name:
+            raise ValueError('invalid OCR asset name')
+        shutil.copyfile(ocr_root / 'v5' / name, ocr_out / name)
+    shutil.copyfile(ocr_root / 'NOTICE.md', output / 'ocr/NOTICE.md')
     # Remove the retired installer when reusing a previous local build directory.
     (output / 'wfm-bookmark.html').unlink(missing_ok=True)
     (output / '.nojekyll').touch()
