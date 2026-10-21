@@ -2,6 +2,7 @@
 """Build an allowlisted public static site without loading private inventory."""
 import argparse
 import copy
+import hashlib
 import datetime as dt
 import json
 from pathlib import Path
@@ -42,8 +43,11 @@ def build(output):
     html = html.replace('<script src="/portable.js"></script>', '')
     html = html.replace('<script src="/stats.js"></script>', '<script src="/hosted.js"></script>\n<script src="/stats.js"></script>')
     for name in ('style.css', 'hosted.js', 'stats.js', 'desk-core.js', 'app.js', 'extras.js', 'inventory.js', 'desk.js'):
-        html = html.replace('"/' + name + '"', '"./' + name + '"')
-        (output / name).write_bytes((ROOT / 'static' / name).read_bytes())
+        content = (ROOT / 'static' / name).read_bytes()
+        asset = Path(name)
+        versioned = asset.stem + '.' + hashlib.sha256(content).hexdigest()[:12] + asset.suffix
+        html = html.replace('"/' + name + '"', '"./' + versioned + '"')
+        (output / versioned).write_bytes(content)
     html = html.replace('href="/"', 'href="./"')
     (output / 'index.html').write_text(html)
     (output / '.nojekyll').touch()

@@ -27,12 +27,15 @@ class PagesTests(unittest.TestCase):
             html = (out / 'index.html').read_text()
             self.assertNotIn('src="/', html)
             self.assertNotIn('href="/', html)
-            self.assertIn('./hosted.js', html)
+            self.assertRegex(html, r'\./hosted\.[0-9a-f]{12}\.js')
             self.assertNotIn('portable.js', html)
+            import re
+            for asset in re.findall(r'(?:src|href)="\./([^"]+\.(?:js|css))"', html):
+                self.assertTrue((out / asset).exists(), asset)
             self.assertGreater(len(state['catalog']), 700)
             self.assertEqual(len(state['prime_sets']), 51)
-            self.assertIn('./desk.js', html)
-            self.assertIn('./desk-core.js', html)
+            self.assertRegex(html, r'\./desk\.[0-9a-f]{12}\.js')
+            self.assertRegex(html, r'\./desk-core\.[0-9a-f]{12}\.js')
             self.assertTrue(all(p['slug'] in {x['slug'] for x in state['catalog']} for r in state['prime_sets'] for p in r['parts']))
 
 
