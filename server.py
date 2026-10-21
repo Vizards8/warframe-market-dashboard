@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 import features
 import portable
 import public_data
@@ -123,7 +123,8 @@ def market_get(url):
                 if auction:
                     LAST_AUCTION_REQUEST = LAST_REQUEST
             response = subprocess.run(['curl', '-sS', '--max-time', '18', '-w', '\n%{http_code}',
-                                       '-H', 'Platform: pc', '-H', 'Language: en', url],
+                                       '-H', 'Platform: pc', '-H', 'Language: en',
+                                       '-A', 'VoidLedger/0.3 (+https://github.com/Vizards8/warframe-market-dashboard)', url],
                                       capture_output=True, text=True, timeout=21)
         if response.returncode:
             if attempt < 2:
@@ -229,6 +230,15 @@ class Handler(BaseHTTPRequestHandler):
         if not self.trusted():
             return self.respond({'error': '只接受本机页面请求'}, 403)
         path = urlparse(self.path).path
+        if path == '/api/wfm-orders':
+            user = parse_qs(urlparse(self.path).query).get('user', [''])[0].strip().lower()
+            if not re.fullmatch(r'[a-z0-9_-]{1,64}', user):
+                return self.respond({'error': '请填写有效的公开 WFM 用户名'}, 400)
+            try:
+                # Fixed public endpoint only. No credentials, arbitrary URLs or writes.
+                return self.respond(market_get('https://api.warframe.market/v2/orders/user/' + user))
+            except (RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
+                return self.respond({'error': str(error)}, 502)
         if path == '/api/ping':
             return self.respond({'app': 'warframe-market-dashboard', 'version': 2, 'pid': os.getpid()})
         if path in ('/api/state', '/portable.html'):
@@ -243,7 +253,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(features.ITEMS)
         if path == '/api/relics':
             return self.respond(features.RELICS)
-        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js')}}
+        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js', 'welcome.js')}}
         if path in files:
             file = ROOT / 'static' / files[path]
             mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css'}[file.suffix]

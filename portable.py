@@ -19,7 +19,7 @@ def build(state, items, relics):
 (()=>{const p=JSON.parse(document.getElementById('portable-data').textContent);window.Portable={...p,async request(path,body){if(body!==undefined)throw new Error('便携快照不支持刷新；请使用本地服务版，或打开 WFM 查询。');if(path==='/api/state')return structuredClone(p.state);if(path==='/api/items')return p.items;if(path==='/api/relics')return p.relics;throw new Error('快照中没有该数据');}};})();
 </script>'''
     shell = shell.replace('<script src="/stats.js"></script>', boot + '<script src="/stats.js"></script>')
-    for name in ('stats.js', 'desk-core.js', 'app.js', 'extras.js', 'portable.js', 'inventory.js', 'desk.js'):
+    for name in ('stats.js', 'desk-core.js', 'app.js', 'extras.js', 'portable.js', 'inventory.js', 'desk.js', 'welcome.js'):
         script = (ROOT / 'static' / name).read_text().replace('</script', '<\\/script')
         shell = shell.replace('<script src="/' + name + '"></script>', '<script>' + script + '</script>')
     snapshot = copy.deepcopy(state)

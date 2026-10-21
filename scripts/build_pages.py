@@ -42,7 +42,7 @@ def build(output):
     html = (ROOT / 'static/index.html').read_text()
     html = html.replace('<script src="/portable.js"></script>', '')
     html = html.replace('<script src="/stats.js"></script>', '<script src="/hosted.js"></script>\n<script src="/stats.js"></script>')
-    for name in ('style.css', 'hosted.js', 'stats.js', 'desk-core.js', 'app.js', 'extras.js', 'inventory.js', 'desk.js'):
+    for name in ('style.css', 'hosted.js', 'stats.js', 'desk-core.js', 'app.js', 'extras.js', 'inventory.js', 'desk.js', 'welcome.js'):
         content = (ROOT / 'static' / name).read_bytes()
         asset = Path(name)
         versioned = asset.stem + '.' + hashlib.sha256(content).hexdigest()[:12] + asset.suffix

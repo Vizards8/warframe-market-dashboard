@@ -1,16 +1,32 @@
 <!doctype html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>虚空账本 · Warframe 行情</title><link rel="stylesheet" href="/style.css"></head>
-<body>
+<body class="home-mode">
 <aside class="sidebar">
   <a class="brand" href="/" aria-label="虚空账本首页"><span class="brand-mark">◈</span><span>虚空账本<small>WARFRAME MARKET DESK</small></span></a>
   <div class="nav-label">我的市场</div>
-  <nav><button class="nav-item active" data-tab="inventory"><span>▦</span> 我的库存 <b id="inventory-count">—</b></button><button class="nav-item" data-tab="watch"><span>☆</span> 我的关注</button><button class="nav-item" data-tab="frames"><span>◇</span> Prime 战甲</button><button class="nav-item" data-tab="mods"><span>▤</span> 奸商补仓</button><button class="nav-item" data-tab="rivens"><span>◈</span> 0 洗紫卡</button><button class="nav-item" data-tab="relics"><span>◉</span> 开核桃助手</button><button class="nav-item" data-tab="sets"><span>▧</span> 散件凑套</button><button class="nav-item" data-tab="ledger"><span>↔</span> 交易记录</button><button class="nav-item" data-tab="routes"><span>◷</span> 赚钱效率</button></nav>
+  <nav aria-label="主导航"><button class="nav-item active" data-tab="home"><span>⌂</span> 启航首页</button><button class="nav-item" data-tab="inventory"><span>▦</span> 我的库存 <b id="inventory-count">—</b></button><button class="nav-item" data-tab="watch"><span>☆</span> 我的关注</button><button class="nav-item" data-tab="frames"><span>◇</span> Prime 战甲</button><button class="nav-item" data-tab="mods"><span>▤</span> 奸商补仓</button><button class="nav-item" data-tab="rivens"><span>◈</span> 0 洗紫卡</button><button class="nav-item" data-tab="relics"><span>◉</span> 开核桃助手</button><button class="nav-item" data-tab="sets"><span>▧</span> 散件凑套</button><button class="nav-item" data-tab="ledger"><span>↔</span> 交易记录</button><button class="nav-item" data-tab="routes"><span>◷</span> 赚钱效率</button></nav>
   <div class="sidebar-note"><span class="status-dot"></span> 国际服 · PC 市场<br><small>R0 MOD / Prime 套装与散件</small></div>
   <div class="sidebar-bottom"><span>持有，等待好价格。</span><p>没有回笼压力。<br>用成交与供需判断，按自己的目标出货。</p><div class="browser-note">库存直接增减，修改自动记住。</div></div>
 </aside>
 <main>
-  <header><div class="breadcrumb">个人交易台 <span>/</span> <span id="crumb">我的库存</span></div><div class="header-right"><button id="add-inventory" class="plain-button" disabled>＋ 添加库存</button><button id="undo-change" class="plain-button" hidden>撤销上次操作</button><button id="portable-export" class="plain-button">备份库存</button><button id="portable-share" class="plain-button">导入库存</button><span id="save-status">网页自动记住</span><span class="market-pill"><i></i> PC · 跨平台交易</span></div></header>
+  <header><div class="breadcrumb">个人交易台 <span>/</span> <span id="crumb">我的库存</span></div><div class="header-right"><button id="wfm-open" class="plain-button" disabled>⇄ WFM 挂单</button><button id="add-inventory" class="plain-button" disabled>＋ 添加库存</button><button id="undo-change" class="plain-button" hidden>撤销上次操作</button><button id="portable-export" class="plain-button">备份库存</button><button id="portable-share" class="plain-button">导入库存</button><span id="save-status">网页自动记住</span><span class="market-pill"><i></i> PC · 跨平台交易</span></div></header>
+  <section id="welcome" class="welcome" aria-label="虚空账本首页">
+    <div class="welcome-hero">
+      <div class="void-art" aria-hidden="true"><div class="void-orbit orbit-a"></div><div class="void-orbit orbit-b"></div><div class="void-orbit orbit-c"></div><div class="void-core">◈</div><span class="orbit-caption">ORIGIN SYSTEM · TRADE DESK</span></div>
+      <div class="welcome-copy"><span class="welcome-kicker"><i></i> TENNO, WELCOME ABOARD</span><h1>把时间，<br>留给好价格<span>。</span></h1><p>你的 Prime、奸商囤货与每一颗遗物，<br>都值得一次有依据的决定。</p><div class="welcome-actions"><button class="welcome-primary" data-go="inventory">进入我的交易台 <span>↗</span></button><button class="welcome-secondary" data-go="relics">我要开核桃 →</button></div><label class="welcome-skip"><input id="welcome-skip" type="checkbox"> 以后直接进入工作台</label></div>
+      <div class="welcome-signal"><span>PUBLIC MARKET / PRIVATE INVENTORY</span><span>国际服 PC · 跨平台</span></div>
+    </div>
+    <div class="welcome-status" aria-live="polite"><span><i></i> 市场观察站</span><span id="welcome-snapshot">正在读取公共行情…</span><button id="welcome-refresh">检查行情更新 ↻</button></div>
+    <div class="welcome-section-title"><div><span>CHOOSE YOUR NEXT MOVE</span><h2>今天，想做点什么？</h2></div><p>从你正在做的事开始。</p></div>
+    <div class="welcome-grid">
+      <button class="welcome-card" data-go="inventory"><span class="welcome-card-icon">▦</span><span class="welcome-card-tag">01 / PORTFOLIO</span><h3>这批库存，值得出手了吗？</h3><p>把持仓、目标价与供需变化放在一起。<br>慢慢等，也要心里有数。</p><div><span id="welcome-holdings">我的库存与观察线</span><b>↗</b></div></button>
+      <button class="welcome-card" data-go="mods"><span class="welcome-card-icon">◇</span><span class="welcome-card-tag">02 / BARO KI’TEER</span><h3>奸商来了，这次囤什么？</h3><p>先看已有多少，再分配杜卡德。<br>货单、成本和预算，一起核对。</p><div><span id="welcome-baro">查看货单与补仓计划</span><b>↗</b></div></button>
+      <button class="welcome-card" data-go="relics"><span class="welcome-card-icon">◉</span><span class="welcome-card-tag">03 / VOID FISSURES</span><h3>奖励一出，直接看价格。</h3><p>出发前选好四个遗物。<br>开奖时用固定顺序对照六种掉落。</p><div><span>四遗物对照 · 战斗模式</span><b>↗</b></div></button>
+    </div>
+    <div class="welcome-bottom"><section class="welcome-guide"><span class="welcome-card-tag">YOUR FIRST THREE MINUTES</span><h2>第一次来？三步就能上手。</h2><ol><li><b>01</b><div><button id="welcome-add">添加你真正持有的商品 ↗</button><p>按中文、英文或别名搜索，数量直接改。</p></div></li><li><b>02</b><div><button data-go="inventory">给它一条自己的观察线 ↗</button><p>在库存设置目标价，选择要比较的报价依据。</p></div></li><li><b>03</b><div><a href="https://warframe.market/" target="_blank" rel="noopener">回 WFM 核价，再决定挂售 ↗</a><p>均价用于参考，挂单不代表已经成交。</p></div></li></ol></section><section class="welcome-connect"><span class="welcome-card-tag">CONNECTED, ON YOUR TERMS</span><h2>让挂单和库存<br>对得上。</h2><p>从 WFM 公开卖单开始核对数量。<br>预览差异，由你选择是否更新库存。</p><button id="welcome-wfm" class="plain-button">了解 WFM 联动 →</button><small>当前支持只读导入；改价和上下架尚未接入。</small></section></div>
+    <p class="welcome-privacy">你的库存与交易记录保存在当前浏览器，不上传公开仓库。换设备前，请备份库存。</p>
+  </section>
   <section class="page-heading"><div><div class="eyebrow">YOUR PATIENT PORTFOLIO</div><h1 id="page-title">每一份等待，都有价格。</h1><p id="page-subtitle">你的库存与市场放在一起，什么时候出手，由你决定。</p></div><button id="refresh" class="primary">↻ <span>刷新库存行情</span></button></section>
   <section id="inventory-summary" class="summary" aria-label="库存摘要">
     <article class="metric"><div class="metric-label">持有库存 <span>ASSETS</span></div><div class="metric-value" id="metric-items">—</div><p id="metric-items-note">正在加载库存</p></article>
@@ -43,4 +59,5 @@
 <script src="/portable.js"></script>
 <script src="/inventory.js"></script>
 <script src="/desk.js"></script>
+<script src="/welcome.js"></script>
 </body></html>

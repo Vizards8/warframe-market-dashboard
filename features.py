@@ -21,7 +21,7 @@ def slim_item(x):
     loc = x['i18n'].get('zh-hans', x['i18n']['en'])
     thumb, icon = loc.get('thumb', ''), loc.get('icon', '')
     tags = x.get('tags', [])
-    return {'slug': x['slug'], 'name': loc['name'], 'english': x['i18n']['en']['name'],
+    return {'id': x['id'], 'maxRank': x.get('maxRank'), 'slug': x['slug'], 'name': loc['name'], 'english': x['i18n']['en']['name'],
             'image': ASSET + thumb if thumb else None, 'icon': ASSET + icon if icon else None,
             'fallback_image': IMAGE_SOURCES.get(x['slug']),
             'kind': 'frame' if 'set' in tags and 'warframe' in tags else 'mod' if 'mod' in tags else 'component',

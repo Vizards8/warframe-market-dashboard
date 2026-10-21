@@ -78,3 +78,9 @@ python3 -m http.server 18866 --bind 127.0.0.1 --directory _site
 - [WFCD / Warframe Items](https://github.com/WFCD/warframe-items)：遗物目录及备用图片，目录核对于 2026-10-21，后续新物品需更新。
 
 代码沿用 [MIT License](LICENSE)。Wiki 派生数据（`data/baro_wiki.json` 及目录里的奸商货单字段）依据来源的 **CC BY-NC-SA 3.0** 使用，保留来源及相同方式共享要求；第三方数据和游戏图片不因本项目 MIT 许可而重新授权。Warframe 为 Digital Extremes 的商标，本项目非官方。
+
+### 启航首页与 WFM 挂单核对
+
+新用户从首页选择库存、奸商补仓或四遗物助手；已有持仓默认进入工作台。侧栏品牌可随时回首页。
+
+顶栏「WFM 挂单」支持只读差异预览：在线版打开官方公开 JSON 并粘贴，本地服务版可按用户名直接读取。只将你勾选的卖单数量覆盖到本地库存，可撤销；买单、非 R0 和未支持变体跳过，缺失商品保留。当前没有自动改价、上下架或游戏仓库同步。[能力边界与下一阶段设计](docs/wfm-integration.md)。
