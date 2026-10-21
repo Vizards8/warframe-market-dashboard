@@ -92,3 +92,7 @@ python3 -m http.server 18866 --bind 127.0.0.1 --directory _site
 3. 在线网页点「WFM 挂单 → 打开本机连接窗口」，即可自动接收本人挂单供核对。在连接窗口直接预览改价、数量与上下架，确认提交后回读状态。
 
 这里只管理已登记的 WFM 挂单；上 / 下架控制显隐，不删除、不标记成交。新建挂单仍在 WFM 官网操作。真实账号 API 联调需使用者在本机自行授权；仓库测试使用模拟会话。[设计、验证与限制](docs/wfm-integration.md)。
+
+### 免安装书签面板（只读试验）
+
+[打开书签设置页](https://vizards8.github.io/warframe-market-dashboard/wfm-bookmark.html)，把按钮拖到书签栏，在 WFM 官网登录后点击书签，再点「读取我的挂单」。不读取 JWT，不启动本机服务，只请求官方 `/me` 与 `/orders/my`，结果留在 WFM 页面。当前尚未验证真人会话兼容性，改价 / 数量 / 显隐尚未开放；自动化浏览器禁止执行 `javascript:` 书签，需使用者在普通浏览器验证。测试：`node tests/test_wfm_bookmark.js`。

@@ -67,3 +67,9 @@ WFM 不提供游戏仓库读取接口。WFM 上下架、删除挂单和实际游
 官方依据：[现有 v1 授权仍用于集成](https://docs.warframe.market/docs/intro/)、[v1 令牌兼容与 scope all](https://docs.warframe.market/docs/api/overview/)、[新版登录接口仅限第一方](https://docs.warframe.market/docs/api/authentication/)。
 
 Cookie 接入参考为[旧版社区示例](https://github.com/NKN1396/warframe.market-api-example)，不代表当前 Cookie 会话已完成真实联调。公开 `/user/{slug}` 响应成功不能证明具有本人读写权限。不要向聊天发送令牌、Cookie 或带凭据的 curl。
+
+## 2026-10-21：免安装书签只读探针
+
+新增 `wfm-bookmark.html` 设置页与自包含 `static/wfm-bookmark.js`。书签限制在 `https://warframe.market` 运行，创建浮动面板；用户点击读取后，以 `credentials: include` 向固定官方 API 发 GET `/me`，账号校验通过后间隔 650ms 发 GET `/orders/my`。不读取 Cookie / 浏览器存储，不提取 JWT，不跨窗口传输，不使用远程脚本或第三方代理。不提交任何写请求。
+
+验证仅覆盖构建后的书签地址与源码一致，以及模拟响应的权限错误、跨域失败、隐藏买卖单、空列表等。实际尝试执行无账号访问的 DOM 探针时，自动化浏览器禁止 `javascript:` URL，并要求不得绕过；因此没有执行 WFM 内脚本，没有完成真人会话读取，更没有验证 Cookie 写入所需的 CSRF 或页面策略。此工具明确标为只读实验版，供使用者在常用浏览器直接测试。读失败不表示空库存，读成功也不表示可以写入。

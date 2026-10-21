@@ -5,8 +5,10 @@ import copy
 import hashlib
 import datetime as dt
 import json
+import html as html_lib
 from pathlib import Path
 import sys
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -50,6 +52,9 @@ def build(output):
         (output / versioned).write_bytes(content)
     html = html.replace('href="/"', 'href="./"')
     (output / 'index.html').write_text(html)
+    bookmark = 'javascript:void ' + quote((ROOT / 'static/wfm-bookmark.js').read_text(), safe='')
+    installer = (ROOT / 'static/wfm-bookmark.html').read_text().replace('__BOOKMARKLET__', html_lib.escape(bookmark, quote=True))
+    (output / 'wfm-bookmark.html').write_text(installer)
     (output / '.nojekyll').touch()
     return state
 
