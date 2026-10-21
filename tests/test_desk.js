@@ -36,18 +36,3 @@ assert.throws(()=>core.backup({...raw,transactions:[{...raw.transactions[0],slug
 assert.throws(()=>core.backup({...raw,transactions:[{...raw.transactions[0],type:'sell'}]},[{slug:'a'}]));
 
 assert.deepEqual(core.budget([{slug:'a',ducats:100,credits:null}],{a:2}),{ducats:200,credits:0,incomplete:2});
-
-// WFM public orders are a partial listing, never the complete game inventory.
-const directory=[{id:'mod',slug:'a',name:'MOD',maxRank:10},{id:'frame',slug:'b',name:'Prime'},{id:'other',slug:'c',name:'Unsupported'}];
-const catalog=[{slug:'a',name:'R0 MOD',kind:'mod'},{slug:'b',name:'Prime',kind:'frame'}];
-const offer=(id,itemId='mod',extra={})=>({id,itemId,type:'sell',quantity:3,platinum:60,visible:true,rank:0,...extra});
-const envelope=data=>({apiVersion:'0.25.0',data,error:null});
-let preview=core.wfmPreview(envelope([offer('1'),offer('2','mod',{quantity:2}),offer('3','frame',{quantity:1,rank:undefined}),offer('buy','mod',{type:'buy'}),offer('rank','mod',{rank:10}),offer('missing','mod',{rank:undefined}),offer('hidden','mod',{visible:false}),offer('unknown','other'),offer('sub','frame',{subtype:'blueprint'}),offer('bulk','frame',{quantity:5,perTrade:2})]),directory,catalog);
-assert.equal(preview.buy,1);assert.equal(preview.rows.length,2);assert.equal(preview.rows[0].quantity,5);assert.equal(preview.skipped.length,6);
-assert.deepEqual(core.wfmPreview(envelope([]),directory,catalog).rows,[]);
-assert.throws(()=>core.wfmPreview(envelope([offer('1'),offer('1')]),directory,catalog));
-assert.throws(()=>core.wfmPreview(envelope([offer('bad','mod',{quantity:-1})]),directory,catalog));
-assert.throws(()=>core.wfmPreview({apiVersion:'0.25.0',data:null,error:{request:['app.user.notFound']}},directory,catalog));
-assert.throws(()=>core.wfmPreview({items:[]},directory,catalog));
-console.log('WFM 只读预览：买单、隐藏单、R0 等级、未知变体、批量规格、重复单与空列表验证通过');
-assert.equal(core.wfmPreview(envelope([offer('hidden','mod',{visible:false})]),directory,catalog,{includeHidden:true}).rows[0].quantity,3);

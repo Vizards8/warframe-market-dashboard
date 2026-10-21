@@ -19,8 +19,9 @@ class PagesTests(unittest.TestCase):
                 raise AssertionError('public build tried to read private inventory')
             return original(path, *args, **kwargs)
         with tempfile.TemporaryDirectory() as tmp, patch.object(Path, 'read_text', guarded):
-            state = build_pages.build(tmp)
             out = Path(tmp)
+            (out / 'wfm-bookmark.html').write_text('retired installer')
+            state = build_pages.build(tmp)
             self.assertEqual(state['initial_settings']['items'], {})
             self.assertEqual(set(p.name for p in (out / 'data').iterdir()), {'state.json', 'items.json', 'relics.json', 'history.json'})
             self.assertFalse((out / 'data/initial_holdings.json').exists())
@@ -29,20 +30,10 @@ class PagesTests(unittest.TestCase):
             self.assertNotIn('href="/', html)
             self.assertRegex(html, r'\./hosted\.[0-9a-f]{12}\.js')
             self.assertNotIn('portable.js', html)
-            from html.parser import HTMLParser
-            from urllib.parse import unquote
-            class BookmarkParser(HTMLParser):
-                href = None
-                def handle_starttag(self, tag, attrs):
-                    fields = dict(attrs)
-                    if tag == 'a' and fields.get('class') == 'bookmark':
-                        self.href = fields['href']
-            installer = (out / 'wfm-bookmark.html').read_text()
-            parser = BookmarkParser()
-            parser.feed(installer)
-            self.assertTrue(parser.href.startswith('javascript:void '))
-            self.assertEqual(unquote(parser.href[len('javascript:void '):]), (ROOT / 'static/wfm-bookmark.js').read_text())
-            self.assertNotIn('__BOOKMARKLET__', installer)
+            self.assertFalse((out / 'wfm-bookmark.html').exists())
+            self.assertNotIn('wfm-open', html)
+            self.assertNotIn('welcome-wfm', html)
+            self.assertIn('查看交易账本', html)
             import re
             for asset in re.findall(r'(?:src|href)="\./([^"]+\.(?:js|css))"', html):
                 self.assertTrue((out / asset).exists(), asset)

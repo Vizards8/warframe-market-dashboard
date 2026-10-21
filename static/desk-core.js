@@ -27,30 +27,6 @@ const DeskCore={
   return now<a?'upcoming':now<e?'active':'departed';
  },
  budget(rows,plan){let ducats=0,credits=0,incomplete=0;for(const r of rows){const q=plan[r.slug]||0;if(!q)continue;if(r.ducats==null||r.credits==null)incomplete+=q;if(r.ducats!=null)ducats+=q*r.ducats;if(r.credits!=null)credits+=q*r.credits;}return {ducats,credits,incomplete};},
- wfmPreview(raw,items,catalog,options={}){
-  if(!raw||typeof raw!=='object'||typeof raw.apiVersion!=='string'||raw.error!=null||!Array.isArray(raw.data)||raw.data.length>10000)throw new Error('不是有效的 WFM v2 公开挂单响应');
-  const index=new Map(items.filter(x=>typeof x.id==='string').map(x=>[x.id,x]));
-  const supported=new Map(catalog.map(x=>[x.slug,x])),seen=new Set(),rows=new Map(),skipped=[];
-  let buy=0;
-  for(const order of raw.data){
-   if(!order||typeof order.id!=='string'||seen.has(order.id)||!['buy','sell'].includes(order.type)||typeof order.visible!=='boolean'||!Number.isInteger(order.quantity)||order.quantity<1||order.quantity>9999||!Number.isInteger(order.platinum)||order.platinum<1||order.platinum>900000||typeof order.itemId!=='string')throw new Error('挂单字段不完整、重复或无效');
-   seen.add(order.id);
-   if(order.type==='buy'){buy++;continue;}
-   const x=index.get(order.itemId),c=supported.get(x?.slug),name=x?.name||order.itemId;
-   let reason=!order.visible&&!options.includeHidden?'隐藏单，不作为公开持有依据':!c?'当前库存目录未收录':null;
-   if(!reason&&(c.kind==='mod'?order.rank!==0:order.rank!=null&&order.rank!==0))reason='非 R0 或等级不明确；避免混合变体';
-   if(!reason&&['subtype','charges','amberStars','cyanStars'].some(k=>order[k]!=null))reason='带有子类型 / 充能 / 星数，当前库存不能区分';
-   const perTrade=order.perTrade??1;
-   if(!reason&&(!Number.isInteger(perTrade)||perTrade<1||perTrade>6||order.quantity%perTrade!==0))reason='批量交易规格无效';
-   if(reason){skipped.push({name,reason});continue;}
-   const row=rows.get(x.slug)||{slug:x.slug,name:c.name,quantity:0,prices:[]};
-   row.quantity+=order.quantity;
-   if(row.quantity>100000)throw new Error('合计数量超过库存上限');
-   if(!row.prices.some(p=>p.platinum===order.platinum&&p.perTrade===perTrade))row.prices.push({platinum:order.platinum,perTrade});
-   rows.set(x.slug,row);
-  }
-  return {total:raw.data.length,buy,rows:[...rows.values()],skipped};
- },
  backup(raw,catalog){
   if(![1,2].includes(raw?.version)||!raw.items||typeof raw.items!=='object'||Array.isArray(raw.items))throw new Error('不是有效的库存备份');
   const allowed=new Set(catalog.map(x=>x.slug)),items={},out={};
