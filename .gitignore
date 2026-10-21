@@ -1,0 +1,21 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.env
+.env.*
+.venv/
+_site/
+# Personal inventory stays on the machine, never in Git history.
+data/initial_holdings.json
+data/settings.json
+data/server.log
+data/*.tmp
+data/seed_raw.json
+data/wfcd/
+data/relics_raw.json
+data/riven_probe.json
+data/new_mod_slugs.json
+# Personal snapshots, archives and screenshots from local use.
+/虚空账本-*.html
+/虚空账本-*.zip
+/*.png
