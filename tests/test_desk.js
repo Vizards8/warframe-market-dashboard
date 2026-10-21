@@ -50,3 +50,4 @@ assert.throws(()=>core.wfmPreview(envelope([offer('bad','mod',{quantity:-1})]),d
 assert.throws(()=>core.wfmPreview({apiVersion:'0.25.0',data:null,error:{request:['app.user.notFound']}},directory,catalog));
 assert.throws(()=>core.wfmPreview({items:[]},directory,catalog));
 console.log('WFM 只读预览：买单、隐藏单、R0 等级、未知变体、批量规格、重复单与空列表验证通过');
+assert.equal(core.wfmPreview(envelope([offer('hidden','mod',{visible:false})]),directory,catalog,{includeHidden:true}).rows[0].quantity,3);

@@ -1,5 +1,7 @@
 """The local connector can only read the fixed public WFM endpoint."""
 import unittest
+import io
+import json
 from unittest.mock import Mock, patch
 
 import server
@@ -31,6 +33,26 @@ class WfmReadTests(unittest.TestCase):
                 handler.do_GET()
             get.assert_not_called()
             self.assertEqual(handler.respond.call_args.args[1], status)
+
+    def test_private_write_requires_csrf_and_local_origin(self):
+        for origin, csrf in [(None, ''), ('https://evil.example', server.WFM_CONNECTOR.csrf)]:
+            handler = self.handler('/api/wfm/connect', origin)
+            payload = json.dumps({'token': 'TEST_ONLY_SESSION_VALUE_1234567890'}).encode()
+            handler.rfile = io.BytesIO(payload)
+            handler.headers.update({'Content-Length': str(len(payload)), 'X-VoidLedger-CSRF': csrf})
+            with patch.object(server.WFM_CONNECTOR, 'connect') as connect:
+                handler.do_POST()
+            connect.assert_not_called()
+            self.assertEqual(handler.respond.call_args.args[1], 403)
+
+    def test_private_write_dispatches_with_csrf_without_returning_auth(self):
+        handler = self.handler('/api/wfm/disconnect', server.BASE)
+        handler.rfile = io.BytesIO(b'{}')
+        handler.headers.update({'Content-Length': '2', 'X-VoidLedger-CSRF': server.WFM_CONNECTOR.csrf})
+        with patch.object(server.WFM_CONNECTOR, 'disconnect', return_value={'connected': False}) as disconnect:
+            handler.do_POST()
+        disconnect.assert_called_once_with()
+        handler.respond.assert_called_once_with({'connected': False})
 
     def test_api_failure_is_explicit_not_an_empty_inventory(self):
         handler = self.handler('/api/wfm-orders?user=example')

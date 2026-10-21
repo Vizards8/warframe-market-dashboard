@@ -19,6 +19,8 @@ from urllib.parse import urlparse, parse_qs
 import features
 import portable
 import public_data
+from wfm_connector import Connector, ConnectorError
+import hmac
 import webbrowser
 
 ROOT = Path(__file__).resolve().parent
@@ -34,6 +36,7 @@ INITIAL_SETTINGS = (json.loads((DATA / 'initial_holdings.json').read_text())
                     if (DATA / 'initial_holdings.json').exists() else {'version': 2, 'items': {}})
 CACHE_FILE = DATA / 'market.json'
 CACHE = json.loads(CACHE_FILE.read_text()) if CACHE_FILE.exists() else {}
+WFM_CONNECTOR = Connector()
 JOB = {'running': False, 'done': 0, 'total': 0, 'errors': [], 'current': '', 'started': None}
 SEED_TIME = '2026-10-20T06:30:00+00:00'
 
@@ -218,6 +221,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body)))
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('Referrer-Policy', 'no-referrer')
         self.end_headers()
         self.wfile.write(body)
 
@@ -230,6 +235,13 @@ class Handler(BaseHTTPRequestHandler):
         if not self.trusted():
             return self.respond({'error': '只接受本机页面请求'}, 403)
         path = urlparse(self.path).path
+        if path == '/wfm':
+            return self.respond((ROOT / 'static/wfm.html').read_bytes(), content_type='text/html; charset=utf-8')
+        if path in ('/api/wfm/status', '/api/wfm/snapshot'):
+            try:
+                return self.respond(WFM_CONNECTOR.status() if path.endswith('/status') else WFM_CONNECTOR.snapshot())
+            except ConnectorError as error:
+                return self.respond({'error': str(error)}, error.status)
         if path == '/api/wfm-orders':
             user = parse_qs(urlparse(self.path).query).get('user', [''])[0].strip().lower()
             if not re.fullmatch(r'[a-z0-9_-]{1,64}', user):
@@ -240,7 +252,7 @@ class Handler(BaseHTTPRequestHandler):
             except (RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
                 return self.respond({'error': str(error)}, 502)
         if path == '/api/ping':
-            return self.respond({'app': 'warframe-market-dashboard', 'version': 2, 'pid': os.getpid()})
+            return self.respond({'app': 'warframe-market-dashboard', 'version': 3, 'pid': os.getpid(), 'wfm_connector': True})
         if path in ('/api/state', '/portable.html'):
             with LOCK:
                 state = copy.deepcopy({'catalog': CATALOG, 'market': CACHE, 'initial_settings': INITIAL_SETTINGS,
@@ -253,7 +265,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(features.ITEMS)
         if path == '/api/relics':
             return self.respond(features.RELICS)
-        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js', 'welcome.js')}}
+        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js', 'welcome.js', 'wfm-client.js')}}
         if path in files:
             file = ROOT / 'static' / files[path]
             mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css'}[file.suffix]
@@ -268,6 +280,27 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < size < 250000:
                 raise ValueError('请求大小不正确')
             body = json.loads(self.rfile.read(size))
+            if self.path.startswith('/api/wfm/'):
+                csrf = self.headers.get('X-VoidLedger-CSRF', '')
+                if not isinstance(csrf, str) or not hmac.compare_digest(csrf, WFM_CONNECTOR.csrf):
+                    return self.respond({'error': '请从本机连接窗口操作'}, 403)
+                if not isinstance(body, dict):
+                    return self.respond({'error': '请求格式不正确'}, 400)
+                try:
+                    action = self.path.rsplit('/', 1)[-1]
+                    if action == 'connect':
+                        result = WFM_CONNECTOR.connect(body.get('token'))
+                    elif action == 'disconnect':
+                        result = WFM_CONNECTOR.disconnect()
+                    elif action == 'plan':
+                        result = WFM_CONNECTOR.plan(body.get('changes'))
+                    elif action == 'apply':
+                        result = WFM_CONNECTOR.apply(body.get('planId'))
+                    else:
+                        return self.respond({'error': '接口不存在'}, 404)
+                    return self.respond(result)
+                except ConnectorError as error:
+                    return self.respond({'error': str(error)}, error.status)
             if self.path == '/api/settings':
                 return self.respond({'error': '库存已改为浏览器自动记住，无需上传保存'}, 410)
             if self.path in ('/api/rivens/refresh', '/api/compare'):
@@ -292,14 +325,14 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond({'error': str(error)}, 400)
 
 
-def launch():
+def launch(view='/'):
     try:
         with urllib.request.urlopen(BASE + '/api/ping', timeout=1) as result:
             if json.load(result).get('app') != 'warframe-market-dashboard':
                 raise RuntimeError('端口已被其他程序占用')
     except (urllib.error.URLError, TimeoutError, ConnectionError):
         with (DATA / 'server.log').open('a') as log:
-            subprocess.Popen([sys.executable, str(ROOT / 'server.py'), '--serve'], cwd=ROOT,
+            subprocess.Popen([sys.executable, str(ROOT / 'server.py'), '--serve', '--port', str(PORT)], cwd=ROOT,
                              stdout=log, stderr=log, start_new_session=True, stdin=subprocess.DEVNULL)
         for _ in range(40):
             try:
@@ -310,16 +343,20 @@ def launch():
                 time.sleep(.15)
         else:
             raise RuntimeError('启动失败，请查看 data/server.log')
-    webbrowser.open(BASE)
+    webbrowser.open(BASE + view)
     print('行情页已打开：' + BASE + '。可以关闭此终端窗口。')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--serve', action='store_true')
+    parser.add_argument('--wfm', action='store_true')
+    parser.add_argument('--port', type=int)
     args = parser.parse_args()
+    PORT = args.port or (18766 if args.wfm else 18765)
+    BASE = f'http://127.0.0.1:{PORT}'
     if args.serve:
         print('Warframe dashboard listening on ' + BASE, flush=True)
         ThreadingHTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
     else:
-        launch()
+        launch('/wfm' if args.wfm else '/')
