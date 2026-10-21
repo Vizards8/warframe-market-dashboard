@@ -61,7 +61,7 @@ window.Welcome=(()=>{
   connectorChannel=crypto.randomUUID();
   const base='http://127.0.0.1:18766';
   const url=base+'/wfm?origin='+encodeURIComponent(location.origin)+'#channel='+connectorChannel;
-  connectorWindow=window.open(url,'void-ledger-wfm-manager');
+  connectorWindow=window.open(url,'void-ledger-wfm-'+connectorChannel);
   if(!connectorWindow){$('wfm-bridge-status').textContent='连接窗口被浏览器拦截，请允许本站弹出本机连接窗口。';return;}
   $('wfm-bridge-status').textContent='正在等待本机窗口。若无法访问，请先启动 / 更新连接器。';
   clearInterval(bridgeTimer);let tries=0;
