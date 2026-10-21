@@ -5,7 +5,7 @@ function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});retur
 function setup(){
  const nodes=new Map(),events={},trackEvents={},timers=new Map();let stopped=0,terminated=0,closedFrames=0,nextTimer=1,captured=0,recognized=0;
  const pendingShare=deferred(),pendingRecognize=deferred();
- const context={drawImage(){},fillRect(){},strokeRect(){},fillText(){},clearRect(){}};
+ const context={drawImage(){},fillRect(){},strokeRect(){},fillText(){},clearRect(){},getImageData(w,h){return {data:new Uint8ClampedArray(Math.max(1,w*h*4))};},putImageData(){},imageSmoothingEnabled:true};
  function node(id){if(!nodes.has(id))nodes.set(id,{value:{'ocr-left':'0','ocr-right':'100','ocr-top':'20','ocr-bottom':'65','ocr-count':'4','ocr-language':'eng'}[id]||'',hidden:false,disabled:false,innerHTML:'',textContent:'',addEventListener(){},prepend(){},getContext:()=>context});return nodes.get(id);}
  const track={stop(){stopped++;},addEventListener:(name,fn)=>{trackEvents[name]=fn;}};
  const stream={getTracks:()=>[track],getVideoTracks:()=>[track]};

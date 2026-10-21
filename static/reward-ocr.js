@@ -1,6 +1,6 @@
 'use strict';
 (()=>{
-  let built=false,rows=[],results=[],imageSource=null,worker=null,busy=false;
+  let built=false,rows=[],results=[],imageSource=null,worker=null,workerLanguage='',busy=false;
   let capture=null,video=null,generation=0,pip=null,resultAt=null,disposed=false,requesting=false;
   const byId=id=>document.getElementById(id),core=RewardOcrCore;
   const assets=new URL('ocr/v5/',window.Portable?'https://vizards8.github.io/warframe-market-dashboard/':document.currentScript?.src||location.href).href;
@@ -28,6 +28,20 @@
     ctx.strokeStyle='#77f1bc';ctx.lineWidth=2;ctx.font='bold 18px sans-serif';
     for(let i=0;i<v.count;i++){const x=c.width*(v.left+(v.right-v.left)*i/v.count),y=c.height*v.top,sw=c.width*(v.right-v.left)/v.count,sh=c.height*(v.bottom-v.top);ctx.strokeRect(x,y,sw,sh);ctx.fillStyle='#77f1bc';ctx.fillText(String(i+1),x+8,y+23);}
   }
+  // Warframe reward labels are often small, light text over a translucent panel.
+  // Upscale and normalize contrast before Tesseract sees each slot; this stays in
+  // the page and does not change the source screenshot or send it anywhere.
+  function prepareCrop(source,x,y,w,h,scale){
+    const c=document.createElement('canvas');c.width=Math.round(w*scale);c.height=Math.round(h*scale);
+    const ctx=c.getContext('2d',{willReadFrequently:true});ctx.imageSmoothingEnabled=true;ctx.drawImage(source,x,y,w,h,0,0,c.width,c.height);
+    const pixels=ctx.getImageData(0,0,c.width,c.height),data=pixels.data;
+    for(let i=0;i<data.length;i+=4){
+      const luminance=data[i]*.299+data[i+1]*.587+data[i+2]*.114;
+      const contrast=Math.max(0,Math.min(255,(luminance-55)*1.75+25));
+      data[i]=data[i+1]=data[i+2]=contrast;
+    }
+    ctx.putImageData(pixels,0,0);return c;
+  }
   async function acceptImage(file){
     if(busy||capture)return status('请先停止共享，再导入截图。');
     if(!file||!file.type.startsWith('image/'))return status('请选择截图图片。');
@@ -41,11 +55,13 @@
     s.onload=()=>{clearTimeout(timeout);resolve();};s.onerror=()=>{clearTimeout(timeout);s.remove();reject(new Error('OCR 组件下载失败，请检查网络后重试'));};document.head.append(s);
   });}
   async function engine(session){
+    const language=byId('ocr-language').value;
+    if(worker&&workerLanguage!==language){await worker.terminate().catch(()=>{});worker=null;workerLanguage='';}
     if(worker)return worker;await loadScript();if(session!==generation)throw new Error('识别已取消');
     let timeout;const starting=Tesseract.createWorker(byId('ocr-language').value,1,{workerPath:assets+'worker.min.js',corePath:assets,langPath:assets,errorHandler:()=>{},logger:m=>{if(session===generation&&busy&&m.status!=='recognizing text')status(`加载 OCR：${m.status} ${Math.round((m.progress||0)*100)}%`);}});
     let next;try{next=await Promise.race([starting,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('OCR 模型加载超时，请检查网络或改用英文识别')),120000);})]);}catch(e){starting.then(w=>w.terminate()).catch(()=>{});throw e;}finally{clearTimeout(timeout);}
     if(session!==generation){await next.terminate();throw new Error('识别已取消');}
-    worker=next;await worker.setParameters({tessedit_pageseg_mode:'11'});return worker;
+    worker=next;workerLanguage=language;await worker.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});return worker;
   }
   async function recognize(){
     if((!capture&&!imageSource)||busy)return false;let v;try{v=layout();}catch(e){status(e.message);return false;}
@@ -65,22 +81,21 @@
       for(let i=0;i<v.count;i++){
         if(session!==generation)return false;
         status(`正在本机识别第 ${i+1}/${v.count} 个奖励…`);
-        const sw=w*(v.right-v.left)/v.count,sh=h*(v.bottom-v.top),scale=Math.min(2,2200/Math.max(sw,sh)),c=document.createElement('canvas');c.width=Math.round(sw*scale);c.height=Math.round(sh*scale);
-        c.getContext('2d').drawImage(imageSource,w*v.left+i*sw,h*v.top,sw,sh,0,0,c.width,c.height);
+        const sw=w*(v.right-v.left)/v.count,sh=h*(v.bottom-v.top),scale=Math.min(3,3000/Math.max(sw,sh)),c=prepareCrop(imageSource,w*v.left+i*sw,h*v.top,sw,sh,scale);
         const r=await ocr.recognize(c);if(session!==generation)return false;
         const lines=(r.data.lines||[]).map(x=>x.text.trim()).filter(Boolean);next.push(core.slot(lines,rows));byId('ocr-progress').value=(i+1)/v.count*100;
       }
       results=next;resultAt=new Date();byId('ocr-preview-details').open=false;render();
       status('识别完成；需要更新时再点“识别一次”。'+'保持游戏从左到右顺序；请核对名称。模糊结果需确认，缺价不代表 0p。');return true;
     }catch(e){
-      if(session===generation){if(worker)await worker.terminate().catch(()=>{});worker=null;status('识别失败：'+e.message+'。可以重试或输入奖励名。');}return false;
+      if(session===generation){if(worker)await worker.terminate().catch(()=>{});worker=null;workerLanguage='';status('识别失败：'+e.message+'。可以重试或输入奖励名。');}return false;
     }finally{if(session===generation){busy=false;syncControls();renderPip();}}
   }
   function stopSharing(message='已停止共享和识别。'){
     generation++;
     const previous=capture;capture=null;previous?.getTracks().forEach(t=>t.stop());
     if(video){video.pause();video.srcObject=null;video=null;}
-    if(worker){worker.terminate().catch(()=>{});worker=null;}
+    if(worker){worker.terminate().catch(()=>{});worker=null;workerLanguage='';}
     busy=false;results=[];resultAt=null;imageSource?.close();imageSource=null;
     if(built){byId('ocr-preview').getContext('2d').clearRect(0,0,byId('ocr-preview').width,byId('ocr-preview').height);byId('ocr-progress').hidden=true;render();syncControls();status(message);}
   }

@@ -5,6 +5,7 @@
   let rivenBuilt=false,relicBuilt=false,detailRiven=null;
   const selectedDrops=new Map();
   const grades=[['intact','完整'],['exceptional','优良'],['flawless','无暇'],['radiant','光辉']];
+  const eras=[['','不限定'],['lith','古纪'],['meso','前纪'],['neo','中纪'],['axi','后纪']];
   const categories={rifle:'步枪',shotgun:'霰弹枪',pistol:'手枪',melee:'近战',archgun:'空战枪械',sentinel:'同伴武器',kitgun:'组合枪',zaw:'Zaw'};
   const weapon=slug=>state.weapons.find(x=>x.slug===slug);
   const rquote=slug=>state.rivens?.[slug]||{};
@@ -68,7 +69,7 @@
   function persistRelics(){queueSave();renderRelicBodies();}
   function buildRelics(){
     if(relicBuilt)return;relicBuilt=true;
-    $('relic-section').innerHTML=`<div class="relic-controls"><div><h2>四遗物掉落对照 <span>输入中英文遗物名，例如 古纪 A1 / Lith A1</span></h2><p>开之前查一次，奖励选择时直接看图和名称。</p></div><div class="relic-buttons"><button id="relic-example" class="plain-button">载入示例</button><button id="relic-clear" class="plain-button">清空</button><button id="relic-focus" class="plain-button">⛶ 战斗视图</button><button id="relic-query" class="primary">查询掉落价格</button></div></div><div class="relic-combinations"><button id="relic-same" class="plain-button">四人同第一个遗物</button><label>统一精炼 <select id="relic-all-grade" aria-label="统一精炼等级"><option value="">分别设置</option>${grades.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><select id="relic-presets" aria-label="已保存遗物组合"><option value="">选择常用组合</option></select><input id="relic-preset-name" aria-label="遗物组合名称" maxlength="40" placeholder="例如：本周四人光辉"><button id="relic-save-preset" class="plain-button">保存组合</button><button id="relic-delete-preset" class="plain-button">删除组合</button></div><div class="relic-options"><div class="segmented" aria-label="掉落排序"><button data-relic-sort="price" class="active">按白金价格 ↓</button><button data-relic-sort="rarity">按金银铜顺序</button></div><span id="relic-status">先输入遗物，回车选择候选。</span></div><div class="relic-selection-tools"><span id="relic-selection-status" role="status">点击奖励选中，每栏一个，方便对照。</span><button id="relic-clear-selected" class="plain-button" disabled>清除选中</button></div><div id="relic-columns" class="relic-columns">${[0,1,2,3].map(i=>`<article class="relic-card" data-slot-card="${i}"><div class="relic-card-head"><span class="slot-number">${i+1}</span><div class="relic-select"><label for="relic-input-${i}">第 ${i+1} 个遗物</label><input id="relic-input-${i}" data-relic-input="${i}" type="text" autocomplete="off" placeholder="搜索遗物，如 后纪 A1" aria-label="第 ${i+1} 个遗物" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="relic-menu-${i}"><div id="relic-menu-${i}" class="relic-menu" role="listbox" hidden></div></div><button data-clear-relic="${i}" class="clear-relic" aria-label="清除第 ${i+1} 个遗物">×</button></div><div class="relic-grade"><select id="relic-grade-${i}" data-relic-grade="${i}" aria-label="第 ${i+1} 个遗物精炼等级">${grades.map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><span id="relic-estimate-${i}"></span></div><div id="relic-drops-${i}" class="relic-drops"></div></article>`).join('')}</div><div class="relic-footer"><span id="relic-source">掉落来源：WFCD / Warframe Items</span><span>白金按在线最低卖单估算 · 不可交易物品单独标注</span></div>`;
+    $('relic-section').innerHTML=`<div class="relic-controls"><div><h2>四遗物掉落对照 <span>先选裂缝时代，再输入编号即可</span></h2><p>四个遗物默认使用同一个古 / 前 / 中 / 后纪，输入 A1、B4 等编号更快。</p></div><div class="relic-buttons"><button id="relic-example" class="plain-button">载入示例</button><button id="relic-clear" class="plain-button">清空</button><button id="relic-focus" class="plain-button">⛶ 战斗视图</button><button id="relic-query" class="primary">查询掉落价格</button></div></div><div class="relic-combinations"><label>裂缝时代 <select id="relic-era" aria-label="四个遗物统一裂缝时代">${eras.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><button id="relic-same" class="plain-button">四人同第一个遗物</button><label>统一精炼 <select id="relic-all-grade" aria-label="统一精炼等级"><option value="">分别设置</option>${grades.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><select id="relic-presets" aria-label="已保存遗物组合"><option value="">选择常用组合</option></select><input id="relic-preset-name" aria-label="遗物组合名称" maxlength="40" placeholder="例如：本周四人光辉"><button id="relic-save-preset" class="plain-button">保存组合</button><button id="relic-delete-preset" class="plain-button">删除组合</button></div><div class="relic-options"><div class="segmented" aria-label="掉落排序"><button data-relic-sort="price" class="active">按白金价格 ↓</button><button data-relic-sort="rarity">按金银铜顺序</button></div><span id="relic-status">先选裂缝时代，再输入遗物编号。</span></div><div class="relic-selection-tools"><span id="relic-selection-status" role="status">点击奖励选中，每栏一个，方便对照。</span><button id="relic-clear-selected" class="plain-button" disabled>清除选中</button></div><div id="relic-columns" class="relic-columns">${[0,1,2,3].map(i=>`<article class="relic-card" data-slot-card="${i}"><div class="relic-card-head"><span class="slot-number">${i+1}</span><div class="relic-select"><label for="relic-input-${i}">第 ${i+1} 个遗物</label><input id="relic-input-${i}" data-relic-input="${i}" type="text" autocomplete="off" placeholder="输入编号，如 A1" aria-label="第 ${i+1} 个遗物" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="relic-menu-${i}"><div id="relic-menu-${i}" class="relic-menu" role="listbox" hidden></div></div><button data-clear-relic="${i}" class="clear-relic" aria-label="清除第 ${i+1} 个遗物">×</button></div><div class="relic-grade"><select id="relic-grade-${i}" data-relic-grade="${i}" aria-label="第 ${i+1} 个遗物精炼等级">${grades.map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><span id="relic-estimate-${i}"></span></div><div id="relic-drops-${i}" class="relic-drops"></div></article>`).join('')}</div><div class="relic-footer"><span id="relic-source">掉落来源：WFCD / Warframe Items</span><span>白金按在线最低卖单估算 · 不可交易物品单独标注</span></div>`;
     const panel=$('relic-section');
     panel.addEventListener('input',e=>{
       if(e.target.dataset.relicInput===undefined)return;
@@ -102,19 +103,26 @@
     $('relic-clear-selected').onclick=()=>{selectedDrops.clear();renderRelicBodies();};
     $('relic-query').onclick=()=>queryRelics(true);
     $('relic-focus').onclick=toggleFocus;
+    $('relic-era').onchange=e=>{
+      const next=e.target.value,previous=settings.relicEra||'';settings.relicEra=next;
+      if(previous!==next&&selections().some(Boolean)){settings.relics=[null,null,null,null];syncRelicFields();notify('裂缝时代已切换，已清空旧遗物，请直接输入新的编号。',true);}
+      queueSave();renderRelicBodies();
+    };
     $('relic-clear').onclick=()=>{settings.relics=[null,null,null,null];[0,1,2,3].forEach(i=>{$('relic-input-'+i).value='';$('relic-menu-'+i).hidden=true;});persistRelics();};
     $('relic-example').onclick=()=>{
-      const keys=['lith_a1','meso_a1','neo_a1','axi_a1'];settings.relics=keys.map(id=>relicIndex.has(id)?{id,grade:'radiant'}:null);syncRelicFields();persistRelics();notify('已载入演示遗物，可以直接修改成你队伍里的四个遗物。',true);queryRelics(false);
+      const era=settings.relicEra||'lith',keys=Array.from({length:4},()=>`${era}_a1`);settings.relics=keys.map(id=>relicIndex.has(id)?{id,grade:'radiant'}:null);syncRelicFields();persistRelics();notify(`已载入 ${era.toUpperCase()} A1 演示遗物，可以直接修改编号。`,true);queryRelics(false);
     };
   }
   function suggestions(i,text){
     if(!relicData)return;
-    const value=normalized(text),matches=relicData.items.filter(x=>normalized(x.name).includes(value)||normalized(x.zh).includes(value)).sort((a,b)=>Number(normalized(b.name)===value)-Number(normalized(a.name)===value)||a.name.localeCompare(b.name,undefined,{numeric:true})).slice(0,8);
+    const value=normalized(text),era=settings.relicEra||'';
+    const matches=relicData.items.filter(x=>(!era||x.id.startsWith(era+'_'))&&(normalized(x.name).includes(value)||normalized(x.zh).includes(value))).sort((a,b)=>Number(normalized(b.name)===value)-Number(normalized(a.name)===value)||a.name.localeCompare(b.name,undefined,{numeric:true})).slice(0,8);
     const menu=$('relic-menu-'+i);menu.hidden=false;$('relic-input-'+i).setAttribute('aria-expanded','true');
     menu.innerHTML=matches.length?matches.map(x=>`<button type="button" role="option" data-relic-choice="${esc(x.id)}" data-choose-slot="${i}"><b>${esc(x.zh)}</b><small>${esc(x.name)}</small></button>`).join(''):'<div class="no-suggestion">没有找到，请输入时代和编号。</div>';
   }
   function chooseRelic(i,id){
     const r=relicIndex.get(id);if(!r)return;
+    if(settings.relicEra&&!id.startsWith(`${settings.relicEra}_`))return notify('这个遗物不属于当前选择的裂缝时代。');
     if(!Array.isArray(settings.relics))settings.relics=[null,null,null,null];
     settings.relics[i]={id,grade:$('relic-grade-'+i).value};$('relic-input-'+i).value=r.zh;$('relic-menu-'+i).hidden=true;$('relic-input-'+i).setAttribute('aria-expanded','false');persistRelics();
     if(i<3&&!selections()[i+1])$('relic-input-'+(i+1)).focus();
@@ -123,6 +131,7 @@
     const presetValue=$('relic-presets').value;
     $('relic-presets').innerHTML='<option value="">选择常用组合</option>'+(settings.relicPresets||[]).map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');
     $('relic-presets').value=presetValue;
+    $('relic-era').value=settings.relicEra||'';
     [0,1,2,3].forEach(i=>{const s=selections()[i],r=s&&relicIndex.get(s.id);$('relic-input-'+i).value=r?.zh||'';$('relic-grade-'+i).value=s?.grade||'intact';});
   }
   function renderRelicBodies(){
