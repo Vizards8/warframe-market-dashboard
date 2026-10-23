@@ -120,5 +120,12 @@
     "/Lotus/Weapons/Tenno/Melee/MeleeTrees/GlaiveCmbTwoMeleeTree": "Astral Twilight",
     "/Lotus/Weapons/VoidTrader/PrismaGrakata": "Prisma Grakata",
     "/Lotus/Weapons/VoidTrader/PrismaSkana": "Prisma Skana"
+  },
+  "aliases": {
+    "Dissolve Enemy Mod": "Peculiar End",
+    "Weapon Glaive On Six Kills Buff Secondary": "Mark Of The Beast",
+    "Prime Fulmination": "Primed Fulmination",
+    "Weapon Pistol Faction Damage Murmurs Expert": "Primed Expel The Murmur",
+    "Weapon Shotgun Faction Damage Murmurs Expert": "Primed Cleanse The Murmur"
   }
 }

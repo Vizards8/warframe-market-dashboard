@@ -78,7 +78,7 @@ python3 -m http.server 18866 --bind 127.0.0.1 --directory _site
 - [Warframe Market](https://warframe.market/)：PC 市场的公开可见在线 / 游戏中 R0 买卖单；成交统计是用户标记记录，并非全服交易总量，也不是保证成交价。
 - 7 / 30 / 90 天均价按各商品快照截止日计算，成交量加权；缺少记录的日子不补零。WFM 只提供近 90 天，无法计算完整的前 90 天环比。
 - 紫卡候选按已覆盖报价重选，种子候选来自 2026-10-19 扫描；并非实时全市场排名。其余未显示不能理解为低于 20p；不同词条的紫卡不能用同一成交均价估算。
-- [WARFRAME Wiki 历史货单](https://wiki.warframe.com/w/Baro_Ki%27Teer/Trades)：兑换成本及常规返场记录，核对于 2026-10-21，历史目录和返场日期不会自动更新。本次货单优先从 [DE 官方公开世界状态](https://api.warframe.com/cdn/worldState.php) 获取，使用 [WFCD warframe-items](https://github.com/WFCD/warframe-items) 的精确物品路径映射（`data/baro_item_names.json`），备用来源为 WarframeStat。官方返回的未知物品不会模糊匹配为已知商品；目录外外观等商品可在 Wiki 完整货单查看。随 GitHub 定时发布更新，6 小时内快照才用于购买参考；来源均失败时可手动核对（48 小时失效）。近期供应、TennoCon 与特别活动都可能压价，历史均价不保证未来回款。
+- [WARFRAME Wiki 历史货单](https://wiki.warframe.com/w/Baro_Ki%27Teer/Trades)：兑换成本及常规返场记录，核对于 2026-10-21，历史目录和返场日期不会自动更新。本次货单优先从 [DE 官方公开世界状态](https://api.warframe.com/cdn/worldState.php) 获取，使用 [WFCD warframe-items](https://github.com/WFCD/warframe-items) 的精确物品路径映射和已核实的备用名称别名（`data/baro_item_names.json`），备用来源为 WarframeStat。官方返回的未知物品不会模糊匹配为已知商品；目录外外观等商品可在 Wiki 完整货单查看。随 GitHub 定时发布更新，6 小时内快照才用于购买参考；来源均失败时可手动核对（48 小时失效）。近期供应、TennoCon 与特别活动都可能压价，历史均价不保证未来回款。
 - [WFCD / Warframe Items](https://github.com/WFCD/warframe-items)：遗物目录及备用图片，目录核对于 2026-10-21，后续新物品需更新。
 
 代码沿用 [MIT License](LICENSE)。Wiki 派生数据（`data/baro_wiki.json` 及目录里的奸商货单字段）依据来源的 **CC BY-NC-SA 3.0** 使用，保留来源及相同方式共享要求；第三方数据和游戏图片不因本项目 MIT 许可而重新授权。Warframe 为 Digital Extremes 的商标，本项目非官方。

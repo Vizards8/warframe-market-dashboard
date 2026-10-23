@@ -50,9 +50,11 @@ def normalize_baro(raw, catalog, at):
     # Exact English names only; fuzzy matches can confuse Prime and ordinary mods.
     names = {x['english'].lower(): x['slug'] for x in catalog}
     names.update({x['name'].lower(): x['slug'] for x in catalog})
+    aliases = {k.lower(): v for k, v in read('baro_item_names.json', {}).get('aliases', {}).items()}
     inventory = []
     for x in raw['inventory']:
         name = str(x.get('item', ''))
+        name = aliases.get(name.lower(), name)
         d, c = x.get('ducats'), x.get('credits')
         if not name or any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0 for v in (d, c)):
             continue
@@ -120,6 +122,7 @@ def refresh_baro(catalog):
         errors.append(str(official_error))
         try:
             value = normalize_baro(fetch(BARO_URL), catalog, now())
+            value['source_errors'] = errors
         except Exception as error:
             errors.append(str(error))
             value = {**previous, 'error': ' / '.join(errors)[:160], 'attempted_at': now()}

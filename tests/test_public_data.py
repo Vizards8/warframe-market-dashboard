@@ -104,6 +104,18 @@ class PublicDataTests(unittest.TestCase):
             out = public_data.refresh_baro([])
         self.assertEqual(out['source'], public_data.BARO_URL)
         self.assertNotIn('error', out)
+        self.assertEqual(out['source_errors'], ['HTTP 404'])
+
+    def test_community_internal_names_use_only_verified_explicit_aliases(self):
+        catalog = [{'slug': 'primed_fulmination', 'english': 'Primed Fulmination', 'name': '猛烈爆发 Prime'},
+                   {'slug': 'primed_expel_the_murmur', 'english': 'Primed Expel The Murmur', 'name': '驱逐低语者 Prime'}]
+        raw = {'activation': '2026-10-23T13:00:00Z', 'expiry': '2026-10-25T13:00:00Z', 'inventory': [
+            {'item': 'Prime Fulmination', 'ducats': 350, 'credits': 175000},
+            {'item': 'Weapon Pistol Faction Damage Murmurs Expert', 'ducats': 375, 'credits': 130000},
+            {'item': 'Fulmination', 'ducats': 300, 'credits': 100000}]}
+        out = public_data.normalize_baro(raw, catalog, '2026-10-23T14:00:00Z')
+        self.assertEqual([x['slug'] for x in out['inventory']], ['primed_fulmination', 'primed_expel_the_murmur', None])
+        self.assertEqual(out['inventory'][0]['name'], 'Primed Fulmination')
 
 
 if __name__ == '__main__':
