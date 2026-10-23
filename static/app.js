@@ -78,6 +78,7 @@ function renderTable(){
   $('mean-heading').textContent=statsDays()+' 天成交均价';$('volume-heading').textContent=statsDays()+' 天记录量';
   $('stats-note').textContent=`WFM 用户标记成交的近 ${statsDays()} 个完整 UTC 日成交量加权均价；记录量不等于全服交易量。`;
   renderModPanel();
+  if(tab==='mods')return;
   const rows=visibleItems();$('table-count').textContent=`${rows.length} 种`;
   $('rows').innerHTML=rows.length?rows.map(x=>{
     const s=srow(x.slug),m=mrow(x.slug),p=mean(m),summary=statsFor(m),change=summary.change;
@@ -103,9 +104,9 @@ function setTab(next){
   tab=next;query='';filter='all';sort='default';$('search').value='';$('type-filter').value='all';$('sort').value='default';
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   const standard=baseTabs.includes(tab);
-  $('stats-controls').hidden=!standard;$('market-section').hidden=!standard;$('inventory-summary').hidden=!standard;$('reading-notes').hidden=!standard;
+  $('stats-controls').hidden=!standard||tab==='mods';$('market-section').classList.toggle('baro-view',tab==='mods');$('market-section').hidden=!standard;$('inventory-summary').hidden=!standard;$('reading-notes').hidden=!standard;
   $('riven-section').hidden=tab!=='rivens';$('relic-section').hidden=tab!=='relics';$('refresh').hidden=tab==='relics';
-  const content={home:['启航首页','把时间，留给好价格。','从你正在做的事开始。'],watch:['我的关注','先观察，再决定。','关注列表与实际持仓分别计数。','关注商品','数量为零也可以持续关注。'],ledger:['交易记录','记下每次买卖，回看真实差额。','成本未知的卖出不计入已知利润。'],sets:['散件凑套','看看手里的散件能凑几套。','先扣除自用保留，再比较整套与散卖报价。'],routes:['赚钱效率','用自己的用时，比较可兑现收益。','报价折算和实际卖出分别计算。'],inventory:['我的库存','今天有哪些持仓值得看？','观察价格与供应变化，再决定是否挂售。','持仓明细','分批挂售的参考，不是立即清仓的价格。'],frames:['Prime 战甲','从整套价格，看市场热度。','比较套装成交价与成交量，关注你手里的蓝图。','Prime 战甲行情','蓝图 + 三个组件蓝图，按整套统计。'],mods:['奸商补仓','这次带了什么，我已经有多少？','自动读取本次货单，先看购买参考，再规划杜卡德与现金。','奸商历史目录','包含历史 MOD 和有来源标记的武器；本次在售以货单为准。'],rivens:['0 洗紫卡','看看哪些武器的 0 洗卡值钱。','公开直售挂价，按不同卖家比较；0 洗是循环次数为 0。'],relics:['开核桃助手','先查好，开出来直接选。','预先输入四个遗物，每列对照一个遗物的六种掉落。']}[tab];
+  const content={home:['启航首页','把时间，留给好价格。','从你正在做的事开始。'],watch:['我的关注','先观察，再决定。','关注列表与实际持仓分别计数。','关注商品','数量为零也可以持续关注。'],ledger:['交易记录','记下每次买卖，回看真实差额。','成本未知的卖出不计入已知利润。'],sets:['散件凑套','看看手里的散件能凑几套。','先扣除自用保留，再比较整套与散卖报价。'],routes:['赚钱效率','用自己的用时，比较可兑现收益。','报价折算和实际卖出分别计算。'],inventory:['我的库存','今天有哪些持仓值得看？','观察价格与供应变化，再决定是否挂售。','持仓明细','分批挂售的参考，不是立即清仓的价格。'],frames:['Prime 战甲','从整套价格，看市场热度。','比较套装成交价与成交量，关注你手里的蓝图。','Prime 战甲行情','蓝图 + 三个组件蓝图，按整套统计。'],mods:['奸商补仓','这次带了什么，我已经有多少？','本次武器与 MOD 全部列出，直接比较囤货效率与流动性。','本次武器与 MOD','自动读取本次在售货单，默认按囤货效率排序。'],rivens:['0 洗紫卡','看看哪些武器的 0 洗卡值钱。','公开直售挂价，按不同卖家比较；0 洗是循环次数为 0。'],relics:['开核桃助手','先查好，开出来直接选。','预先输入四个遗物，每列对照一个遗物的六种掉落。']}[tab];
   ['crumb','page-title','page-subtitle'].forEach((id,i)=>$(id).textContent=content[i]);
   if(standard){$('table-title').innerHTML=esc(content[3])+' <span id="table-count"></span>';$('table-description').textContent=content[4];renderTable();}
   window.Extras?.activate(tab);
