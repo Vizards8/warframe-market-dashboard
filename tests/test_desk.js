@@ -36,3 +36,20 @@ assert.throws(()=>core.backup({...raw,transactions:[{...raw.transactions[0],slug
 assert.throws(()=>core.backup({...raw,transactions:[{...raw.transactions[0],type:'sell'}]},[{slug:'a'}]));
 
 assert.deepEqual(core.budget([{slug:'a',ducats:100,credits:null}],{a:2}),{ducats:200,credits:0,incomplete:2});
+
+// A returned trader's older high average must not be advertised as an executable profit.
+const baroMarket={...m,stats:{end:'2026-10-20',history:[{date:'2026-10-01',price:100,volume:30},{date:'2026-10-20',price:60,volume:10}]}};
+const baroItem={ducats:300,credits:150000};
+const value=core.baroValue(baroItem,baroMarket,{ducatCost:5,creditCost:10},now);
+assert.equal(value.history,60); // min(7d,30d), not the inflated older mean.
+assert.equal(value.current,50); // Live asking price remains visibly separate.
+assert.equal(value.efficiency,20);
+assert.ok(Math.abs(value.currentEfficiency-50/3)<1e-10);
+assert.equal(value.net,43.5);
+assert.equal(value.eligible,true);
+assert.equal(core.baroValue(baroItem,baroMarket,{ducatCost:5},now).net,null);
+assert.equal(core.baroValue(baroItem,{...baroMarket,orders_error:'HTTP 429'},{},now).eligible,false);
+assert.equal(core.baroValue(baroItem,{...baroMarket,stats_at:'2026-10-20T07:00:00Z'},{},now).eligible,false);
+assert.equal(core.baroValue(baroItem,{...baroMarket,stats:{end:'2026-10-20',history:[{date:'2026-10-20',price:60,volume:2}]}},{},now).eligible,false);
+assert.equal(core.baroValue({ducats:null},baroMarket,{},now).efficiency,null);
+console.log('奸商购买参考：历史/挂价分离、双资源成本、报价过期与低记录量不推荐');

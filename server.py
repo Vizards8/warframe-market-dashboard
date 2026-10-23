@@ -32,7 +32,7 @@ INDEX = {**features.ALL_INDEX, **{x['slug']: x for x in CATALOG}}
 INITIAL_SETTINGS = (json.loads((DATA / 'initial_holdings.json').read_text())
                     if (DATA / 'initial_holdings.json').exists() else {'version': 2, 'items': {}})
 CACHE_FILE = DATA / 'market.json'
-CACHE = json.loads(CACHE_FILE.read_text()) if CACHE_FILE.exists() else {}
+CACHE = public_data.market_snapshot()
 JOB = {'running': False, 'done': 0, 'total': 0, 'errors': [], 'current': '', 'started': None}
 SEED_TIME = '2026-10-20T06:30:00+00:00'
 

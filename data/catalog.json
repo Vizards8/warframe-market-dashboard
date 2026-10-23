@@ -6578,10 +6578,14 @@
       "primary",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 450,
     "alias": "",
-    "baro": false,
-    "catalog_source": "WFM item directory"
+    "baro": true,
+    "catalog_source": "WFM item directory",
+    "credits": 300000,
+    "baro_verified": "2026-10-24",
+    "baro_source": "https://api.warframe.com/cdn/worldState.php",
+    "supply_note": "奸商返场增加供应；未使用且满足游戏交易条件的成品才可交易"
   },
   {
     "slug": "bronco_prime_receiver",

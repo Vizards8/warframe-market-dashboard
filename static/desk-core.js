@@ -26,6 +26,18 @@ const DeskCore={
   if(!Number.isFinite(a)||!Number.isFinite(e)||!this.fresh(snapshot.at,snapshot.error,now))return 'unknown';
   return now<a?'upcoming':now<e?'active':'departed';
  },
+ baroValue(item,market,settings={},now=Date.now()){
+  const month=MarketStats.window(market,30),week=MarketStats.window(market,7);
+  // This is a historical resale scenario, not a forecast or an immediately executable price.
+  const history=month.price!=null&&week.price!=null?Math.min(month.price,week.price):null;
+  const current=market?.orders?.sell?.[0]?.price??null;
+  const valid=this.fresh(market?.stats_at,market?.stats_error,now)&&this.fresh(market?.orders_at,market?.orders_error,now);
+  const efficiency=history!=null&&item.ducats>0?history/item.ducats*100:null;
+  const currentEfficiency=current!=null&&item.ducats>0?current/item.ducats*100:null;
+  const net=history!=null&&item.ducats!=null&&item.credits!=null&&settings.ducatCost!=null&&settings.creditCost!=null?history-item.ducats/100*settings.ducatCost-item.credits/1e6*settings.creditCost:null;
+  return {history,current,efficiency,currentEfficiency,net,volume:month.volume,weekVolume:week.volume,
+   valid,eligible:valid&&efficiency!=null&&month.volume>=30&&week.volume>=5};
+ },
  budget(rows,plan){let ducats=0,credits=0,incomplete=0;for(const r of rows){const q=plan[r.slug]||0;if(!q)continue;if(r.ducats==null||r.credits==null)incomplete+=q;if(r.ducats!=null)ducats+=q*r.ducats;if(r.credits!=null)credits+=q*r.credits;}return {ducats,credits,incomplete};},
  backup(raw,catalog){
   if(![1,2].includes(raw?.version)||!raw.items||typeof raw.items!=='object'||Array.isArray(raw.items))throw new Error('不是有效的库存备份');

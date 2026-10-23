@@ -5,6 +5,19 @@ import public_data
 
 
 class PublicDataTests(unittest.TestCase):
+    def test_checked_baro_quotes_survive_older_ci_cache_without_overwriting_newer_sources(self):
+        old = {'orders': {'sell': []}, 'orders_at': '2026-10-23T12:00:00Z', 'orders_error': 'HTTP 429',
+               'stats': {'history': []}, 'stats_at': '2026-10-23T17:00:00Z', 'stats_error': 'retry failed'}
+        checked = {'orders': {'sell': [{'price': 45}]}, 'orders_at': '2026-10-23T16:00:00Z',
+                   'stats': {'history': [{'price': 100}]}, 'stats_at': '2026-10-23T16:00:00Z'}
+        with patch.object(public_data, 'read', side_effect=[{'a': old}, {'a': checked}]):
+            out = public_data.market_snapshot()['a']
+        self.assertEqual(out['orders'], checked['orders'])
+        self.assertNotIn('orders_error', out)
+        self.assertEqual(out['stats'], old['stats'])
+        self.assertEqual(out['stats_error'], 'retry failed')
+        self.assertIn('orders_error', old)
+
     def test_baro_does_not_fuzzy_match_prime_or_accept_invalid_cost(self):
         cat = [{'slug': 'primed_x', 'name': 'X Prime', 'english': 'Primed X'}]
         raw = {'activation': '2026-10-23T13:00:00Z', 'expiry': '2026-10-25T13:00:00Z',
@@ -43,7 +56,54 @@ class PublicDataTests(unittest.TestCase):
         with patch.object(public_data, 'read', return_value=old), patch.object(public_data, 'fetch', side_effect=RuntimeError('HTTP 403')), patch.object(public_data.Path, 'write_text'):
             out = public_data.refresh_baro([])
         self.assertEqual(out['at'], old['at'])
-        self.assertEqual(out['error'], 'HTTP 403')
+        self.assertIn('HTTP 403', out['error'])
+
+    def worldstate(self, manifest=None):
+        return {'Time': 1792764000, 'VoidTraders': [{
+            'Activation': {'$date': {'$numberLong': '1792760400000'}},
+            'Expiry': {'$date': {'$numberLong': '1792933200000'}},
+            'Character': 'EvilBaroWeek2', 'Node': 'EarthHUB',
+            'Manifest': manifest if manifest is not None else [
+                {'ItemType': '/Lotus/StoreItems/Upgrades/Mods/Shotgun/Expert/WeaponDamageAmountModExpert',
+                 'PrimePrice': 300, 'RegularPrice': 110000},
+                {'ItemType': '/Lotus/StoreItems/UnmappedNewItem', 'PrimePrice': 10, 'RegularPrice': 100}]}]}
+
+    def test_official_worldstate_exact_mapping_costs_and_unknown_item(self):
+        catalog = [{'slug': 'primed_point_blank', 'english': 'Primed Point Blank', 'name': '抵近射击 Prime'}]
+        out = public_data.normalize_worldstate(self.worldstate(), catalog, '2026-10-23T14:00:00Z')
+        self.assertEqual(out['source'], public_data.WORLDSTATE_URL)
+        self.assertEqual(out['inventory'][0]['slug'], 'primed_point_blank')
+        self.assertEqual(out['inventory'][0]['ducats'], 300)
+        self.assertEqual(out['inventory'][0]['credits'], 110000)
+        self.assertIsNone(out['inventory'][1]['slug'])
+        self.assertEqual(out['total_items'], 2)
+        self.assertEqual(out['location'], '地球 · Strata 中继站')
+        self.assertEqual(out['activation'], '2026-10-23T13:00:00+00:00')
+
+    def test_official_rejects_stale_empty_active_and_invalid_costs(self):
+        with self.assertRaises(ValueError):
+            public_data.normalize_worldstate(self.worldstate(), [], '2026-10-24T14:00:00Z')
+        with self.assertRaises(ValueError):
+            public_data.normalize_worldstate(self.worldstate([]), [], '2026-10-23T14:00:00Z')
+        bad = self.worldstate()
+        bad['VoidTraders'][0]['Manifest'][0]['PrimePrice'] = True
+        with self.assertRaises(ValueError):
+            public_data.normalize_worldstate(bad, [], '2026-10-23T14:00:00Z')
+
+    def test_official_active_trader_wins_over_upcoming(self):
+        raw = self.worldstate()
+        later = {**raw['VoidTraders'][0], 'Activation': {'$date': {'$numberLong': '1793365200000'}},
+                 'Expiry': {'$date': {'$numberLong': '1793538000000'}}, 'Node': 'MercuryHUB'}
+        raw['VoidTraders'].insert(0, later)
+        out = public_data.normalize_worldstate(raw, [], '2026-10-23T14:00:00Z')
+        self.assertEqual(out['location'], '地球 · Strata 中继站')
+
+    def test_official_failure_uses_community_fallback(self):
+        community = {'activation': '2026-10-23T13:00:00Z', 'expiry': '2026-10-25T13:00:00Z', 'inventory': []}
+        with patch.object(public_data, 'fetch', side_effect=[RuntimeError('HTTP 404'), community]), patch.object(public_data.Path, 'write_text'):
+            out = public_data.refresh_baro([])
+        self.assertEqual(out['source'], public_data.BARO_URL)
+        self.assertNotIn('error', out)
 
 
 if __name__ == '__main__':

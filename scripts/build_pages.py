@@ -26,7 +26,7 @@ def build(output):
     catalog = json.loads((ROOT / 'data/catalog.json').read_text())
     for item in catalog:
         item['fallback_image'] = features.IMAGE_SOURCES.get(item['slug'])
-    cache = json.loads((ROOT / 'data/market.json').read_text())
+    cache = public_data.market_snapshot()
     idle = {'running': False, 'done': 0, 'total': 0, 'errors': [], 'current': ''}
     state = {'catalog': catalog, 'market': cache, 'initial_settings': {'version': 2, 'items': {}},
              'job': copy.deepcopy(idle), 'riven_job': copy.deepcopy(idle), 'compare_job': copy.deepcopy(idle),
