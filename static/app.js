@@ -106,7 +106,19 @@ function setTab(next){
   const standard=baseTabs.includes(tab);
   $('stats-controls').hidden=!standard||tab==='mods';$('market-section').classList.toggle('baro-view',tab==='mods');$('market-section').hidden=!standard;$('inventory-summary').hidden=!standard;$('reading-notes').hidden=!standard;
   $('riven-section').hidden=tab!=='rivens';$('relic-section').hidden=tab!=='relics';$('refresh').hidden=tab==='relics';
-  const content={ducats:['杜卡德兑换','把白金与杜卡德，换算清楚。','先比较部件兑换成本，再判断奸商囤货是否值得。'],home:['启航首页','把时间，留给好价格。','从你正在做的事开始。'],watch:['我的关注','先观察，再决定。','关注列表与实际持仓分别计数。','关注商品','数量为零也可以持续关注。'],ledger:['交易记录','记下每次买卖，回看真实差额。','成本未知的卖出不计入已知利润。'],sets:['散件凑套','看看手里的散件能凑几套。','先扣除自用保留，再比较整套与散卖报价。'],routes:['赚钱效率','用自己的用时，比较可兑现收益。','报价折算和实际卖出分别计算。'],inventory:['我的库存','今天有哪些持仓值得看？','观察价格与供应变化，再决定是否挂售。','持仓明细','分批挂售的参考，不是立即清仓的价格。'],frames:['Prime 战甲','从整套价格，看市场热度。','比较套装成交价与成交量，关注你手里的蓝图。','Prime 战甲行情','蓝图 + 三个组件蓝图，按整套统计。'],mods:['奸商补仓','这次带了什么，我已经有多少？','本次武器与 MOD 全部列出，直接比较囤货效率与流动性。','本次武器与 MOD','自动读取本次在售货单，默认按囤货效率排序。'],rivens:['0 洗紫卡','看看哪些武器的 0 洗卡值钱。','公开直售挂价，按不同卖家比较；0 洗是循环次数为 0。'],relics:['开核桃助手','先查好，开出来直接选。','预先输入四个遗物，每列对照一个遗物的六种掉落。']}[tab];
+  const content={
+    ducats:['杜卡德兑换','杜卡德兑换','每百杜卡德成本越低，兑换越划算。'],
+    home:['首页','首页',''],
+    watch:['我的关注','我的关注','关注商品的价格与成交量。','关注商品','数量为零也可关注。'],
+    ledger:['交易记录','交易记录','按已记录成本计算买卖差额。'],
+    sets:['散件凑套','散件凑套','扣除自用保留，比较整套与散卖报价。'],
+    routes:['赚钱效率','赚钱效率','分别记录报价估值和实际卖出收入。'],
+    inventory:['我的库存','我的库存','查看数量、行情与目标售价。','持仓明细','点击商品查看走势。'],
+    frames:['Prime 战甲','Prime 战甲','整套蓝图的成交价与成交量。','战甲套装','按蓝图及组件蓝图整套统计。'],
+    mods:['奸商货单','奸商货单','比较囤货效率与成交量，按需填写购买数量。','本次武器与 MOD','MOD 按 R0。'],
+    rivens:['0 洗紫卡','0 洗紫卡','循环次数为 0 的公开直售挂价，非成交价。'],
+    relics:['开核桃助手','开核桃助手','选择遗物查看掉落，或截图识别奖励。']
+  }[tab];
   ['crumb','page-title','page-subtitle'].forEach((id,i)=>$(id).textContent=content[i]);
   if(standard){$('table-title').innerHTML=esc(content[3])+' <span id="table-count"></span>';$('table-description').textContent=content[4];renderTable();}
   window.Extras?.activate(tab);

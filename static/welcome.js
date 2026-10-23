@@ -14,10 +14,10 @@ window.Welcome=(()=>{
    document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.go));
   }
   const count=state.catalog.filter(held).length;
-  $('welcome-holdings').textContent=count?`${count} 种持仓 · 查看观察线`:'录入第一份持仓 →';
-  $('welcome-snapshot').textContent=`公开快照 ${timeLabel(state.server_time)} · ${state.catalog.length} 种目录商品`;
+  $('welcome-holdings').textContent=count?`${count} 种商品持有中`:'尚未添加库存';
+  $('welcome-snapshot').textContent=`行情更新 ${timeLabel(state.server_time)} · ${state.catalog.length} 种商品`;
   const status=DeskCore.baro(state.baro);
-  $('welcome-baro').textContent={active:'奸商在售 · 先核对本次货单',upcoming:'等待下一次到访 · 先做好计划',departed:'奸商已离场 · 回看补仓计划',unknown:'货单待核实 · 可手动核对'}[status];
+  $('welcome-baro').textContent={active:'本次在售',upcoming:'等待下次到访',departed:'本次已离场',unknown:'货单待更新'}[status];
  }
  function update(){if(ready)activate();}
  return {activate,update};
