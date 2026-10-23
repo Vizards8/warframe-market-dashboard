@@ -38,6 +38,38 @@ const DeskCore={
   return {history,current,efficiency,currentEfficiency,net,volume:month.volume,weekVolume:week.volume,
    valid,eligible:valid&&efficiency!=null&&month.volume>=30&&week.volume>=5};
  },
+ liquidity(m,now=Date.now()){
+  const known=!!m?.stats?.end,week=MarketStats.window(m,7),month=MarketStats.window(m,30);
+  const valid=known&&this.fresh(m.stats_at,m.stats_error,now);
+  const tier=!valid?-1:week.volume>=70?2:week.volume>=14?1:0;
+  return {week:known?week.volume:null,month:known?month.volume:null,daily:known?week.volume/7:null,valid,tier,
+   label:!valid?'成交数据待更新':tier===2?'近期活跃':tier===1?'成交一般':'成交偏少'};
+ },
+ ducatPart(item,m,holding={},mode='market',now=Date.now()){
+  const eligible=item?.kind==='component'&&item.ducats>0&&item.tags?.includes('prime')&&!item.tags.includes('set');
+  const quote=mode==='owned'?m?.orders?.buy?.[0]?.price:m?.orders?.sell?.[0]?.price;
+  const valid=eligible&&Number.isFinite(quote)&&quote>0&&this.fresh(m?.orders_at,m?.orders_error,now);
+  return {eligible,valid,price:Number.isFinite(quote)&&quote>0?quote:null,per100:quote>0&&eligible?quote/item.ducats*100:null,
+   available:this.available(holding),depth:(m?.orders?.[mode==='owned'?'buy':'sell']||[]).reduce((n,r)=>n+r.quantity,0)};
+ },
+ ducatCycle(part,partMarket,target,targetMarket,copies=1,manualPrice=null,creditCost=null,now=Date.now()){
+  if(!(part?.ducats>0)||!(target?.ducats>0)||!Number.isInteger(copies)||copies<1||!Number.isFinite(target.credits)||target.credits<0)return null;
+  const needed=target.ducats*copies,parts=Math.ceil(needed/part.ducats),remainder=parts*part.ducats-needed;
+  const manual=Number.isFinite(manualPrice)&&manualPrice>0;
+  const buyDepth=this.depth(partMarket?.orders?.sell,parts),sellDepth=this.depth(targetMarket?.orders?.buy,copies);
+  const buyValid=manual||this.fresh(partMarket?.orders_at,partMarket?.orders_error,now)&&buyDepth.left===0;
+  const cost=buyValid?(manual?manualPrice*parts:buyDepth.value):null;
+  const sellValid=this.fresh(targetMarket?.orders_at,targetMarket?.orders_error,now)&&sellDepth.left===0;
+  const history=this.baroValue(target,targetMarket,{},now).history;
+  const historyValid=this.fresh(targetMarket?.stats_at,targetMarket?.stats_error,now)&&history!=null;
+  const credits=target.credits*copies,creditP=Number.isFinite(creditCost)&&creditCost>=0?credits/1e6*creditCost:null;
+  const immediate=sellValid?sellDepth.value:null,historical=historyValid?history*copies:null;
+  return {parts,remainder,needed,credits,creditP,cost,manual,buyCovered:buyDepth.covered,sellCovered:sellDepth.covered,
+   immediate,historical,immediateGap:cost!=null&&immediate!=null?immediate-cost:null,
+   historicalGap:cost!=null&&historical!=null?historical-cost:null,
+   immediateNet:cost!=null&&immediate!=null&&creditP!=null?immediate-cost-creditP:null,
+   historicalNet:cost!=null&&historical!=null&&creditP!=null?historical-cost-creditP:null};
+ },
  budget(rows,plan){let ducats=0,credits=0,incomplete=0;for(const r of rows){const q=plan[r.slug]||0;if(!q)continue;if(r.ducats==null||r.credits==null)incomplete+=q;if(r.ducats!=null)ducats+=q*r.ducats;if(r.credits!=null)credits+=q*r.credits;}return {ducats,credits,incomplete};},
  backup(raw,catalog){
   if(![1,2].includes(raw?.version)||!raw.items||typeof raw.items!=='object'||Array.isArray(raw.items))throw new Error('不是有效的库存备份');
