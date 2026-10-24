@@ -23,7 +23,11 @@ const DeskCore={
  },
  baro(snapshot,now=Date.now()){
   const a=Date.parse(snapshot?.activation),e=Date.parse(snapshot?.expiry);
-  if(!Number.isFinite(a)||!Number.isFinite(e)||!this.fresh(snapshot.at,snapshot.error,now))return 'unknown';
+  // The activation/expiry window is authoritative for whether this visit is
+  // current.  A GitHub Pages snapshot can be older than the six-hour market
+  // refresh window while the same Baro visit is still active; hiding the
+  // entire inventory in that case made the current tab look empty.
+  if(!Number.isFinite(a)||!Number.isFinite(e))return 'unknown';
   return now<a?'upcoming':now<e?'active':'departed';
  },
  baroValue(item,market,settings={},now=Date.now()){

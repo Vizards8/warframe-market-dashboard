@@ -18,7 +18,7 @@ const unknown=core.ledger([{id:'1',slug:'a',type:'opening',quantity:2,price:null
 assert.equal(unknown.realized,0);assert.equal(unknown.unknown,1);assert.equal(unknown.unpriced,1);
 const corrected=core.ledger([{id:'1',slug:'a',type:'buy',quantity:2,price:10},{id:'2',slug:'a',type:'adjust',quantity:-1},{id:'3',slug:'a',type:'sell',quantity:1,price:20}]);assert.equal(corrected.realized,10);
 const snapshot={at:'2026-10-21T07:00:00Z',activation:'2026-10-21T06:00:00Z',expiry:'2026-10-21T10:00:00Z'};
-assert.equal(core.baro(snapshot,now),'active');assert.equal(core.baro({...snapshot,error:'403'},now),'unknown');assert.equal(core.baro({...snapshot,expiry:'2026-10-21T07:30:00Z'},now),'departed');
+assert.equal(core.baro(snapshot,now),'active');assert.equal(core.baro({...snapshot,error:'403'},now),'active');assert.equal(core.baro({...snapshot,at:'2026-10-20T07:00:00Z'},now),'active');assert.equal(core.baro({...snapshot,expiry:'2026-10-21T07:30:00Z'},now),'departed');
 assert.deepEqual(core.budget([{slug:'a',ducats:100,credits:5000},{slug:'b',ducats:null,credits:null}],{a:2,b:1}),{ducats:200,credits:10000,incomplete:1});
 const raw={version:2,items:{a:{quantity:3,reserve:1,cost:20,target:50,note:'hello'}},transactions:[{id:'1',slug:'a',type:'buy',quantity:3,price:20,date:'2026-10-21'}],relicPresets:[{name:'Test',relics:[{id:'lith_a1',grade:'radiant'},null,null,null]}],baroBudget:{ducats:2000},targetBasis:'buy'};
 const copy=core.backup(raw,[{slug:'a'}]);assert.equal(copy.items.a.reserve,1);assert.equal(copy.transactions[0].price,20);assert.equal(copy.relicPresets[0].relics[0].grade,'radiant');assert.equal(copy.targetBasis,'buy');

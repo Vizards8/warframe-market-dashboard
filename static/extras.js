@@ -65,14 +65,22 @@
       return {...r,rarity,item:r.slug?itemIndex.get(r.slug):null};
     });
   }
-  function quote(r){return r.slug?ask(mrow(r.slug)):null;}
+  function quoteInfo(r){
+    if(!r.slug)return null;
+    const m=mrow(r.slug),current=ask(m);
+    if(current!=null&&DeskCore.fresh(m.orders_at,m.orders_error))return {value:current,basis:'ask'};
+    const average=MarketStats.window(m,30).price;
+    if(average!=null&&DeskCore.fresh(m.stats_at,m.stats_error))return {value:average,basis:'mean30'};
+    return null;
+  }
+  function quote(r){return quoteInfo(r)?.value??null;}
   function allRewards(){return [0,1,2,3].flatMap(chosenRewards);}
   function relicState(relic){return relic.vaulted===true?'入库':relic.vaulted===false?'出库':'状态未知';}
   function relicStateHint(relic){return relic.vaulted===true?'已入库，当前通常不会从新掉落表获得':relic.vaulted===false?'出库中，当前仍可能从掉落表获得':'状态未标注，先核对来源';}
   function adviceRows(){
     const q=normalized(relicAdviceQuery),grade=relicAdviceGrade;
     return relicData.items.map(relic=>{
-      const drops=(relic.grades[grade]||relic.grades.intact||[]).map(drop=>{const item=drop.slug&&itemIndex.get(drop.slug),price=quote(drop);return {...drop,item,price};});
+      const drops=(relic.grades[grade]||relic.grades.intact||[]).map(drop=>{const item=drop.slug&&itemIndex.get(drop.slug),quote=quoteInfo(drop);return {...drop,item,price:quote?.value??null,priceBasis:quote?.basis};});
       const tradable=drops.filter(drop=>drop.tradable),priced=tradable.filter(drop=>Number.isFinite(drop.price));
       const ev=priced.length?priced.reduce((sum,drop)=>sum+drop.price*drop.chance/100,0):null;
       const best=priced.length?Math.max(...priced.map(drop=>drop.price)):null;
@@ -91,10 +99,10 @@
   function renderRelicAdvice(){
     const box=$('relic-advice-list'),summary=$('relic-advice-summary');if(!box||!relicData)return;
     const rows=adviceRows(),known=rows.filter(row=>row.ev!=null),display=rows.slice(0,relicAdviceLimit);
-    summary.textContent=`${rows.length} 个遗物 · ${known.length} 个有可用报价 · 价格按${relicAdviceGrade==='radiant'?'光辉':relicAdviceGrade==='flawless'?'无暇':relicAdviceGrade==='exceptional'?'优良':'完整'}概率计算；缺价不按 0p 处理。`;
+    summary.textContent=`${rows.length} 个遗物 · ${known.length} 个有可用报价 · 优先使用新鲜在线卖单，挂单过期时回退 30 天成交均价 · 缺价不按 0p 处理。`;
     box.innerHTML=display.length?display.map((relic,index)=>{
       const priced=[...relic.priced].sort((a,b)=>(b.price??-1)-(a.price??-1));
-      const rewards=priced.slice(0,3).map(drop=>`<span class="relic-advice-drop"><b>${esc(drop.item?.name||drop.name)}</b><strong>${number(drop.price)}p</strong><small>${number(drop.chance,2)}%</small></span>`).join('');
+      const rewards=priced.slice(0,3).map(drop=>`<span class="relic-advice-drop" title="${drop.priceBasis==='mean30'?'挂单快照过期，使用 30 天成交均价':'当前在线最低卖单'}"><b>${esc(drop.item?.name||drop.name)}</b><strong>${number(drop.price)}p</strong><small>${drop.priceBasis==='mean30'?'30天均价':number(drop.chance,2)+'%'}</small></span>`).join('');
       const unknown=relic.tradable.length-relic.priced.length;
       return `<article class="relic-advice-card"><div class="relic-advice-title"><span class="relic-advice-rank">${index+1}</span><div><h4>${esc(relic.zh||relic.name)}</h4><small>${esc(relic.name)} · <b class="relic-vault-${relic.vaulted?'in':'out'}">${relicState(relic)}</b> · ${esc(relicStateHint(relic))}</small></div><button class="plain-button" data-relic-use="${esc(relic.id)}">填入下一空位</button></div><div class="relic-advice-metrics"><span><b>${relic.ev==null?'—':number(relic.ev,1)+'p'}</b><small>期望价值</small></span><span><b>${relic.best==null?'—':number(relic.best,1)+'p'}</b><small>最高掉落</small></span><span><b>${relic.priced.length}/${relic.tradable.length}</b><small>报价覆盖</small></span></div><div class="relic-advice-drops">${rewards||'<span class="relic-advice-empty">暂无可用报价</span>'}</div>${unknown?`<small class="relic-advice-warning">还有 ${unknown} 个可交易掉落缺少最新报价</small>`:''}</article>`;
     }).join(''):'<p class="relic-advice-empty">没有符合条件的遗物。降低最低期望价值，或清除搜索 / 状态筛选。</p>';
@@ -210,7 +218,7 @@
     const picked=[...selectedDrops].sort(([a],[b])=>a-b).map(([i,c])=>{const r=chosenRewards(i).find(r=>r.name===c.name),p=quote(r);return `${i+1} 栏 ${r.item?.name||'Forma 蓝图'} · ${r.tradable?(p==null?'待查询':number(p)+'p'):'不可交易'}`;});
     $('relic-selection-status').textContent=picked.length?picked.join('　/　'):'点击奖励选中，每栏一个，方便对照。';
     $('relic-clear-selected').disabled=!picked.length;
-    $('relic-source').textContent=`掉落表 ${relicData.as_of} · WFCD / Warframe Items`;
+    $('relic-source').textContent=`掉落表 ${relicData.as_of} · WFCD / Warframe Items · 价格优先新鲜卖单，过期时回退 30 天成交均价`;
     renderRewardSearch(all);
     renderRelicAdvice();
     renderProgress();
