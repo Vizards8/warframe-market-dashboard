@@ -145,6 +145,7 @@
     if(!relicBuilt||!relicData||tab!=='relics')return;
     for(const [i,choice] of selectedDrops)if(selections()[i]?.id!==choice.id||!chosenRewards(i).some(r=>r.name===choice.name))selectedDrops.delete(i);
     const all=allRewards(),known=all.filter(r=>r.tradable&&quote(r)!=null),max=known.length?Math.max(...known.map(quote)):null;
+    window.RewardOcr?.setCandidates(all);
     const unique=new Set(all.filter(r=>r.tradable).map(r=>r.slug)),knownUnique=new Set(known.map(r=>r.slug));
     $('relic-status').textContent=unique.size?`已查到 ${knownUnique.size}/${unique.size} 种可交易掉落${all.some(r=>r.tradable&&stale(mrow(r.slug).orders_at))?' · 部分价格待刷新':''}`:'先输入遗物，回车选择候选。';
     document.querySelectorAll('[data-relic-sort]').forEach(b=>b.classList.toggle('active',(settings.relicSort||'price')===b.dataset.relicSort));
