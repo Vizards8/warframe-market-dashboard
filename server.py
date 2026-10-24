@@ -84,6 +84,26 @@ def summarize_orders(raw):
                           key=lambda x: x['platinum'], reverse=(side == 'buy'))
         out[side] = [{'price': x['platinum'], 'quantity': x['quantity']} for x in selected[:10]]
         out[side + '_count'] = len(selected)
+    # Keep the display depth bounded, but retain enough identified sellers for
+    # single-counterparty bulk purchases. Anonymous legacy depth is not proof
+    # that six items can be bought in one trade.
+    sellers = {}
+    for row in rows:
+        user = row.get('user', {})
+        seller = user.get('id')
+        if row.get('type') != 'sell' or not seller or row.get('perTrade', 1) != 1:
+            continue
+        if row.get('quantity', 0) <= 0 or row.get('platinum', 0) <= 0:
+            continue
+        offer = {'price': row['platinum'], 'quantity': row['quantity'],
+                 'seller': seller, 'name': user.get('ingameName', ''),
+                 'slug': user.get('slug', ''), 'status': user.get('status'),
+                 'order': row.get('id', '')}
+        # One seller must not be counted twice for duplicate orders.
+        if seller not in sellers or offer['price'] < sellers[seller]['price']:
+            sellers[seller] = offer
+    out['sell_offers'] = sorted(sellers.values(), key=lambda x: (x['price'], -x['quantity']))[:200]
+    out['offer_schema'] = 1
     return out
 
 
@@ -105,7 +125,7 @@ if not CACHE:
 LAST_REQUEST = 0.0
 LAST_AUCTION_REQUEST = 0.0
 REQUEST_RATE_LOCK = threading.Lock()
-REQUEST_SLOTS = threading.Semaphore(3)
+REQUEST_SLOTS = threading.Semaphore(6)
 
 def market_get(url):
     global LAST_REQUEST, LAST_AUCTION_REQUEST
@@ -122,7 +142,7 @@ def market_get(url):
                 if auction:
                     LAST_AUCTION_REQUEST = LAST_REQUEST
             response = subprocess.run(['curl', '-sS', '--max-time', '18', '-w', '\n%{http_code}',
-                                       '-H', 'Platform: pc', '-H', 'Language: en',
+                                       '-H', 'Platform: pc', '-H', 'Crossplay: true', '-H', 'Language: en',
                                        '-A', 'VoidLedger/0.3 (+https://github.com/Vizards8/warframe-market-dashboard)', url],
                                       capture_output=True, text=True, timeout=21)
         if response.returncode:

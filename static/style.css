@@ -75,3 +75,5 @@ header{font-size:12px;min-height:62px;height:auto;padding:14px 0;gap:18px}.heade
 
 .baro-plan-label{display:block;margin-top:9px}.ocr-crop-settings{font-size:12px}.ocr-crop-settings summary{cursor:pointer;color:var(--muted)}.ocr-crop-settings>div{display:flex;gap:10px;flex-wrap:wrap;padding-top:12px}.ocr-crop-settings[open]{flex-basis:100%}.ocr-crop-settings label{font-size:12px}.ocr-layout{gap:14px}.baro-table td:nth-child(2) small{margin-top:5px}
 @media(max-width:900px){.sidebar .nav-item{font-size:12px;padding:8px 10px;margin-bottom:0}.sidebar nav{gap:2px}}
+
+.ducat-trade-yield{display:block;font-size:18px;color:#293a31;font-variant-numeric:tabular-nums}.ducat-bulk-filters{font-size:12px;color:var(--muted)}.ducat-bulk-filters label{display:flex;align-items:center;gap:8px}.ducat-method{margin:20px 23px;font-size:12px;color:var(--muted);line-height:1.8}.ducat-method summary{cursor:pointer}.ducat-table{min-width:1080px}.ducat-table th:first-child{width:230px}.ducat-table th:nth-child(4){min-width:165px}.ducat-table td:nth-child(4)>b{font-size:16px}.ducat-table td:nth-child(5){min-width:165px}.ducat-table td:nth-child(6){min-width:95px}

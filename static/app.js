@@ -89,7 +89,7 @@ function renderTable(){
     <td>${inventory?`<div class="quantity-stepper"><button data-step="-1" data-item="${esc(x.slug)}" aria-label="减少 ${esc(x.name)} 持有数量" ${s.quantity<=0?'disabled':''}>−</button><input class="number-input" data-quantity="${esc(x.slug)}" type="number" min="0" max="100000" step="1" value="${s.quantity}" aria-label="${esc(x.name)} 持有数量"><button data-step="1" data-item="${esc(x.slug)}" aria-label="增加 ${esc(x.name)} 持有数量">＋</button></div>`:'<span class="neutral">—</span>'}</td>
     <td><div class="price">${price(p)}</div><div class="subline ${change==null?'':change>=0?'positive':'negative'}" title="相邻两个 ${statsDays()} 天窗口的成交量加权均价对比；低样本涨幅参考价值有限">${changeText}</div></td>
     <td title="${esc(updateTitle)}"><div class="order-pair"><span class="price">${price(ask(m))}</span><span class="slash">/</span><span class="buy">${number(bid(m))}</span></div><div class="subline">${m.orders?`${m.orders.sell_count} 卖家 · ${m.orders.buy_count} 买家`:'尚未查询，请到 WFM 核价'}</div></td>
-    <td><div class="volume-cell"><span class="volume-num">${number(summary.volume)}</span>${spark(MarketStats.history(m,90))}</div><div class="subline">${m.stats?`${summary.days} 天有记录${summary.volume<20?' · 样本少':''}`:'暂无成交统计'}</div></td>
+    <td><div class="volume-cell"><span class="volume-num">${m.stats?.end?number(summary.volume):'—'}</span>${spark(MarketStats.history(m,90))}</div><div class="subline">${m.stats?`${summary.days} 天有记录${summary.volume<20?' · 样本少':''}`:'暂无成交统计'}</div></td>
     <td>${inventory?`<div class="target-wrap"><input class="number-input target-input" data-target="${esc(x.slug)}" type="number" min="1" max="1000000" step="1" value="${s.target??''}" placeholder="未设定" aria-label="${esc(x.name)} 目标售价"><span class="unit">p</span></div><div class="target-status">${s.target?targetHit(s,m)?'✓ '+targetQuote(m).label+'达线':!targetQuote(m).valid?'报价过期 / 缺价，暂不判断':'观察依据：'+targetQuote(m).label:''}</div>`:'<span class="neutral">—</span>'}</td>
     <td><div class="price">${s.quantity&&p!=null?price(s.quantity*p):'<span class="neutral">—</span>'}</div>${s.quantity&&s.cost!=null&&p!=null?`<div class="subline ${p>=s.cost?'positive':'negative'}">账面差额 ${p>=s.cost?'+':''}${number((p-s.cost)*s.quantity)}p</div>`:''}</td>
     <td>${inventory?`<button class="detail-btn" data-detail="${esc(x.slug)}" aria-label="查看 ${esc(x.name)} 详情">↗</button>`:`<button class="watch-btn" data-watch="${esc(x.slug)}">＋ 关注</button>`}</td></tr>`;
@@ -107,7 +107,7 @@ function setTab(next){
   $('stats-controls').hidden=!standard||tab==='mods';$('market-section').classList.toggle('baro-view',tab==='mods');$('market-section').hidden=!standard;$('inventory-summary').hidden=!standard;$('reading-notes').hidden=!standard;
   $('riven-section').hidden=tab!=='rivens';$('relic-section').hidden=tab!=='relics';$('refresh').hidden=tab==='relics';
   const content={
-    ducats:['杜卡德兑换','杜卡德兑换','每百杜卡德成本越低，兑换越划算。'],
+    ducats:['杜卡德兑换','杜卡德兑换','比较整批成本和每次交易能收到的杜卡德。'],
     home:['首页','首页',''],
     watch:['我的关注','我的关注','关注商品的价格与成交量。','关注商品','数量为零也可关注。'],
     ledger:['交易记录','交易记录','按已记录成本计算买卖差额。'],

@@ -10,7 +10,7 @@ class PublicDataTests(unittest.TestCase):
                'stats': {'history': []}, 'stats_at': '2026-10-23T17:00:00Z', 'stats_error': 'retry failed'}
         checked = {'orders': {'sell': [{'price': 45}]}, 'orders_at': '2026-10-23T16:00:00Z',
                    'stats': {'history': [{'price': 100}]}, 'stats_at': '2026-10-23T16:00:00Z'}
-        with patch.object(public_data, 'read', side_effect=[{'a': old}, {'a': checked}]):
+        with patch.object(public_data, 'read', side_effect=[{'a': old}, {'a': checked}, {}]):
             out = public_data.market_snapshot()['a']
         self.assertEqual(out['orders'], checked['orders'])
         self.assertNotIn('orders_error', out)

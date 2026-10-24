@@ -44,6 +44,14 @@ class PagesTests(unittest.TestCase):
                 self.assertTrue((out / asset).exists(), asset)
             self.assertGreater(len(state['catalog']), 700)
             self.assertEqual(len(state['prime_sets']), 51)
+            self.assertEqual(len(state['ducat_sets']), 160)
+            index = {x['slug']: x for x in state['catalog']}
+            for recipe in state['ducat_sets']:
+                self.assertIn(recipe['slug'], index)
+                self.assertEqual(recipe['slots'], sum(x['quantity'] for x in recipe['parts']))
+                self.assertLessEqual(recipe['slots'], 6)
+                self.assertEqual(recipe['ducats'], sum(index[x['slug']]['ducats'] * x['quantity'] for x in recipe['parts']))
+                self.assertTrue(all('set' not in index[x['slug']]['tags'] for x in recipe['parts']))
             self.assertRegex(html, r'\./desk\.[0-9a-f]{12}\.js')
             self.assertRegex(html, r'\./desk-core\.[0-9a-f]{12}\.js')
             self.assertTrue(all(p['slug'] in {x['slug'] for x in state['catalog']} for r in state['prime_sets'] for p in r['parts']))

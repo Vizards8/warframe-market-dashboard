@@ -47,16 +47,39 @@ const DeskCore={
  },
  ducatPart(item,m,holding={},mode='market',now=Date.now()){
   const eligible=item?.kind==='component'&&item.ducats>0&&item.tags?.includes('prime')&&!item.tags.includes('set');
-  const quote=mode==='owned'?m?.orders?.buy?.[0]?.price:m?.orders?.sell?.[0]?.price;
-  const valid=eligible&&Number.isFinite(quote)&&quote>0&&this.fresh(m?.orders_at,m?.orders_error,now);
-  return {eligible,valid,price:Number.isFinite(quote)&&quote>0?quote:null,per100:quote>0&&eligible?quote/item.ducats*100:null,
+  const summary=MarketStats.window(m,30),price=summary.price;
+  const valid=eligible&&Number.isFinite(price)&&price>0&&this.fresh(m?.stats_at,m?.stats_error,now);
+  return {eligible,valid,price,per100:price>0&&eligible?price/item.ducats*100:null,volume:m?.stats?.end?summary.volume:null,
    available:this.available(holding),depth:(m?.orders?.[mode==='owned'?'buy':'sell']||[]).reduce((n,r)=>n+r.quantity,0)};
  },
- ducatCycle(part,partMarket,target,targetMarket,copies=1,manualPrice=null,creditCost=null,now=Date.now()){
+ ducatLot(item,m,slots=1,now=Date.now()){
+  if(!(item?.ducats>0)||!Number.isInteger(slots)||slots<1||slots>6)return null;
+  const capacity=Math.floor(6/slots),offers=m?.orders?.sell_offers||[];
+  if(!this.fresh(m?.orders_at,m?.orders_error,now))return null;
+  const seen=new Set();
+  const lots=offers.filter(o=>{
+   if(!o.seller||seen.has(o.seller)||!Number.isFinite(o.price)||o.price<=0||!Number.isInteger(o.quantity)||o.quantity<1)return false;
+   seen.add(o.seller);return slots>1||o.quantity>=6;
+  }).map(offer=>{
+   const units=Math.min(capacity,offer.quantity),ducats=units*item.ducats,cost=units*offer.price;
+   return {offer,units,slots:units*slots,ducats,cost,per100:cost/ducats*100,stock:offer.quantity};
+  });
+  lots.sort((a,b)=>Number(b.units===capacity)-Number(a.units===capacity)||a.per100-b.per100||b.ducats-a.ducats||b.stock-a.stock);
+  return lots[0]||null;
+ },
+ ducatSet(recipe,catalog){
+  const index=new Map(catalog.map(x=>[x.slug,x]));let ducats=0,slots=0;
+  for(const part of recipe?.parts||[]){const x=index.get(part.slug);if(!x||!this.ducatPart(x,{}).eligible||!Number.isInteger(part.quantity)||part.quantity<1)return null;ducats+=x.ducats*part.quantity;slots+=part.quantity;}
+  if(!slots||slots>6||ducats!==recipe.ducats||slots!==recipe.slots)return null;
+  return {ducats,slots};
+ },
+ ducatCycle(part,partMarket,target,targetMarket,copies=1,manualPrice=null,creditCost=null,now=Date.now(),purchase=null){
   if(!(part?.ducats>0)||!(target?.ducats>0)||!Number.isInteger(copies)||copies<1||!Number.isFinite(target.credits)||target.credits<0)return null;
-  const needed=target.ducats*copies,parts=Math.ceil(needed/part.ducats),remainder=parts*part.ducats-needed;
+  const needed=target.ducats*copies,batch=purchase?.units||1,parts=Math.ceil(needed/part.ducats/batch)*batch,remainder=parts*part.ducats-needed;
   const manual=Number.isFinite(manualPrice)&&manualPrice>0;
-  const buyDepth=this.depth(partMarket?.orders?.sell,parts),sellDepth=this.depth(targetMarket?.orders?.buy,copies);
+  const seller=purchase?.offer,stock=seller?[{price:seller.price,quantity:seller.quantity}]:purchase?[]:partMarket?.orders?.sell;
+  const buyDepth=this.depth(stock,parts),sellDepth=this.depth(targetMarket?.orders?.buy,copies);
+  const trades=purchase?Math.ceil(parts/batch):null;
   const buyValid=manual||this.fresh(partMarket?.orders_at,partMarket?.orders_error,now)&&buyDepth.left===0;
   const cost=buyValid?(manual?manualPrice*parts:buyDepth.value):null;
   const sellValid=this.fresh(targetMarket?.orders_at,targetMarket?.orders_error,now)&&sellDepth.left===0;
@@ -64,7 +87,7 @@ const DeskCore={
   const historyValid=this.fresh(targetMarket?.stats_at,targetMarket?.stats_error,now)&&history!=null;
   const credits=target.credits*copies,creditP=Number.isFinite(creditCost)&&creditCost>=0?credits/1e6*creditCost:null;
   const immediate=sellValid?sellDepth.value:null,historical=historyValid?history*copies:null;
-  return {parts,remainder,needed,credits,creditP,cost,manual,buyCovered:buyDepth.covered,sellCovered:sellDepth.covered,
+  return {parts,remainder,needed,credits,creditP,cost,manual,trades,buyCovered:buyDepth.covered,sellCovered:sellDepth.covered,
    immediate,historical,immediateGap:cost!=null&&immediate!=null?immediate-cost:null,
    historicalGap:cost!=null&&historical!=null?historical-cost:null,
    immediateNet:cost!=null&&immediate!=null&&creditP!=null?immediate-cost-creditP:null,

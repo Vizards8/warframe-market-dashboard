@@ -59,6 +59,31 @@ class MarketTests(unittest.TestCase):
                     else:
                         self.assertIn('Forma Blueprint', reward['name'])
 
+    def test_bulk_offers_preserve_counterparty_beyond_first_ten(self):
+        rows = [{'type': 'sell', 'platinum': i + 1, 'quantity': 1, 'rank': 0,
+                 'visible': True, 'user': {'id': str(i), 'slug': str(i), 'status': 'ingame'}} for i in range(12)]
+        rows += [{'type': 'sell', 'platinum': 15, 'quantity': 24, 'perTrade': 1,
+                  'visible': True, 'user': {'id': 'bulk', 'ingameName': 'Bulk', 'slug': 'bulk', 'status': 'online'}},
+                 {'type': 'sell', 'platinum': 1, 'quantity': 200, 'perTrade': 6,
+                  'visible': True, 'user': {'id': 'pack', 'status': 'online'}}]
+        result = server.summarize_orders({'data': rows})
+        bulk = next(x for x in result['sell_offers'] if x['seller'] == 'bulk')
+        self.assertEqual(bulk['quantity'], 24)
+        self.assertEqual(bulk['price'], 15)
+        self.assertEqual(bulk['slug'], 'bulk')
+        self.assertNotIn('pack', [x['seller'] for x in result['sell_offers']])
+        self.assertEqual(len(result['sell']), 10)
+        self.assertEqual(result['offer_schema'], 1)
+
+    def test_component_stats_use_closed_trades_and_calendar_window(self):
+        yesterday = str(dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1))
+        rows = [{'datetime': yesterday + 'T00:00:00Z', 'volume': 10, 'wa_price': 6},
+                {'datetime': yesterday + 'T00:00:00Z', 'volume': 100, 'wa_price': 500, 'mod_rank': 10}]
+        result = server.summarize_stats({'payload': {'statistics_closed': {'90days': rows}}})
+        self.assertEqual(result['recent']['price'], 6)
+        self.assertEqual(result['recent']['volume'], 10)
+        self.assertEqual(result['end'], yesterday)
+
     def test_online_r0_quote_filter(self):
         def order(price, rank=0, status='ingame', visible=True):
             return {'type': 'sell', 'platinum': price, 'quantity': 1, 'rank': rank,

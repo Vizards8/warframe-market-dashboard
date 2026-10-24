@@ -25,7 +25,14 @@ def market_snapshot():
     # CI restores a scheduled cache before a code deployment. Preserve explicitly
     # checked public quotes if that cache predates the trader's arrival.
     market = copy.deepcopy(read('market.json', {}))
-    for slug, quote in read('baro_quotes.json', {}).items():
+    checked = {}
+    for source_file in ('baro_quotes.json', 'ducat_quotes.json'):
+        for slug, quote in read(source_file, {}).items():
+            target = checked.setdefault(slug, {})
+            for source in ('orders', 'stats'):
+                if quote.get(source + '_at', '') > target.get(source + '_at', ''):
+                    target.update({source: quote[source], source + '_at': quote[source + '_at']})
+    for slug, quote in checked.items():
         for source in ('orders', 'stats'):
             at = quote.get(source + '_at')
             current = market.get(slug, {}).get(source + '_at')
@@ -185,4 +192,5 @@ def public_state():
     history = read('history.json', {'items': {}})
     return {'baro': read('baro_current.json', {}), 'refresh_status': read('refresh_status.json', history.get('refresh_status', {})),
             'prime_sets': read('prime_sets.json', {}).get('sets', []),
+            'ducat_sets': read('ducat_sets.json', {}).get('sets', []),
             'history': history}

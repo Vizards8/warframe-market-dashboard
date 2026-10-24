@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Rate-limited scheduled updates of public prices. Never publishes inventory."""
+import concurrent.futures
+import threading
 import datetime as dt
 import json
 from pathlib import Path
@@ -16,30 +18,38 @@ import features
 def refresh():
     failures = []
     completed = 0
+    write_lock = threading.Lock()
     def record(slug, source, url, summarize, cache):
         nonlocal completed
         try:
-            cache.setdefault(slug, {})[source] = summarize(server.market_get(url))
-            cache[slug][source + '_at'] = server.now()
-            cache[slug].pop(source + '_error', None)
+            value = summarize(server.market_get(url))
+            with write_lock:
+                cache.setdefault(slug, {})[source] = value
+                cache[slug][source + '_at'] = server.now()
+                cache[slug].pop(source + '_error', None)
         except Exception as error:
-            cache.setdefault(slug, {})[source + '_error'] = str(error)[:160]
-            failures.append({'slug': slug, 'source': source, 'message': str(error)[:160]})
-        completed += 1
-        if completed % 25 == 0:
-            print(f'{completed} queries completed; {len(failures)} failures', flush=True)
-            server.atomic_json(ROOT / 'data/market.json', server.CACHE)
+            with write_lock:
+                cache.setdefault(slug, {})[source + '_error'] = str(error)[:160]
+                failures.append({'slug': slug, 'source': source, 'message': str(error)[:160]})
+        with write_lock:
+            completed += 1
+            if completed % 25 == 0:
+                print(f'{completed} queries completed; {len(failures)} failures', flush=True)
+                server.atomic_json(ROOT / 'data/market.json', server.CACHE)
 
-    primary = [x for x in server.CATALOG if x.get('baro') or x['kind'] == 'frame']
+    # Every item shown in the market/ducat tables needs both sources. The old
+    # rewards-only orders pass left every Prime component without trade history.
+    primary = [x for x in server.CATALOG if x.get('baro') or x['kind'] == 'frame'
+               or 'prime' in x.get('tags', []) and (x.get('ducats') or 0) > 0]
+    queries = []
     for item in primary:
         slug = item['slug']
-        record(slug, 'orders', f'https://api.warframe.market/v2/orders/item/{slug}', server.summarize_orders, server.CACHE)
-        record(slug, 'stats', f'https://api.warframe.market/v1/items/{slug}/statistics', server.summarize_stats, server.CACHE)
-    # All distinct tradable relic rewards: orders only, shared rewards queried once.
-    rewards = {r['slug'] for relic in features.RELICS['items'] for drops in relic['grades'].values()
-               for r in drops if r.get('tradable') and r.get('slug')}
-    for slug in sorted(rewards - {x['slug'] for x in primary}):
-        record(slug, 'orders', f'https://api.warframe.market/v2/orders/item/{slug}', server.summarize_orders, server.CACHE)
+        queries.extend([(slug, 'orders', f'https://api.warframe.market/v2/orders/item/{slug}', server.summarize_orders, server.CACHE),
+                        (slug, 'stats', f'https://api.warframe.market/v1/items/{slug}/statistics', server.summarize_stats, server.CACHE)])
+    # Requests overlap network latency but share market_get's global .6s limiter.
+    # This keeps the expanded component coverage inside the workflow time limit.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+        list(pool.map(lambda args: record(*args), queries))
     server.atomic_json(ROOT / 'data/market.json', server.CACHE)
     # Rotate the full weapon pool in bounded batches; keep high-price candidates frequent.
     weapons = sorted(features.WEAPON_INDEX)

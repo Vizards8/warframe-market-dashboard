@@ -72,7 +72,8 @@ assert.equal(core.ducatCycle(part,pm,target,tm,10,2,0,now).cost,46);
 assert.equal(core.ducatCycle(part,pm,target,tm,0,null,0,now),null);
 assert.equal(core.ducatCycle(part,pm,{ducats:100},tm,1,null,0,now),null);
 assert.equal(core.ducatPart(part,pm,{quantity:7,reserve:2},'owned',now).available,5);
-assert.equal(core.ducatPart(part,pm,{},'market',now).per100,2/45*100);
+assert.equal(core.ducatPart(part,pm,{},'market',now).per100,null); // Orders never substitute for closed trades.
+assert.equal(core.ducatPart(part,baroMarket,{},'market',now).price,90);
 assert.equal(core.ducatPart({...part,tags:['prime','set']},pm,{},'market',now).eligible,false);
 assert.equal(core.ducatPart({...part,ducats:0},pm,{},'market',now).valid,false);
 assert.equal(core.ducatPart(part,{orders_at:m.orders_at,orders:{sell:[]}}, {},'market',now).price,null);
@@ -82,3 +83,35 @@ assert.equal(core.liquidity(baroMarket,now).week,10);
 assert.equal(core.liquidity(baroMarket,now).label,'成交偏少');
 assert.equal(core.liquidity({...baroMarket,stats_error:'429'},now).tier,-1);
 console.log('杜卡德路线：散件资格、保留库存、整件取整、逐档深度、现金与行情失效边界验证通过');
+
+// One trade must use one identified seller, never the sum of unrelated offers.
+const bulkMarket={...pm,orders:{...pm.orders,sell_offers:[
+ {price:1,quantity:1,seller:'cheap',name:'A'},
+ {price:3,quantity:6,seller:'bulk',name:'B'},
+ {price:5,quantity:30,seller:'deep',name:'C'}]}};
+const lot=core.ducatLot(part,bulkMarket,1,now);
+assert.equal(lot.offer.seller,'bulk');assert.equal(lot.units,6);assert.equal(lot.ducats,270);assert.equal(lot.cost,18);
+assert.equal(core.ducatLot(part,pm,1,now),null); // Legacy anonymous depth is insufficient evidence.
+assert.equal(core.ducatLot(part,{...bulkMarket,orders_error:'429'},1,now),null);
+assert.equal(core.ducatLot(part,{...bulkMarket,orders:{sell_offers:[{price:1,quantity:3,seller:'a'},{price:1,quantity:3,seller:'b'}]}},1,now),null);
+const rounded=core.ducatCycle(part,bulkMarket,{ducats:280,credits:0},tm,1,null,null,now,lot);
+assert.equal(rounded.parts,12);assert.equal(rounded.remainder,260);assert.equal(rounded.trades,2);assert.equal(rounded.cost,null); // Seller has only 6: do not extrapolate or borrow from others.
+assert.equal(rounded.buyCovered,6);
+const set={kind:'component',tags:['prime','set'],ducats:160};
+const setMarket={...bulkMarket,orders:{sell_offers:[{price:20,quantity:2,seller:'set'}]}};
+const setLot=core.ducatLot(set,setMarket,3,now);
+assert.equal(setLot.units,2);assert.equal(setLot.slots,6);assert.equal(setLot.ducats,320);assert.equal(setLot.cost,40);
+const setCycle=core.ducatCycle(set,setMarket,{ducats:300,credits:0},tm,1,null,null,now,setLot);
+assert.equal(setCycle.parts,2);assert.equal(setCycle.trades,1);assert.equal(setCycle.cost,40);assert.equal(setCycle.remainder,20);
+assert.equal(core.ducatLot(set,setMarket,7,now),null);
+const recipe={ducats:160,slots:4,parts:[{slug:'a',quantity:2},{slug:'b',quantity:2}]};
+assert.deepEqual(core.ducatSet(recipe,[{...part,slug:'a',ducats:65},{...part,slug:'b',ducats:15}]),{ducats:160,slots:4});
+assert.equal(core.ducatSet(recipe,[{...part,slug:'a',ducats:65}]),null);
+assert.equal(core.ducatSet({...recipe,ducats:500},[{...part,slug:'a',ducats:65},{...part,slug:'b',ducats:15}]),null);
+const statPart={...pm,stats_at:m.stats_at,stats:{end:'2026-10-20',history:[{date:'2026-10-19',price:3,volume:10},{date:'2026-10-20',price:6,volume:30}]}};
+assert.equal(core.ducatPart(part,statPart,{},'market',now).price,5.25);
+assert.equal(core.ducatPart(part,{...statPart,stats_error:'429'},{},'owned',now).valid,false);
+assert.equal(core.ducatPart(part,statPart,{},'owned',now).price,5.25); // Owned value uses the same statistical basis.
+console.log('整批收货：独立卖家、6 槽、整套数量、库存不足、整批取整和成交参考分离验证通过');
+
+assert.equal(core.ducatLot(set,{...setMarket,orders:{sell_offers:[{price:10,quantity:1,seller:'one'},{price:11,quantity:2,seller:'two'}]}},3,now).offer.seller,'two'); // Prefer two 3-part sets in a full trade.
