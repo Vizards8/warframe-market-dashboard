@@ -105,7 +105,7 @@ function setTab(next){
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   const standard=baseTabs.includes(tab);
   $('stats-controls').hidden=!standard||tab==='mods';$('market-section').classList.toggle('baro-view',tab==='mods');$('market-section').hidden=!standard;$('inventory-summary').hidden=!standard;$('reading-notes').hidden=!standard;
-  $('riven-section').hidden=tab!=='rivens';$('relic-section').hidden=tab!=='relics';$('refresh').hidden=tab==='relics';
+  $('riven-section').hidden=tab!=='rivens';$('relic-section').hidden=tab!=='relics';$('relic-prices-section').hidden=tab!=='relic-prices';$('refresh').hidden=tab==='relics';
   const content={
     ducats:['杜卡德兑换','杜卡德兑换','比较整批成本和每次交易能收到的杜卡德。'],
     home:['首页','首页',''],
@@ -117,6 +117,7 @@ function setTab(next){
     frames:['Prime 战甲','Prime 战甲','整套蓝图的成交价与成交量。','战甲套装','按蓝图及组件蓝图整套统计。'],
     mods:['奸商货单','奸商货单','比较囤货效率与成交量，按需填写购买数量。','本次武器与 MOD','MOD 按 R0。'],
     rivens:['0 洗紫卡','0 洗紫卡','循环次数为 0 的公开直售挂价，非成交价。'],
+    'relic-prices':['核桃价格','核桃价格','按时代、精炼和掉落价值挑选遗物；支持从低到高开。'],
     relics:['开核桃助手','开核桃助手','选择遗物查看掉落，或截图识别奖励。']
   }[tab];
   ['crumb','page-title','page-subtitle'].forEach((id,i)=>$(id).textContent=content[i]);

@@ -2,8 +2,8 @@
 (()=>{
   let rivenQuery='',rivenScope='all',rivenCategory='all',rivenSort='reference';
   let relicData=null,itemData=null,relicIndex=new Map(),itemIndex=new Map(),relicLoading=null;
-  let rivenBuilt=false,relicBuilt=false,detailRiven=null,relicRewardQuery='';
-  let relicAdviceQuery='',relicAdviceGrade='radiant',relicAdviceSort='ev',relicAdviceMin=0,relicAdviceBestMin=0,relicAdviceVault='all',relicAdviceLimit=60;
+  let rivenBuilt=false,relicBuilt=false,relicAdviceBuilt=false,detailRiven=null,relicRewardQuery='';
+  let relicAdviceQuery='',relicAdviceGrade='intact',relicAdviceSort='ev',relicAdviceEra='',relicAdviceOrder='asc',relicAdviceMin=0,relicAdviceBestMin=0,relicAdviceVault='all',relicAdviceLimit=60;
   const selectedDrops=new Map();
   const grades=[['intact','完整'],['exceptional','优良'],['flawless','无暇'],['radiant','光辉']];
   const eras=[['','不限定'],['lith','古纪'],['meso','前纪'],['neo','中纪'],['axi','后纪']];
@@ -86,33 +86,48 @@
       const best=priced.length?Math.max(...priced.map(drop=>drop.price)):null;
       const matches=!q||[relic.id,relic.name,relic.zh,...drops.flatMap(drop=>[drop.name,drop.item?.name,drop.item?.english])].filter(Boolean).some(value=>normalized(value).includes(q));
       return {...relic,drops,tradable,priced,ev,best,coverage:tradable.length?priced.length/tradable.length:1,matches};
-    }).filter(relic=>relic.matches&&(relicAdviceVault==='all'||relicAdviceVault===(relic.vaulted?'vaulted':'unvaulted'))&&(relic.ev==null?relicAdviceMin===0:relic.ev>=relicAdviceMin)&&(relic.best==null?relicAdviceBestMin===0:relic.best>=relicAdviceBestMin)).sort((a,b)=>{
-      const av=relicAdviceSort==='best'?a.best??-Infinity:a.ev??-Infinity,bv=relicAdviceSort==='best'?b.best??-Infinity:b.ev??-Infinity;
-      return bv-av||Number(b.coverage)-Number(a.coverage)||a.name.localeCompare(b.name,undefined,{numeric:true});
+    }).filter(relic=>relic.matches&&(!relicAdviceEra||relic.id.startsWith(relicAdviceEra+'_'))&&(relicAdviceVault==='all'||relicAdviceVault===(relic.vaulted?'vaulted':'unvaulted'))&&(relic.ev==null?relicAdviceMin===0:relic.ev>=relicAdviceMin)&&(relic.best==null?relicAdviceBestMin===0:relic.best>=relicAdviceBestMin)).sort((a,b)=>{
+      const av=relicAdviceSort==='best'?a.best:a.ev,bv=relicAdviceSort==='best'?b.best:b.ev;
+      if(av==null||bv==null)return Number(av==null)-Number(bv==null)||a.name.localeCompare(b.name,undefined,{numeric:true});
+      return (relicAdviceOrder==='asc'?av-bv:bv-av)||Number(b.coverage)-Number(a.coverage)||a.name.localeCompare(b.name,undefined,{numeric:true});
     });
   }
   function useAdviceRelic(id){
     const relic=relicIndex.get(id),i=selections().findIndex(choice=>!choice);if(!relic)return;
     if(i<0)return notify('四个遗物栏已填满；先清空一个栏位再填入。');
-    settings.relics[i]={id,grade:$('relic-grade-'+i).value||'intact'};syncRelicFields();persistRelics();document.querySelector('[data-slot-card="'+i+'"]')?.scrollIntoView({block:'center',behavior:'smooth'});
+    if(settings.relicEra&&!id.startsWith(settings.relicEra+'_'))settings.relicEra='';
+    settings.relics||=[null,null,null,null];settings.relics[i]={id,grade:relicAdviceGrade};queueSave();setTab('relics');syncRelicFields();persistRelics();document.querySelector('[data-slot-card="'+i+'"]')?.scrollIntoView({block:'center',behavior:'smooth'});
   }
   function renderRelicAdvice(){
-    const box=$('relic-advice-list'),summary=$('relic-advice-summary');if(!box||!relicData)return;
+    const box=$('relic-advice-list'),summary=$('relic-advice-summary');if(!box||!relicData||tab!=='relic-prices')return;
     const rows=adviceRows(),known=rows.filter(row=>row.ev!=null),display=rows.slice(0,relicAdviceLimit);
     summary.textContent=`${rows.length} 个遗物 · ${known.length} 个有可用报价 · 期望价值按 30 天成交均价计算；没有成交数据时才回退在线最低卖价 · 缺价不按 0p 处理。`;
     box.innerHTML=display.length?display.map((relic,index)=>{
       const priced=[...relic.priced].sort((a,b)=>(b.price??-1)-(a.price??-1));
       const rewards=priced.slice(0,3).map(drop=>`<span class="relic-advice-drop" title="${drop.priceBasis==='mean30'?'30 天成交均价':'没有成交数据，使用当前在线最低卖单'}"><b>${esc(drop.item?.name||drop.name)}</b><strong>${number(drop.price)}p</strong><small>${drop.priceBasis==='mean30'?'30天均价':number(drop.chance,2)+'%'}</small></span>`).join('');
       const unknown=relic.tradable.length-relic.priced.length;
-      return `<article class="relic-advice-card"><div class="relic-advice-title"><span class="relic-advice-rank">${index+1}</span><div><h4>${esc(relic.zh||relic.name)}</h4><small>${esc(relic.name)} · <b class="relic-vault-${relic.vaulted?'in':'out'}">${relicState(relic)}</b> · ${esc(relicStateHint(relic))}</small></div><button class="plain-button" data-relic-use="${esc(relic.id)}">填入下一空位</button></div><div class="relic-advice-metrics"><span><b>${relic.ev==null?'—':number(relic.ev,1)+'p'}</b><small>期望价值</small></span><span><b>${relic.best==null?'—':number(relic.best,1)+'p'}</b><small>最高掉落</small></span><span><b>${relic.priced.length}/${relic.tradable.length}</b><small>报价覆盖</small></span></div><div class="relic-advice-drops">${rewards||'<span class="relic-advice-empty">暂无可用报价</span>'}</div>${unknown?`<small class="relic-advice-warning">还有 ${unknown} 个可交易掉落缺少最新报价</small>`:''}</article>`;
+      return `<article class="relic-advice-card" data-advice-relic="${esc(relic.id)}"><div class="relic-advice-title"><span class="relic-advice-rank">${index+1}</span><div><h4>${esc(relic.zh||relic.name)}</h4><small>${esc(relic.name)} · <b class="relic-vault-${relic.vaulted?'in':'out'}">${relicState(relic)}</b> · ${esc(relicStateHint(relic))}</small></div><button class="plain-button" data-relic-use="${esc(relic.id)}">加入开核桃助手</button></div><div class="relic-advice-metrics"><span><b>${relic.ev==null?'—':number(relic.ev,1)+'p'}</b><small>期望价值</small></span><span><b>${relic.best==null?'—':number(relic.best,1)+'p'}</b><small>最高掉落</small></span><span><b>${relic.priced.length}/${relic.tradable.length}</b><small>报价覆盖</small></span></div><div class="relic-advice-drops">${rewards||'<span class="relic-advice-empty">暂无可用报价</span>'}</div>${unknown?`<small class="relic-advice-warning">还有 ${unknown} 个可交易掉落缺少最新报价</small>`:''}</article>`;
     }).join(''):'<p class="relic-advice-empty">没有符合条件的遗物。降低最低期望价值，或清除搜索 / 状态筛选。</p>';
     if(rows.length>relicAdviceLimit)box.insertAdjacentHTML('beforeend','<button id="relic-advice-more" class="plain-button relic-advice-more">再显示 60 个</button>');
     $('relic-advice-more')?.addEventListener('click',()=>{relicAdviceLimit+=60;renderRelicAdvice();});
   }
   function persistRelics(){queueSave();renderRelicBodies();}
+  function buildRelicAdvice(){
+    if(relicAdviceBuilt)return;relicAdviceBuilt=true;
+    $('relic-prices-section').innerHTML=`<section class="relic-advice"><div class="relic-advice-head"><div><h3>核桃价格</h3><p>按掉落期望价值排序，并非遗物本身的交易价。默认完整、从低到高；选好后可加入开核桃助手。出库 = 当前仍可能掉落；入库 = 已进入 Vault，通常只能消耗已有库存。</p></div></div><div class="relic-advice-controls"><input id="relic-advice-search" type="search" placeholder="搜遗物编号、名称或部件，例如：伯斯顿 Prime" aria-label="搜索遗物或内部件"><select id="relic-advice-era" aria-label="核桃价格时代筛选">${eras.map(([key,label])=>`<option value="${key}">${key?label:'全部时代'}</option>`).join('')}</select><select id="relic-advice-grade" aria-label="建议使用的精炼等级">${grades.map(([key,label])=>`<option value="${key}" ${key===relicAdviceGrade?'selected':''}>${label}</option>`).join('')}</select><select id="relic-advice-sort" aria-label="遗物建议排序"><option value="ev">期望价值</option><option value="best">最高掉落价值</option></select><select id="relic-advice-order" aria-label="核桃价格排序方向"><option value="asc">从低到高 ↑</option><option value="desc">从高到低 ↓</option></select><select id="relic-advice-min" aria-label="最低期望价值">${[[0,'不限期望价值'],[5,'期望至少 5p'],[10,'期望至少 10p'],[20,'期望至少 20p'],[50,'期望至少 50p'],[100,'期望至少 100p']].map(([value,label])=>`<option value="${value}" ${Number(value)===relicAdviceMin?'selected':''}>${label}</option>`).join('')}</select><select id="relic-advice-best-min" aria-label="最高掉落最低价值">${[[0,'不限最高掉落'],[10,'最高掉落至少 10p'],[20,'最高掉落至少 20p'],[50,'最高掉落至少 50p'],[100,'最高掉落至少 100p']].map(([value,label])=>`<option value="${value}" ${Number(value)===relicAdviceBestMin?'selected':''}>${label}</option>`).join('')}</select><select id="relic-advice-vault" aria-label="遗物出库入库状态"><option value="all">全部状态</option><option value="unvaulted">出库（当前掉落）</option><option value="vaulted">入库（已入 Vault）</option></select></div><p id="relic-advice-summary" class="relic-advice-summary"></p><div id="relic-advice-list" class="relic-advice-list"></div></section>`;
+    $('relic-advice-search').oninput=e=>{relicAdviceQuery=e.target.value.trim();relicAdviceLimit=60;renderRelicAdvice();};
+    $('relic-advice-grade').onchange=e=>{relicAdviceGrade=e.target.value;relicAdviceLimit=60;renderRelicAdvice();};
+    $('relic-advice-sort').onchange=e=>{relicAdviceSort=e.target.value;relicAdviceLimit=60;renderRelicAdvice();};
+    $('relic-advice-min').onchange=e=>{relicAdviceMin=Number(e.target.value);relicAdviceLimit=60;renderRelicAdvice();};
+    $('relic-advice-best-min').onchange=e=>{relicAdviceBestMin=Number(e.target.value);relicAdviceLimit=60;renderRelicAdvice();};
+    $('relic-advice-vault').onchange=e=>{relicAdviceVault=e.target.value;relicAdviceLimit=60;renderRelicAdvice();};
+    $('relic-advice-era').onchange=e=>{relicAdviceEra=e.target.value;relicAdviceLimit=60;renderRelicAdvice();};
+    $('relic-advice-order').onchange=e=>{relicAdviceOrder=e.target.value;relicAdviceLimit=60;renderRelicAdvice();};
+    $('relic-prices-section').addEventListener('click',e=>{const button=e.target.closest('[data-relic-use]');if(button)useAdviceRelic(button.dataset.relicUse);});
+  }
   function buildRelics(){
     if(relicBuilt)return;relicBuilt=true;
-    $('relic-section').innerHTML=`<div class="relic-controls"><div><h2>遗物掉落</h2><p>可输入编号、遗物名称或内部件名称；也可以在下方目录直接填入四个栏位。</p></div><div class="relic-buttons"><button id="relic-example" class="plain-button">载入示例</button><button id="relic-clear" class="plain-button">清空</button><button id="relic-focus" class="plain-button">⛶ 战斗视图</button><button id="relic-query" class="primary">查询掉落价格</button></div></div><div class="relic-combinations"><label>裂缝时代 <select id="relic-era" aria-label="四个遗物统一裂缝时代">${eras.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><button id="relic-same" class="plain-button">四人同第一个遗物</button><label>统一精炼 <select id="relic-all-grade" aria-label="统一精炼等级"><option value="">分别设置</option>${grades.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><select id="relic-presets" aria-label="已保存遗物组合"><option value="">选择常用组合</option></select><input id="relic-preset-name" aria-label="遗物组合名称" maxlength="40" placeholder="例如：本周四人光辉"><button id="relic-save-preset" class="plain-button">保存组合</button><button id="relic-delete-preset" class="plain-button">删除组合</button></div><div class="relic-options"><div class="segmented" aria-label="掉落排序"><button data-relic-sort="price" class="active">按白金价格 ↓</button><button data-relic-sort="rarity">按金银铜顺序</button></div><span id="relic-status">先选裂缝时代，再输入遗物编号。</span></div><div class="relic-selection-tools"><span id="relic-selection-status" role="status">点击奖励选中，每栏一个，方便对照。</span><button id="relic-clear-selected" class="plain-button" disabled>清除选中</button></div><div class="relic-reward-search"><label for="relic-reward-query">快速查奖励</label><input id="relic-reward-query" type="search" placeholder="输入奖励名，例如：伯斯顿 Prime 蓝图" aria-label="快速查奖励"><span id="relic-reward-hint">输入奖励名后，直接显示它来自哪一栏。</span><div id="relic-reward-results" role="status" hidden></div></div><div id="relic-columns" class="relic-columns">${[0,1,2,3].map(i=>`<article class="relic-card" data-slot-card="${i}"><div class="relic-card-head"><span class="slot-number">${i+1}</span><div class="relic-select"><label for="relic-input-${i}">第 ${i+1} 个遗物</label><input id="relic-input-${i}" data-relic-input="${i}" type="text" autocomplete="off" placeholder="输入编号 / 部件名" aria-label="第 ${i+1} 个遗物" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="relic-menu-${i}"><div id="relic-menu-${i}" class="relic-menu" role="listbox" hidden></div></div><button data-clear-relic="${i}" class="clear-relic" aria-label="清除第 ${i+1} 个遗物">×</button></div><div class="relic-grade"><select id="relic-grade-${i}" data-relic-grade="${i}" aria-label="第 ${i+1} 个遗物精炼等级">${grades.map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><span id="relic-estimate-${i}"></span></div><div id="relic-drops-${i}" class="relic-drops"></div></article>`).join('')}</div><section class="relic-advice"><div class="relic-advice-head"><div><h3>开核桃建议</h3><p>按当前成交均价估算遗物内部掉落价值，点击“填入下一空位”就能加入上面的四个栏位。出库 = 当前仍可能掉落；入库 = 已进入 Vault，通常只能消耗已有库存。</p></div></div><div class="relic-advice-controls"><input id="relic-advice-search" type="search" placeholder="搜遗物编号、名称或部件，例如：伯斯顿 Prime" aria-label="搜索遗物或内部件"><select id="relic-advice-grade" aria-label="建议使用的精炼等级">${grades.map(([key,label])=>`<option value="${key}" ${key===relicAdviceGrade?'selected':''}>${label}</option>`).join('')}</select><select id="relic-advice-sort" aria-label="遗物建议排序"><option value="ev">期望白金 ↓</option><option value="best">最高掉落 ↓</option></select><select id="relic-advice-min" aria-label="最低期望价值">${[[0,'不限期望价值'],[5,'期望至少 5p'],[10,'期望至少 10p'],[20,'期望至少 20p'],[50,'期望至少 50p'],[100,'期望至少 100p']].map(([value,label])=>`<option value="${value}" ${Number(value)===relicAdviceMin?'selected':''}>${label}</option>`).join('')}</select><select id="relic-advice-best-min" aria-label="最高掉落最低价值">${[[0,'不限最高掉落'],[10,'最高掉落至少 10p'],[20,'最高掉落至少 20p'],[50,'最高掉落至少 50p'],[100,'最高掉落至少 100p']].map(([value,label])=>`<option value="${value}" ${Number(value)===relicAdviceBestMin?'selected':''}>${label}</option>`).join('')}</select><select id="relic-advice-vault" aria-label="遗物出库入库状态"><option value="all">全部状态</option><option value="unvaulted">出库（当前掉落）</option><option value="vaulted">入库（已入 Vault）</option></select></div><p id="relic-advice-summary" class="relic-advice-summary"></p><div id="relic-advice-list" class="relic-advice-list"></div></section><div class="relic-footer"><span id="relic-source">掉落表 WFCD / Warframe Items</span><span>期望价值按 30 天成交均价；没有成交数据时才回退在线最低卖价</span></div>`;
+    $('relic-section').innerHTML=`<div class="relic-controls"><div><h2>遗物掉落</h2><p>可输入编号、遗物名称或内部件名称；也可以在“核桃价格”页挑选后加入。</p></div><div class="relic-buttons"><button id="relic-example" class="plain-button">载入示例</button><button id="relic-clear" class="plain-button">清空</button><button id="relic-focus" class="plain-button">⛶ 战斗视图</button><button id="relic-query" class="primary">查询掉落价格</button></div></div><div class="relic-combinations"><label>裂缝时代 <select id="relic-era" aria-label="四个遗物统一裂缝时代">${eras.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><button id="relic-same" class="plain-button">四人同第一个遗物</button><label>统一精炼 <select id="relic-all-grade" aria-label="统一精炼等级"><option value="">分别设置</option>${grades.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><select id="relic-presets" aria-label="已保存遗物组合"><option value="">选择常用组合</option></select><input id="relic-preset-name" aria-label="遗物组合名称" maxlength="40" placeholder="例如：本周四人光辉"><button id="relic-save-preset" class="plain-button">保存组合</button><button id="relic-delete-preset" class="plain-button">删除组合</button></div><div class="relic-options"><div class="segmented" aria-label="掉落排序"><button data-relic-sort="price" class="active">按白金价格 ↓</button><button data-relic-sort="rarity">按金银铜顺序</button></div><span id="relic-status">先选裂缝时代，再输入遗物编号。</span></div><div class="relic-selection-tools"><span id="relic-selection-status" role="status">点击奖励选中，每栏一个，方便对照。</span><button id="relic-clear-selected" class="plain-button" disabled>清除选中</button></div><div class="relic-reward-search"><label for="relic-reward-query">快速查奖励</label><input id="relic-reward-query" type="search" placeholder="输入奖励名，例如：伯斯顿 Prime 蓝图" aria-label="快速查奖励"><span id="relic-reward-hint">输入奖励名后，直接显示它来自哪一栏。</span><div id="relic-reward-results" role="status" hidden></div></div><div id="relic-columns" class="relic-columns">${[0,1,2,3].map(i=>`<article class="relic-card" data-slot-card="${i}"><div class="relic-card-head"><span class="slot-number">${i+1}</span><div class="relic-select"><label for="relic-input-${i}">第 ${i+1} 个遗物</label><input id="relic-input-${i}" data-relic-input="${i}" type="text" autocomplete="off" placeholder="输入编号 / 部件名" aria-label="第 ${i+1} 个遗物" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="relic-menu-${i}"><div id="relic-menu-${i}" class="relic-menu" role="listbox" hidden></div></div><button data-clear-relic="${i}" class="clear-relic" aria-label="清除第 ${i+1} 个遗物">×</button></div><div class="relic-grade"><select id="relic-grade-${i}" data-relic-grade="${i}" aria-label="第 ${i+1} 个遗物精炼等级">${grades.map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><span id="relic-estimate-${i}"></span></div><div id="relic-drops-${i}" class="relic-drops"></div></article>`).join('')}</div><div class="relic-footer"><span id="relic-source">掉落表 WFCD / Warframe Items</span><span>期望价值按 30 天成交均价；没有成交数据时才回退在线最低卖价</span></div>`;
     const panel=$('relic-section');
     panel.addEventListener('input',e=>{
       if(e.target.id==='relic-reward-query'){relicRewardQuery=e.target.value;renderRelicBodies();return;}
@@ -132,8 +147,6 @@
       if(e.key==='Escape')$('relic-menu-'+i).hidden=true;
     });
     panel.addEventListener('click',e=>{
-      const advice=e.target.closest('[data-relic-use]');
-      if(advice)return useAdviceRelic(advice.dataset.relicUse);
       const result=e.target.closest('[data-reward-slot]');
       if(result){
         const i=Number(result.dataset.rewardSlot),name=result.dataset.rewardName;
@@ -152,12 +165,6 @@
     $('relic-save-preset').onclick=()=>{if(!selections().some(Boolean))return notify('先选择至少一个遗物。');const name=$('relic-preset-name').value.trim();if(!name)return notify('请为组合起一个名称。');settings.relicPresets||=[];const old=settings.relicPresets.findIndex(p=>p.name===name),row={name,relics:structuredClone(selections())};if(old>=0)settings.relicPresets[old]=row;else settings.relicPresets.unshift(row);settings.relicPresets=settings.relicPresets.slice(0,12);queueSave();presets();notify('组合已记住，同名组合会更新。',true);};
     $('relic-presets').onchange=e=>{const p=settings.relicPresets?.[Number(e.target.value)];if(e.target.value===''||!p)return;settings.relics=structuredClone(p.relics);$('relic-preset-name').value=p.name;syncRelicFields();persistRelics();};
     $('relic-delete-preset').onclick=()=>{const v=$('relic-presets').value;if(v==='')return notify('先选择需要删除的组合。');settings.relicPresets.splice(Number(v),1);queueSave();presets();notify('组合已删除；当前四个遗物保持不变。',true);};
-    $('relic-advice-search').oninput=e=>{relicAdviceQuery=e.target.value.trim();relicAdviceLimit=60;renderRelicAdvice();};
-    $('relic-advice-grade').onchange=e=>{relicAdviceGrade=e.target.value;relicAdviceLimit=60;renderRelicAdvice();};
-    $('relic-advice-sort').onchange=e=>{relicAdviceSort=e.target.value;relicAdviceLimit=60;renderRelicAdvice();};
-    $('relic-advice-min').onchange=e=>{relicAdviceMin=Number(e.target.value);relicAdviceLimit=60;renderRelicAdvice();};
-    $('relic-advice-best-min').onchange=e=>{relicAdviceBestMin=Number(e.target.value);relicAdviceLimit=60;renderRelicAdvice();};
-    $('relic-advice-vault').onchange=e=>{relicAdviceVault=e.target.value;relicAdviceLimit=60;renderRelicAdvice();};
     $('relic-clear-selected').onclick=()=>{selectedDrops.clear();renderRelicBodies();};
     $('relic-query').onclick=()=>queryRelics(true);
     $('relic-focus').onclick=toggleFocus;
@@ -176,7 +183,7 @@
     const value=normalized(text),era=settings.relicEra||'';
     const matches=relicData.items.map(x=>{const reward=[...(x.grades.intact||[])].find(drop=>[drop.name,itemIndex.get(drop.slug)?.name,itemIndex.get(drop.slug)?.english].filter(Boolean).some(name=>normalized(name).includes(value)));return {relic:x,reward};}).filter(({relic,reward})=>(!era||relic.id.startsWith(era+'_'))&&(!value||normalized(relic.name).includes(value)||normalized(relic.zh).includes(value)||normalized(relic.id).includes(value)||reward)).sort((a,b)=>Number(normalized(b.relic.name)===value)-Number(normalized(a.relic.name)===value)||a.relic.name.localeCompare(b.relic.name,undefined,{numeric:true})).slice(0,12);
     const menu=$('relic-menu-'+i);menu.hidden=false;$('relic-input-'+i).setAttribute('aria-expanded','true');
-    menu.innerHTML=matches.length?matches.map(({relic,reward})=>`<button type="button" role="option" data-relic-choice="${esc(relic.id)}" data-choose-slot="${i}"><b>${esc(relic.zh)}</b><small>${esc(relic.name)}${relicState(relic)}${reward?' · 含 '+esc(itemIndex.get(reward.slug)?.name||reward.name):''}</small></button>`).join(''):'<div class="no-suggestion">没有找到。可以输入遗物编号、中文名或内部件名，也可以用下方目录搜索。</div>';
+    menu.innerHTML=matches.length?matches.map(({relic,reward})=>`<button type="button" role="option" data-relic-choice="${esc(relic.id)}" data-choose-slot="${i}"><b>${esc(relic.zh)}</b><small>${esc(relic.name)}${relicState(relic)}${reward?' · 含 '+esc(itemIndex.get(reward.slug)?.name||reward.name):''}</small></button>`).join(''):'<div class="no-suggestion">没有找到。可以输入遗物编号、中文名或内部件名，也可以到“核桃价格”页搜索。</div>';
   }
   function chooseRelic(i,id){
     const r=relicIndex.get(id);if(!r)return;
@@ -220,7 +227,6 @@
     $('relic-clear-selected').disabled=!picked.length;
     $('relic-source').textContent=`掉落表 ${relicData.as_of} · WFCD / Warframe Items · 期望价值按 30 天成交均价`;
     renderRewardSearch(all);
-    renderRelicAdvice();
     renderProgress();
   }
   function renderRewardSearch(all){
@@ -256,6 +262,10 @@
   async function activate(next){
     if(next!=='relics'){window.RewardOcr?.leave();if(document.body.classList.contains('relic-focus'))toggleFocus();}
     if(next==='rivens'){buildRivens();renderRivens();}
+    if(next==='relic-prices'){
+      buildRelicAdvice();$('relic-advice-summary').textContent='正在加载遗物与物品目录…';
+      try{await ensureRelics();renderRelicAdvice();}catch(error){notify('核桃价格加载失败：'+error.message+'。重新点击核桃价格可重试。');}
+    }
     if(next==='relics'){
       if(!Array.isArray(settings.relics))settings.relics=[null,null,null,null];
       buildRelics();$('relic-status').textContent='正在加载遗物与物品目录…';
@@ -263,6 +273,7 @@
     }
   }
   function update(){
+    if(tab==='relic-prices'&&relicData)renderRelicAdvice();
     if(tab==='rivens')renderRivens();
     if(tab==='relics'&&relicData){renderRelicBodies();window.RewardOcr?.update();}
   }
