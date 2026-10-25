@@ -1,6 +1,32 @@
 'use strict';
 // Only relic rewards are candidates. UI labels and unrelated market items cannot become rewards.
 const RewardOcrCore=(()=>{
+  function rewardLayout(width,height,count){
+    // Reward cards are centered and sized against the 16:9 safe area, not the full monitor width.
+    const safe=Math.min(width,height*16/9),span=safe*.126*count;
+    return {left:(width-span)/2/width,right:(width+span)/2/width,top:.375,bottom:.44,count};
+  }
+  function textMask(pixels){
+    const d=pixels.data;
+    for(let i=0;i<d.length;i+=4){
+      const strength=Math.min(d[i+1]-d[i],d[i+2]-d[i]);
+      const value=255-Math.max(0,Math.min(255,(strength-15)*4));
+      d[i]=d[i+1]=d[i+2]=value;d[i+3]=255;
+    }
+    return pixels;
+  }
+  function titleLines(pixels){
+    const {width:w,height:h,data:d}=pixels,bands=[];
+    for(let y=0;y<h;y++){
+      let count=0;for(let x=0;x<w;x++)if(d[(y*w+x)*4]<128)count++;
+      if(count<Math.max(5,w*.035))continue;
+      const last=bands[bands.length-1];if(!last||y-last.bottom>1)bands.push({top:y,bottom:y});else last.bottom=y;
+    }
+    return bands.filter(b=>b.bottom-b.top>=Math.max(5,h*.06)).slice(0,3).map(b=>{
+      let left=w,right=0;for(let y=b.top;y<=b.bottom;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4]<128){left=Math.min(left,x);right=Math.max(right,x);}
+      return {x:left,y:b.top,width:right-left+1,height:b.bottom-b.top+1};
+    }).filter(b=>b.width>0);
+  }
   function normalize(text){return String(text||'').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\p{Script=Han}]/gu,'');}
   function aliases(item){
     const names=[item.name,item.english,...(item.ocrNames||[])].filter(Boolean),result=new Set();
@@ -46,6 +72,6 @@ const RewardOcrCore=(()=>{
     const eligible=compared.filter(r=>r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value!=null),max=eligible.length?Math.max(...eligible.map(r=>r.q.value)):null;
     return compared.map(r=>({...r,best:max!=null&&r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value===max}));
   }
-  return {normalize,aliases,catalog,match,slot,compare};
+  return {rewardLayout,textMask,titleLines,normalize,aliases,catalog,match,slot,compare};
 })();
 if(typeof module!=='undefined')module.exports=RewardOcrCore;

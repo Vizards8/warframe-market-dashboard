@@ -265,7 +265,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(features.ITEMS)
         if path == '/api/relics':
             return self.respond(features.RELICS)
-        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'reward-ocr-core.js', 'reward-ocr.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js', 'welcome.js')}}
+        files = {'/': 'index.html', **{'/' + name: name for name in ('app.js', 'reward-ocr-core.js', 'reward-ocr-assets.js', 'reward-ocr.js', 'extras.js', 'style.css', 'stats.js', 'portable.js', 'inventory.js', 'desk-core.js', 'desk.js', 'welcome.js')}}
         if path.startswith('/ocr/'):
             # Serve only checked-in OCR assets, with no path traversal or directory listing.
             assets = ROOT / 'static/ocr'

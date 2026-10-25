@@ -1,7 +1,12 @@
 # OCR third-party assets
 
-These unmodified files are loaded only when the user starts OCR. They are hosted
-with the dashboard to avoid reliance on a third-party CDN at runtime.
+These unmodified files are loaded only when the user prepares or starts OCR.
+They are hosted with the dashboard. The downloader can also fetch the same pinned
+versions from registry.npmmirror.com, verifies their SHA-256 against the bundled
+manifest values before execution, and caches verified dependencies in the browser.
+Model packages are streamed to extract only 4.0.0_best_int; their model bytes are
+unchanged. The Worker bootstrap is project code, not a modification of these
+third-party files. Screenshots and recognized text are never sent to either source.
 
 - Tesseract.js 5.1.1: https://github.com/naptha/tesseract.js, Apache-2.0.
 - tesseract.js-core 5.1.1: https://github.com/naptha/tesseract.js-core, Apache-2.0.

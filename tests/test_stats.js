@@ -11,4 +11,5 @@ require('./test_desk.js');
 // Keep public-build checks in the existing CI entrypoint.
 require('./test_ocr.js');
 require('./test_ocr_lifecycle.js');
+require('./test_ocr_assets.js');
 require('./test_relic_prices.js');

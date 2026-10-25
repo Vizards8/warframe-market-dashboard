@@ -27,3 +27,18 @@ assert.deepEqual(comparison.map(x=>!!x.best),[true,false,false,false,false,false
 assert.equal(comparison[3].display,'待查询');assert.equal(comparison[4].display,'不可交易');
 assert.equal(core.compare([{status:'exact',item:item('none')}],()=>({value:null,valid:false}))[0].best,false);
 assert.equal(core.compare([{status:'exact',item:item('zero')}],()=>({value:0,valid:true}))[0].display,'0p');
+// Centered cards retain the same pixel width on ultrawide displays.
+for(const count of [1,2,3,4]){
+ const normal=core.rewardLayout(2560,1440,count),wide=core.rewardLayout(3440,1440,count);
+ assert.ok(Math.abs(normal.left+normal.right-1)<1e-12);
+ assert.ok(Math.abs((normal.right-normal.left)*2560-(wide.right-wide.left)*3440)<1e-9);
+ assert.ok(Math.abs((normal.right-normal.left)/count-.126)<1e-12);
+ assert.ok(normal.top>0&&normal.bottom<1&&normal.bottom>normal.top);
+}
+const colors={width:3,height:1,data:new Uint8ClampedArray([30,180,210,255,80,80,80,255,240,230,220,255])};
+core.textMask(colors);assert.deepEqual([...colors.data],[0,0,0,255,255,255,255,255,255,255,255,255]);
+const image={width:100,height:30,data:new Uint8ClampedArray(100*30*4).fill(255)};
+for(const [top,bottom] of [[2,7],[9,15]])for(let y=top;y<=bottom;y++)for(let x=10;x<30;x++)image.data[(y*100+x)*4]=0;
+image.data[(24*100+2)*4]=0; // An isolated dot is not a title line.
+assert.deepEqual(core.titleLines(image),[{x:10,y:2,width:20,height:6},{x:10,y:9,width:20,height:7}]);
+console.log('OCR preprocessing: centered layouts, blue-text isolation and wrapped title separation passed');
