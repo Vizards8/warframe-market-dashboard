@@ -1,10 +1,10 @@
 'use strict';
 // Only relic rewards are candidates. UI labels and unrelated market items cannot become rewards.
 const RewardOcrCore=(()=>{
-  function rewardLayout(width,height,count){
+  function rewardLayout(width,height,count,scale=1,offset=0){
     // Reward cards are centered and sized against the 16:9 safe area, not the full monitor width.
-    const safe=Math.min(width,height*16/9),span=safe*.126*count;
-    return {left:(width-span)/2/width,right:(width+span)/2/width,top:.375,bottom:.44,count};
+    const safe=Math.min(width,height*16/9),span=safe*.126*count*scale;
+    return {left:Math.max(0,(width-span)/2/width),right:Math.min(1,(width+span)/2/width),top:Math.max(0,.5+(.375-.5)*scale+offset),bottom:Math.min(1,.5+(.44-.5)*scale+offset),count};
   }
   function textMask(pixels){
     const d=pixels.data;

@@ -42,3 +42,10 @@ for(const [top,bottom] of [[2,7],[9,15]])for(let y=top;y<=bottom;y++)for(let x=1
 image.data[(24*100+2)*4]=0; // An isolated dot is not a title line.
 assert.deepEqual(core.titleLines(image),[{x:10,y:2,width:20,height:6},{x:10,y:9,width:20,height:7}]);
 console.log('OCR preprocessing: centered layouts, blue-text isolation and wrapped title separation passed');
+
+// Calibration follows the pixel transform around screen center, independently of monitor resolution.
+for(const scale of [.8,1.25]){
+ const base=core.rewardLayout(2560,1440,4),adjusted=core.rewardLayout(2560,1440,4,scale,40/1440);
+ assert.ok(Math.abs(adjusted.left-(.5+(base.left-.5)*scale))<1e-12);
+ assert.ok(Math.abs(adjusted.top-(.5+(base.top-.5)*scale+40/1440))<1e-12);
+}

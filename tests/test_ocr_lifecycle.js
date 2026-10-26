@@ -60,5 +60,13 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  await s.node('ocr-prepare').onclick();assert.match(s.node('ocr-status').textContent,/已就绪/);
  s.node('ocr-language').value='chi_sim+eng';s.node('ocr-language').onchange();assert.equal(s.terminated(),1);
  await s.node('ocr-prepare').onclick();assert.equal(attempts,3);assert.equal(s.timers.size,0);
+ // Zero recognized rewards keep the source preview visible and report captured pixels, not monitor size.
+ s=setup();start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
+ const empty=s.node('ocr-run').onclick();await flush();s.pendingRecognize.resolve({data:{text:'',lines:[]}});await empty;
+ assert.equal(s.node('ocr-preview-details').open,true);assert.match(s.node('ocr-status').textContent,/1920 × 1080/);assert.match(s.node('ocr-status').textContent,/实际裁剪/);
+ assert.match(s.node('ocr-frame-info').textContent,/屏幕共享/);
+ s.node('ocr-ui-scale').value='80';s.node('ocr-ui-scale').onchange();assert.equal(s.node('ocr-area-mode').value,'auto');
+ s.node('ocr-ui-scale').value='0';await s.node('ocr-run').onclick();assert.match(s.node('ocr-status').textContent,/60–150/);
+ s.sandbox.RewardOcr.leave();assert.equal(s.node('ocr-frame-info').textContent,'');
  console.log('OCR lifecycle: late permission, cancellation during recognition, browser stop, manual-only single-frame batches and resource cleanup passed');
 })().catch(e=>{console.error(e);process.exitCode=1;});
