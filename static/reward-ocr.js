@@ -31,8 +31,8 @@
     byId('ocr-prepare').disabled=busy;
   }
   function candidateStatus(){
-    if(!candidateRows.length||candidateRows.length===rows.length)return '当前未锁定遗物候选，将从全部奖励目录匹配。';
-    return `已预载当前四个遗物的 ${candidateRows.length} 个候选，结算时无需再输入奖励名。`;
+    if(!candidateRows.length)return '识别会从全部奖励目录匹配，无需先填写遗物。';
+    return `已填写遗物包含 ${candidateRows.length} 种掉落，仅作核对；识别和修正仍使用全部奖励目录。`;
   }
   function renderCandidateStatus(){const node=byId('ocr-candidate-status');if(node)node.textContent=candidateStatus();}
   function preview(){
@@ -119,11 +119,11 @@
         status(`正在本机识别第 ${i+1}/${v.count} 个奖励…`);
         const sw=w*(v.right-v.left)/v.count,sh=h*(v.bottom-v.top),c=prepareCrop(imageSource,w*v.left+i*sw,h*v.top,sw,sh);
         const r=await ocr.recognize(c);if(session!==generation)return false;
-        const lines=(r.data.lines||[]).map(x=>x.text.trim()).filter(Boolean);next.push({...core.slot(lines,candidateRows.length?candidateRows:rows),rawText:r.data.text||lines.join('\n'),crop:c.toDataURL?.('image/png')||''});byId('ocr-progress').value=(i+1)/v.count*100;
+        const lines=(r.data.lines?.length?r.data.lines.map(x=>x.text):String(r.data.text||'').split(/\n/)).map(x=>x.trim()).filter(Boolean);next.push({...core.slot(lines,rows),rawText:r.data.text||lines.join('\n'),crop:c.toDataURL?.('image/png')||''});byId('ocr-progress').value=(i+1)/v.count*100;
       }
       results=next;resultAt=new Date();const matched=next.filter(r=>r.status==='exact'||r.status==='probable').length;byId('ocr-preview-details').open=matched===0;render();
       if(!matched){status(`本次未匹配到奖励。实际画面 ${w} × ${h}。请展开“识别原文 / 实际裁剪”，检查名称是否完整；绿色框偏位时调整卡位缩放或手动区域，黑白裁剪没有文字时检查游戏文字颜色。`);return true;}
-      status(`识别完成；需要更新时再点“识别一次”。${candidateRows.length?'已优先按当前四个遗物候选匹配。':''}保持游戏从左到右顺序；请核对名称。模糊结果需确认，缺价不代表 0p。`);return true;
+      status(`识别完成；需要更新时再点“识别一次”。已按全部奖励目录匹配。保持游戏从左到右顺序；请核对名称。模糊结果需确认，缺价不代表 0p。`);return true;
     }catch(e){
       if(session===generation){if(worker)await worker.terminate().catch(()=>{});worker=null;workerLanguage='';status('识别失败：'+(e?.message||String(e))+'。可以重试或输入奖励名。');}return false;
     }finally{if(session===generation){busy=false;syncControls();renderPip();}}
@@ -174,11 +174,11 @@
       const item=r.item,name=item?.name||(r.status==='ambiguous'?'请确认奖励':'未识别，请手动查找');
       // Exact matches need no unrelated fuzzy alternatives; search remains available for correction.
       const candidates=r.status==='exact'?[]:(r.candidates||[]).map(x=>x.item);
-      return `<article class="ocr-result ${r.best?'ocr-best':''}"><span class="ocr-slot">游戏第 ${i+1} 格 ${r.best?'· 已确认奖励中挂价最高':''}</span><h3>${esc(name)}</h3><strong class="ocr-price">${esc(r.display)}</strong><p>${esc(r.note)}</p><small>${item?.tradable?'报价 '+esc(timeLabel(mrow(item.slug).orders_at)):''}</small><p class="ocr-match-state">${r.status==='probable'?'近似匹配，确认名称后再比较':r.status==='exact'?'名称已匹配；仍请对照游戏核对':'请选择候选或输入完整奖励名'}</p><input data-ocr-search="${i}" value="${esc(r.search||'')}" placeholder="手动修正 / 查找奖励" aria-label="第 ${i+1} 格奖励搜索"><div class="ocr-candidates">${candidates.map(x=>`<button data-ocr-slot="${i}" data-ocr-choice="${esc(x.slug)}">${esc(x.name)}</button>`).join('')}</div><details><summary>识别原文 / 实际裁剪</summary><p>${esc(r.rawText||r.text||'没有可用文字')}</p>${r.crop?`<img class="ocr-crop-image" src="${r.crop}" alt="第 ${i+1} 格实际送入 OCR 的图片">`:''}</details></article>`;
+      return `<article class="ocr-result ${r.best?'ocr-best':''}"><span class="ocr-slot">游戏第 ${i+1} 格 ${r.best?'· 已确认奖励中挂价最高':''}</span><h3>${esc(name)}</h3><strong class="ocr-price">${esc(r.display)}</strong><p>${esc(r.note)}</p>${item&&candidateRows.length&&!candidateRows.some(x=>x.slug===item.slug)?'<p class="ocr-scope-note">不在已填遗物的掉落中，请核对遗物或名称。</p>':''}<small>${item?.tradable?'报价 '+esc(timeLabel(mrow(item.slug).orders_at)):''}</small><p class="ocr-match-state">${r.status==='probable'?'近似匹配，确认名称后再比较':r.status==='exact'?'名称已匹配；仍请对照游戏核对':'请选择候选或输入完整奖励名'}</p><input data-ocr-search="${i}" value="${esc(r.search||'')}" placeholder="手动修正 / 查找奖励" aria-label="第 ${i+1} 格奖励搜索"><div class="ocr-candidates">${candidates.map(x=>`<button data-ocr-slot="${i}" data-ocr-choice="${esc(x.slug)}">${esc(x.name)}</button>`).join('')}</div><details><summary>识别原文 / 实际裁剪</summary><p>${esc(r.rawText||r.text||'没有可用文字')}</p>${r.crop?`<img class="ocr-crop-image" src="${r.crop}" alt="第 ${i+1} 格实际送入 OCR 的图片">`:''}</details></article>`;
     }).join('');renderPip();
   }
   function mount(items,relics){
-    rows=core.catalog(items,relics);candidateRows=rows;if(built){renderCandidateStatus();return;}built=true;
+    rows=core.catalog(items,relics);candidateRows=[];if(built){renderCandidateStatus();return;}built=true;
     const panel=document.createElement('section');panel.className='ocr-panel';panel.id='reward-ocr-panel';
     panel.innerHTML=`<div class="ocr-heading"><div><h2>截图识别奖励</h2><p>共享游戏画面后，奖励出现时点击“识别一次”。只处理截图，不读取游戏内存。</p></div><button id="ocr-pip" class="plain-button">↗ 悬浮价格窗</button></div>
       <div class="ocr-share-controls"><button id="ocr-share" class="primary">共享游戏画面</button><button id="ocr-stop" class="plain-button" hidden>停止共享 / 取消识别</button><span>选择游戏窗口或游戏所在屏幕，不要选择本站标签页。</span></div>
@@ -190,9 +190,9 @@
     byId('ocr-prepare').onclick=prepareEngine;byId('ocr-file').onchange=e=>acceptImage(e.target.files[0]);byId('ocr-run').onclick=()=>recognize();byId('ocr-share').onclick=startSharing;byId('ocr-stop').onclick=()=>stopSharing();byId('ocr-pip').onclick=openPip;
     ['left','right','top','bottom','count','language','area-mode','source','text-style','ui-scale','y-offset'].forEach(k=>byId('ocr-'+k).onchange=()=>{try{if(['left','right','top','bottom'].includes(k))byId('ocr-area-mode').value='manual';if(['ui-scale','y-offset'].includes(k))byId('ocr-area-mode').value='auto';preview();results=[];resultAt=null;render();if(k==='language'&&worker){worker.terminate().catch(()=>{});worker=null;}status('参数已改变，下次识别按新区域和语言处理。');}catch(e){status(e.message);}});
     byId('ocr-text-mode').onclick=()=>{byId('ocr-text-area').hidden=!byId('ocr-text-area').hidden;};
-    byId('ocr-match-text').onclick=()=>{const pool=candidateRows.length?candidateRows:rows;results=byId('ocr-text').value.split(/\n/).map(x=>x.trim()).filter(Boolean).slice(0,4).map(text=>({...core.match(text,pool),text}));resultAt=new Date();render();status(`已按输入顺序匹配${candidateRows.length?'当前四个遗物候选':''}；可在各格修正名称。`);};
-    panel.addEventListener('input',e=>{const i=e.target.dataset.ocrSearch;if(i===undefined)return;const r=results[Number(i)],q=core.normalize(e.target.value);r.search=e.target.value;const pool=candidateRows.length?candidateRows:rows;const choices=q?pool.filter(x=>(x.ocrAliases||[]).some(a=>a.includes(q))).slice(0,8):[];e.target.nextElementSibling.innerHTML=choices.map(x=>`<button data-ocr-slot="${i}" data-ocr-choice="${esc(x.slug)}">${esc(x.name)}</button>`).join('');});
-    panel.addEventListener('click',e=>{const b=e.target.closest('[data-ocr-choice]');if(!b)return;const r=results[Number(b.dataset.ocrSlot)];if(!r)return;const pool=candidateRows.length?candidateRows:rows;r.item=pool.find(x=>x.slug===b.dataset.ocrChoice)||rows.find(x=>x.slug===b.dataset.ocrChoice);r.status='exact';r.search='';render();});
+    byId('ocr-match-text').onclick=()=>{results=byId('ocr-text').value.split(/\n/).map(x=>x.trim()).filter(Boolean).slice(0,4).map(text=>({...core.match(text,rows),text}));resultAt=new Date();render();status('已按输入顺序从全部奖励目录匹配；可在各格修正名称。');};
+    panel.addEventListener('input',e=>{const i=e.target.dataset.ocrSearch;if(i===undefined)return;const r=results[Number(i)],q=core.normalize(e.target.value);r.search=e.target.value;const choices=q?rows.filter(x=>(x.ocrAliases||[]).some(a=>a.includes(q))).slice(0,8):[];e.target.nextElementSibling.innerHTML=choices.map(x=>`<button data-ocr-slot="${i}" data-ocr-choice="${esc(x.slug)}">${esc(x.name)}</button>`).join('');});
+    panel.addEventListener('click',e=>{const b=e.target.closest('[data-ocr-choice]');if(!b)return;const r=results[Number(b.dataset.ocrSlot)];if(!r)return;r.item=rows.find(x=>x.slug===b.dataset.ocrChoice);r.status='exact';r.search='';render();});
     document.addEventListener('paste',e=>{if(tab!=='relics'||document.activeElement?.matches('input,textarea,select'))return;const file=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith('image/'))?.getAsFile();if(file){e.preventDefault();acceptImage(file);}});
     syncControls();
   }
@@ -200,7 +200,7 @@
     const values=new Set();
     for(const reward of rewards||[])for(const value of [reward?.slug,reward?.name,reward?.item?.slug,reward?.item?.name,...(reward?.item?.ocrNames||[])])if(value)values.add(core.normalize(value));
     candidateRows=values.size?rows.filter(item=>[item.slug,item.name,item.english,...(item.ocrNames||[])].filter(Boolean).some(value=>values.has(core.normalize(value)))):[];
-    renderCandidateStatus();
+    renderCandidateStatus();render();
   }
   window.RewardOcr={mount,update:render,setCandidates,leave:()=>{if(capture||busy)stopSharing('已离开开核桃页面，共享与识别已停止。');else generation++;if(pip){pip.close();pip=null;}}};
   window.addEventListener('pagehide',()=>{disposed=true;stopSharing();if(pip)pip.close();});
