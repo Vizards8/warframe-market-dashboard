@@ -25,10 +25,10 @@ function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null}={}
  sandbox.RewardOcr.mount(items,relics);
  return {sandbox,node,stream,pendingShare,pendingRecognize,trackEvents,timers,stopped:()=>stopped,terminated:()=>terminated,closedFrames:()=>closedFrames,captured:()=>captured,recognized:()=>recognized,captureRequest:()=>captureRequest,track,events};
 }
-function installPip(s,{resizeFails=false}={}){
+function installPip(s,{resizeFails=false,width=320}={}){
  const nodes=new Map(),events={},sizes=[],requests=[];let focused=0;
  const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',hidden:false,disabled:false,attributes:{},setAttribute(k,v){this.attributes[k]=v;}});return nodes.get(id);};
- const pip={closed:false,document:{title:'',body:{innerHTML:''},head:{append(){}},createElement:()=>({}),getElementById:get,addEventListener:(name,fn)=>{events['doc-'+name]=fn;}},addEventListener:(name,fn)=>{events[name]=fn;},resizeTo(w,h){if(resizeFails)throw new Error('resize unavailable');sizes.push([w,h]);},close(){pip.closed=true;events.pagehide?.();},focus(){focused++;}};
+ const pip={closed:false,innerWidth:width,innerHeight:96,document:{title:'',body:{innerHTML:''},head:{append(){}},createElement:()=>({}),getElementById:get,addEventListener:(name,fn)=>{events['doc-'+name]=fn;}},addEventListener:(name,fn)=>{events[name]=fn;},resizeBy(w,h){if(resizeFails)throw new Error('resize unavailable');pip.innerWidth+=w;pip.innerHeight+=h;sizes.push([pip.innerWidth,pip.innerHeight]);},close(){pip.closed=true;events.pagehide?.();},focus(){focused++;}};
  s.sandbox.documentPictureInPicture={requestWindow:async options=>{requests.push(options);return pip;}};
  return {pip,node:get,events,sizes,requests,focused:()=>focused};
 }
@@ -94,7 +94,7 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  let p=installPip(s);await s.node('ocr-pip').onclick();
  assert.equal(p.requests[0].width,320);assert.equal(p.requests[0].height,96);assert.equal(p.requests[0].preferInitialWindowPlacement,false);
  assert.equal(p.node('ocr-pip-results').hidden,true);assert.equal(p.node('ocr-pip-run').disabled,true);assert.equal(p.node('ocr-pip-toggle').textContent,'展开');
- p.node('ocr-pip-toggle').onclick();assert.equal(p.node('ocr-pip-results').hidden,false);assert.equal(p.sizes.at(-1)[0],720);
+ p.node('ocr-pip-toggle').onclick();assert.equal(p.node('ocr-pip-results').hidden,false);assert.equal(p.sizes.at(-1)[0],320);assert.equal(p.sizes.at(-1)[1],440);
  p.node('ocr-pip-toggle').onclick();assert.equal(p.node('ocr-pip-results').hidden,true);assert.equal(p.sizes.at(-1)[0],320);
  assert.equal(s.captured(),0);assert.equal(s.recognized(),0);assert.equal(s.timers.size,0);
  await s.node('ocr-pip').onclick();assert.equal(p.requests.length,1);assert.equal(p.focused(),1);
@@ -104,6 +104,11 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  p.node('ocr-pip-toggle').onclick();const sizes=p.sizes.length;s.sandbox.RewardOcr.update();assert.equal(p.node('ocr-pip-results').hidden,true);assert.equal(p.sizes.length,sizes);
  await s.node('ocr-run').onclick();assert.equal(p.node('ocr-pip-results').hidden,false);assert.equal(s.captured(),2);
  s.sandbox.RewardOcr.leave();assert.equal(p.pip.closed,true);assert.equal(s.timers.size,0);
+ // Preserve a user-resized width through expand/collapse rather than shifting the right edge.
+ s=setup();p=installPip(s,{width:560});await s.node('ocr-pip').onclick();
+ p.node('ocr-pip-toggle').onclick();assert.deepEqual(p.sizes.at(-1),[560,440]);
+ p.node('ocr-pip-toggle').onclick();assert.deepEqual(p.sizes.at(-1),[560,96]);
+ assert.equal(s.captured(),0);assert.equal(s.recognized(),0);s.sandbox.RewardOcr.leave();
  // Collapse during recognition stays collapsed when results arrive; old data never expands it.
  s=setup();p=installPip(s);await s.node('ocr-pip').onclick();start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
  const pipRun=p.node('ocr-pip-run').onclick();await flush();assert.equal(p.node('ocr-pip-run').disabled,true);

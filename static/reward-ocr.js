@@ -214,8 +214,9 @@
     if(!pip||pip.closed)return;
     const changed=pipExpanded!==expanded;pipExpanded=expanded;
     renderPip();
-    // PiP position belongs to the browser; only resize in direct response to a user action.
-    if(changed)try{pip.resizeTo(expanded?720:320,expanded?260:96);}catch(_){
+    // Keep the current width so the right-side toggle stays at the same horizontal position.
+    // PiP forbids moving the window; only resize vertically during a user action.
+    if(changed)try{pip.resizeBy(0,(expanded?440:96)-pip.innerHeight);}catch(_){
       pip.document.getElementById('ocr-pip-state').textContent+=' · 可拖动窗口边框调整大小';
     }
   }
