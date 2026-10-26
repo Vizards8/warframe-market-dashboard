@@ -264,8 +264,9 @@
   function mount(items,relics){
     rows=core.catalog(items,relics);candidateRows=[];if(built){renderCandidateStatus();return;}built=true;
     const panel=document.createElement('section');panel.className='ocr-panel';panel.id='reward-ocr-panel';
-    panel.innerHTML=`<div class="ocr-heading"><div><h2>截图识别</h2><p>可直接 Ctrl + V 粘贴截图 · 仅手动识别，截图不上传。</p></div></div>
+    panel.innerHTML=`<div class="ocr-heading"><div><h2>截图识别</h2><p>仅手动识别，截图不上传。</p></div></div>
       <div class="ocr-actions"><button id="ocr-share" class="plain-button">共享画面</button><button id="ocr-stop" class="plain-button" hidden>停止共享</button><button id="ocr-run" class="primary" disabled>识别一次</button><label class="plain-button ocr-file-button">导入截图<input id="ocr-file" type="file" accept="image/*" aria-label="导入奖励截图"></label><button id="ocr-pip" class="plain-button">悬浮窗</button></div>
+      <div class="ocr-paste-area" tabindex="0" role="group" aria-label="截图粘贴区域">在此页面按 <kbd>Ctrl + V</kbd> 粘贴截图<span>也可先点击这里，再粘贴</span></div>
       <details id="ocr-settings" class="ocr-settings"><summary>设置与帮助</summary>
         <div class="ocr-layout"><label>奖励数 <select id="ocr-count"><option value="auto">自动检测</option>${[4,3,2,1].map(n=>`<option>${n}</option>`).join('')}</select></label><label>识别语言 <select id="ocr-language"><option value="chi_sim+eng">中文 + 英文</option><option value="eng">仅英文</option></select></label><label>名称颜色 <select id="ocr-text-style"><option value="cyan">蓝色文字</option><option value="light">其他颜色</option></select></label><label>下载来源 <select id="ocr-source"><option value="mirror">国内镜像优先</option><option value="site">本站优先</option></select></label><button id="ocr-prepare" class="plain-button">提前加载 OCR</button></div>
         <div class="ocr-crop-settings"><h3>区域校准</h3><div><label>定位 <select id="ocr-area-mode"><option value="auto">居中奖励卡</option><option value="manual">手动区域</option></select></label><label>卡位缩放 % <input id="ocr-ui-scale" type="number" min="60" max="150" value="100"></label><label>上下偏移 % <input id="ocr-y-offset" type="number" min="-15" max="15" value="0" step="0.5"></label>${[['left','左',24.8],['right','右',75.2],['top','上',36],['bottom','下',49]].map(([key,name,value])=>`<label>${name}边 % <input id="ocr-${key}" type="number" min="0" max="100" value="${value}"></label>`).join('')}</div></div>
@@ -280,7 +281,7 @@
     byId('ocr-match-text').onclick=()=>{results=byId('ocr-text').value.split(/\n/).map(x=>x.trim()).filter(Boolean).slice(0,4).map(text=>({...core.match(text,rows),text}));resultAt=new Date();render();status('已按输入顺序查价。');};
     panel.addEventListener('input',e=>{const i=e.target.dataset.ocrSearch;if(i===undefined)return;const r=results[Number(i)],q=core.normalize(e.target.value);r.search=e.target.value;const choices=q?rows.filter(x=>(x.ocrAliases||[]).some(a=>a.includes(q))).slice(0,8):[];e.target.nextElementSibling.innerHTML=choices.map(x=>`<button data-ocr-slot="${i}" data-ocr-choice="${esc(x.slug)}">${esc(x.name)}</button>`).join('');});
     panel.addEventListener('click',e=>{const b=e.target.closest('[data-ocr-choice]');if(!b)return;const r=results[Number(b.dataset.ocrSlot)];if(!r)return;r.item=rows.find(x=>x.slug===b.dataset.ocrChoice);r.status='exact';r.search='';render();});
-    document.addEventListener('paste',e=>{if(tab!=='relics'||document.activeElement?.matches('input,textarea,select'))return;const file=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith('image/'))?.getAsFile();if(file){e.preventDefault();acceptImage(file);}});
+    document.addEventListener('paste',e=>{if(tab!=='relics')return;const file=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith('image/'))?.getAsFile();if(file){e.preventDefault();acceptImage(file);}});
     syncControls();
   }
   function setCandidates(rewards){

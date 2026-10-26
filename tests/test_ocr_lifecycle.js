@@ -34,6 +34,16 @@ function installPip(s,{resizeFails=false}={}){
 }
 const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
 (async()=>{
+ // Image paste works even after typing in a relic field; ordinary text paste is untouched.
+ let pasteSetup=setup(),prevented=0;
+ pasteSetup.sandbox.document.activeElement={matches:()=>true};
+ const imagePaste={clipboardData:{items:[{type:'image/png',getAsFile:()=>({type:'image/png',size:100})}]},preventDefault(){prevented++;}};
+ pasteSetup.events['document-paste'](imagePaste);await flush();
+ assert.equal(prevented,1);assert.equal(pasteSetup.captured(),1);assert.equal(pasteSetup.recognized(),0);
+ assert.equal(pasteSetup.node('ocr-run').disabled,false);assert.match(pasteSetup.node('ocr-status').textContent,/截图已载入/);
+ pasteSetup.events['document-paste']({clipboardData:{items:[{type:'text/plain'}]},preventDefault(){prevented++;}});
+ assert.equal(prevented,1);assert.equal(pasteSetup.captured(),1);
+ pasteSetup.sandbox.tab='home';pasteSetup.events['document-paste'](imagePaste);await flush();assert.equal(prevented,1);
  // A chooser may resolve after the user navigates away. Never start capture then.
  let s=setup(),start=s.node('ocr-share').onclick();s.sandbox.RewardOcr.leave();s.pendingShare.resolve(s.stream);await start;
  assert.equal(s.stopped(),1);assert.equal(s.timers.size,0);
