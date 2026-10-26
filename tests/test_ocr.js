@@ -76,3 +76,19 @@ assert.equal(core.detectCount(titleMask(0)),null);
 assert.equal(core.detectCount(titleMask(3,{omit:1})),null); // Never shift two separated outer slots into a two-card result.
 assert.equal(core.detectCount(titleMask(4,{shift:35})),null); // Misaligned boundaries should prompt calibration.
 console.log('OCR rewards: shared 30-day means, explicit fallback, 1–4 layout detection, blank and ambiguous layouts passed');
+
+
+// Captured title lines can touch after resampling: broad first line, short wrapped 图 below.
+const touching={width:360,height:94,data:new Uint8ClampedArray(360*94*4).fill(255)};
+for(let y=15;y<=77;y++){
+ const ink=y<46?200:y===46?32:y===47?17:31,left=y<46?20:157;
+ for(let x=left;x<left+ink;x++)touching.data[(y*360+x)*4]=0;
+}
+assert.deepEqual(core.titleLines(touching).map(b=>[b.y,b.height]),[[15,33],[48,30]]);
+const primary={status:'unknown',score:0},retry={status:'exact',score:1,item:item('correct')};
+assert.equal(core.chooseAttempt(primary,retry),retry);
+assert.equal(core.chooseAttempt(retry,primary),retry);
+assert.equal(core.chooseAttempt({status:'probable',score:.9,item:item('correct')},primary).item.slug,'correct');
+assert.equal(core.chooseAttempt({status:'probable',score:.9,item:item('other')},retry).status,'ambiguous');
+assert.equal(core.chooseAttempt(retry,{...retry,item:item('other')}).status,'ambiguous');
+console.log('OCR shared frames: touching wrapped lines, bounded retry, preserved good matches and conflicting-name confirmation passed');

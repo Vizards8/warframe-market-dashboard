@@ -16,13 +16,23 @@ const RewardOcrCore=(()=>{
     return pixels;
   }
   function titleLines(pixels){
-    const {width:w,height:h,data:d}=pixels,bands=[];
+    const {width:w,height:h,data:d}=pixels,bands=[],hits=new Uint32Array(h);
     for(let y=0;y<h;y++){
       let count=0;for(let x=0;x<w;x++)if(d[(y*w+x)*4]<128)count++;
-      if(count<Math.max(5,w*.035))continue;
+      hits[y]=count;if(count<Math.max(5,w*.035))continue;
       const last=bands[bands.length-1];if(!last||y-last.bottom>1)bands.push({top:y,bottom:y});else last.bottom=y;
     }
-    return bands.filter(b=>b.bottom-b.top>=Math.max(5,h*.06)).slice(0,3).map(b=>{
+    // A short wrapped line can touch the previous line after capture resampling.
+    // Split only a tall band with a deep ink valley followed by a narrower line.
+    const separated=bands.flatMap(b=>{
+      if(b.bottom-b.top<h*.48)return [b];
+      const min=Math.max(6,Math.round(h*.16));let cut=-1,lowest=Infinity;
+      for(let y=b.top+min;y<=b.bottom-min;y++)if(hits[y]<lowest){cut=y;lowest=hits[y];}
+      if(cut<0)return [b];
+      const before=Math.max(...hits.slice(b.top,cut)),after=Math.max(...hits.slice(cut+1,b.bottom+1));
+      return lowest<before*.18&&after>lowest*1.4&&after<before*.4?[{top:b.top,bottom:cut},{top:cut+1,bottom:b.bottom}]:[b];
+    });
+    return separated.filter(b=>b.bottom-b.top>=Math.max(5,h*.06)).slice(0,3).map(b=>{
       let left=w,right=0;for(let y=b.top;y<=b.bottom;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4]<128){left=Math.min(left,x);right=Math.max(right,x);}
       return {x:left,y:b.top,width:right-left+1,height:b.bottom-b.top+1};
     }).filter(b=>b.width>0);
@@ -89,6 +99,13 @@ const RewardOcrCore=(()=>{
     if(exacts.size>1)return {status:'ambiguous',text:texts.join(' '),candidates:[...exacts].map(slug=>({item:rows.find(x=>x.slug===slug),score:1})).slice(0,4)};
     return results[0]||{status:'unknown',text:'',candidates:[]};
   }
+  function chooseAttempt(primary,retry){
+    const a=primary.item?.slug,b=retry.item?.slug;
+    // Two attempts naming different rewards must never silently replace one another.
+    if(a&&b&&a!==b)return {status:'ambiguous',text:retry.text,candidates:[{item:primary.item,score:primary.score},{item:retry.item,score:retry.score}]};
+    const rank={exact:3,probable:2,ambiguous:1,unknown:0};
+    return rank[retry.status]>rank[primary.status]||rank[retry.status]===rank[primary.status]&&(retry.score||0)>(primary.score||0)?retry:primary;
+  }
   function compare(results,quote){
     const compared=results.map(r=>{
       const q=r.item?.tradable?quote(r.item.slug):null,basis=q?.basis==='mean30'?'30 天成交均价':'在线最低卖价';
@@ -100,6 +117,6 @@ const RewardOcrCore=(()=>{
     const eligible=compared.filter(r=>r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value!=null),max=eligible.length?Math.max(...eligible.map(r=>r.q.value)):null;
     return compared.map(r=>({...r,best:max!=null&&r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value===max}));
   }
-  return {rewardLayout,textMask,titleLines,detectCount,normalize,aliases,catalog,match,slot,compare};
+  return {rewardLayout,textMask,titleLines,detectCount,normalize,aliases,catalog,match,slot,chooseAttempt,compare};
 })();
 if(typeof module!=='undefined')module.exports=RewardOcrCore;

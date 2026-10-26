@@ -86,3 +86,5 @@ header{font-size:12px;min-height:62px;height:auto;padding:14px 0;gap:18px}.heade
 #relic-prices-section .relic-advice{margin:0;border:0;border-radius:0;background:#fff}#relic-prices-section .relic-advice-head p{color:var(--muted);font-size:12px}#relic-prices-section .relic-advice-controls select{font-size:12px}#relic-prices-section .relic-advice-summary{font-size:12px;color:var(--muted)}
 
 .ocr-crop-image{display:block;width:100%;height:auto;max-height:130px;object-fit:contain;background:#fff;border:1px solid var(--line);margin-top:8px}#ocr-frame-info{font-size:12px;color:var(--muted);line-height:1.6}
+
+.ocr-capture-info{font-size:12px;line-height:1.7;color:var(--muted);margin:0 0 12px}

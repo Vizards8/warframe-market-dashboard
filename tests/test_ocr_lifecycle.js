@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('nod
 const core=require('../static/reward-ocr-core.js');
 function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};}
 function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null}={}){
- const nodes=new Map(),events={},trackEvents={},timers=new Map();let stopped=0,terminated=0,closedFrames=0,nextTimer=1,captured=0,recognized=0,activeCount=0;
+ const nodes=new Map(),events={},trackEvents={},timers=new Map();let stopped=0,terminated=0,closedFrames=0,nextTimer=1,captured=0,recognized=0,activeCount=0,captureRequest;
  const pendingShare=deferred(),pendingRecognize=deferred();
  const context={drawImage(){},fillRect(){},strokeRect(){},fillText(){},clearRect(){},getImageData(x,y,w,h){
   const data=new Uint8ClampedArray(Math.max(1,w*h*4));
@@ -13,17 +13,17 @@ function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null}={}
   }}return {width:w,height:h,data};
  },putImageData(){},imageSmoothingEnabled:true};
  function node(id){if(!nodes.has(id))nodes.set(id,{value:{'ocr-left':'0','ocr-right':'100','ocr-top':'20','ocr-bottom':'65','ocr-count':'4','ocr-language':'eng'}[id]||'',hidden:false,disabled:false,innerHTML:'',textContent:'',style:{setProperty(){}},addEventListener(){},prepend(){},getContext:()=>context});return nodes.get(id);}
- const track={stop(){stopped++;},addEventListener:(name,fn)=>{trackEvents[name]=fn;}};
+ const track={getSettings:()=>({width:2560,height:1440,displaySurface:'monitor'}),stop(){stopped++;},addEventListener:(name,fn)=>{trackEvents[name]=fn;}};
  const stream={getTracks:()=>[track],getVideoTracks:()=>[track]};
  const worker={setParameters:async()=>{},recognize:()=>{const index=recognized++;return recognitions?Promise.resolve(recognitions[index%recognitions.length]):pendingRecognize.promise;},terminate:async()=>{terminated++;}};
  const sandbox={URL,console,AbortController,RewardOcrCore:core,RewardOcrAssets:{prepare:async()=>({langs:[],scriptURL:"",workerURL:"",coreURL:""})},document:{currentScript:{src:'http://localhost/reward-ocr.js'},getElementById:node,createElement:type=>type==='video'?{muted:false,playsInline:false,readyState:2,play:async()=>{},pause(){}}:node('created-'+type),addEventListener(){},head:{append(){}}},
- navigator:{mediaDevices:{getDisplayMedia:()=>pendingShare.promise}},createImageBitmap:async()=>{activeCount=autoCounts?.[captured%autoCounts.length]||0;captured++;return {width:1920,height:1080,close(){closedFrames++;}};},
+ navigator:{mediaDevices:{getDisplayMedia:options=>{captureRequest=options;return pendingShare.promise;}}},createImageBitmap:async()=>{activeCount=autoCounts?.[captured%autoCounts.length]||0;captured++;return {width:1920,height:1080,close(){closedFrames++;}};},
  setTimeout:fn=>{const id=nextTimer++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),
  Tesseract:{createWorker:async()=>worker},DeskCore:{rewardQuote:()=>({value:null,valid:false})},mrow:()=>({}),esc:x=>String(x),timeLabel:()=>'',tab:'relics'};
  sandbox.window=sandbox;sandbox.addEventListener=(name,fn)=>{events[name]=fn;};
  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../static/reward-ocr.js'),'utf8'),sandbox);
  sandbox.RewardOcr.mount(items,relics);
- return {sandbox,node,stream,pendingShare,pendingRecognize,trackEvents,timers,stopped:()=>stopped,terminated:()=>terminated,closedFrames:()=>closedFrames,captured:()=>captured,recognized:()=>recognized};
+ return {sandbox,node,stream,pendingShare,pendingRecognize,trackEvents,timers,stopped:()=>stopped,terminated:()=>terminated,closedFrames:()=>closedFrames,captured:()=>captured,recognized:()=>recognized,captureRequest:()=>captureRequest,track};
 }
 const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
 (async()=>{
@@ -42,13 +42,16 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  s.pendingRecognize.resolve({data:{lines:[]}});await interrupted;
  assert.equal(s.stopped(),1);assert.match(s.node('ocr-status').textContent,/停止屏幕共享/);assert.equal(s.timers.size,0);
  // Sharing alone never extracts a frame or starts OCR. Each click is one four-slot batch.
- s=setup();start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;await flush();
+ s=setup({relics:{items:[{grades:{intact:[{name:'Forma Blueprint',tradable:false}]}}]}});start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;await flush();
  assert.equal(s.captured(),0);assert.equal(s.recognized(),0);assert.equal(s.timers.size,0);
+ assert.equal(s.captureRequest().video.resizeMode,'none');assert.equal(s.captureRequest().video.width.ideal,3840);assert.equal(s.track.contentHint,'detail');
+ assert.match(s.node('ocr-capture-info').textContent,/整个屏幕.*2560 × 1440/);
  assert.equal(s.node('ocr-run').disabled,false);
  const once=s.node('ocr-run').onclick();await flush();assert.equal(s.node('ocr-run').disabled,true);
  await s.node('ocr-run').onclick();assert.equal(s.captured(),1); // duplicate click ignored
  s.pendingRecognize.resolve({data:{lines:[{text:'Forma Blueprint'}]}});await once;
  assert.equal(s.recognized(),4);assert.equal(s.captured(),1);assert.equal(s.node('ocr-run').disabled,false);
+ assert.match(s.node('ocr-capture-info').textContent,/本次识别画面 1920 × 1080/);
  assert.equal(s.timers.size,0);await flush();assert.equal(s.recognized(),4);
  await s.node('ocr-run').onclick();assert.equal(s.recognized(),8);assert.equal(s.captured(),2);
  assert.equal(s.closedFrames(),1);assert.equal(s.timers.size,0);
@@ -63,6 +66,12 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  s=setup({autoCounts:[0]});s.node('ocr-count').value='auto';start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
  await s.node('ocr-run').onclick();assert.equal(s.recognized(),0);assert.match(s.node('ocr-status').textContent,/未能可靠判断奖励数/);
  assert.equal(s.node('ocr-preview-details').open,true);assert.equal(s.node('ocr-run').disabled,false);s.sandbox.RewardOcr.leave();
+ // A bad crop gets at most one alternate preprocessing pass; exact crops are not rerun.
+ s=setup({items:[{slug:'bronco_prime_barrel',name:'野马 Prime 枪管'}],relics:{items:[{grades:{intact:[{slug:'bronco_prime_barrel',name:'Bronco Prime Barrel',tradable:true}]}}]},recognitions:[{data:{text:'TRENE Prime &'}},{data:{text:'野马 Prime 枪管'}}]});
+ s.node('ocr-count').value='1';start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
+ await s.node('ocr-run').onclick();assert.equal(s.recognized(),2);assert.equal(s.captured(),1);assert.match(s.node('ocr-results').innerHTML,/<h3>野马 Prime 枪管<\/h3>/);
+ assert.match(s.node('ocr-results').innerHTML,/标准处理：TRENE Prime/);assert.match(s.node('ocr-results').innerHTML,/紧凑拼行：野马/);
+ s.sandbox.RewardOcr.leave();
  // Cancelling model preparation aborts its network request and does not create an engine.
  s=setup();let downloadSignal,engines=0;
  s.sandbox.RewardOcrAssets.prepare=(_base,_language,options)=>new Promise((resolve,reject)=>{downloadSignal=options.signal;options.signal.addEventListener('abort',()=>reject(new Error('cancelled')));});
@@ -92,7 +101,7 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
   {slug:'yareli_prime_chassis_blueprint',name:'Yareli Prime 机体 蓝图'}
  ];
  const raw=['佐伦双莽 Prime 握柄',...catalog.slice(1).map(x=>x.name)];
- s=setup({items:catalog,relics:{items:[{grades:{intact:catalog.map(x=>({...x,tradable:true}))}}]},recognitions:raw.map(text=>({data:{text}}))}); // text-only engine output is valid too.
+ s=setup({items:catalog,relics:{items:[{grades:{intact:catalog.map(x=>({...x,tradable:true}))}}]},recognitions:[raw[0],...raw].map(text=>({data:{text}}))}); // text-only engine output is valid too.
  s.sandbox.RewardOcr.setCandidates([catalog[3]]);
  start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;await s.node('ocr-run').onclick();
  for(const x of catalog)assert.ok(s.node('ocr-results').innerHTML.includes('<h3>'+x.name+'</h3>'),x.name);
