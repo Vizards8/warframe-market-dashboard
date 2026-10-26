@@ -49,3 +49,30 @@ for(const scale of [.8,1.25]){
  assert.ok(Math.abs(adjusted.left-(.5+(base.left-.5)*scale))<1e-12);
  assert.ok(Math.abs(adjusted.top-(.5+(base.top-.5)*scale+40/1440))<1e-12);
 }
+
+// Two order books would rank these the other way: recommendation must use the shared mean.
+global.MarketStats=require('../static/stats.js');
+const desk=require('../static/desk-core.js'),now=Date.now(),at=new Date(now).toISOString();
+const market={a:{stats_at:at,stats:{end:'2026-10-20',history:[{date:'2026-10-20',price:12.3456,volume:3}]},orders_at:at,orders:{sell:[{price:99}]}},b:{stats_at:at,stats:{end:'2026-10-20',history:[{date:'2026-10-20',price:20,volume:1}]},orders_at:at,orders:{sell:[{price:1}]}}};
+const means=core.compare(['a','b'].map(slug=>({status:'exact',item:item(slug)})),slug=>desk.rewardQuote(market[slug],now));
+assert.deepEqual(means.map(r=>r.best),[false,true]);assert.equal(means[0].display,'12.3p');
+assert.equal(means[0].note,'30 天成交均价');assert.equal(means[0].q.at,at);
+const fallback=core.compare([{status:'exact',item:item('a')}],()=>desk.rewardQuote({...market.a,stats:{}},now))[0];
+assert.match(fallback.note,/在线最低卖价.*无有效均价/);
+
+function titleMask(count,{width=400,height=70,omit=-1,shift=0}={}){
+ const data=new Uint8ClampedArray(width*height*4).fill(255),cell=width/4;
+ // Synthetic glyphs with variable title widths and two lines; no screenshot or account data stored.
+ for(let i=0;i<count;i++)if(i!==omit){
+  const center=(width-cell*count)/2+(i+.5)*cell+shift,span=cell*(i%2?.54:.76);
+  for(let line=0;line<2;line++)for(let y=12+line*22;y<26+line*22;y++)for(let x=Math.round(center-span/2);x<center+span/2;x++){
+   if(x>=0&&x<width&&(x%9)<6)data[(y*width+x)*4]=0;
+  }
+ }
+ return {width,height,data};
+}
+for(const width of [240,400,646,1290])for(const count of [1,2,3,4])assert.equal(core.detectCount(titleMask(count,{width}))?.count,count,`${width}px / ${count} rewards`);
+assert.equal(core.detectCount(titleMask(0)),null);
+assert.equal(core.detectCount(titleMask(3,{omit:1})),null); // Never shift two separated outer slots into a two-card result.
+assert.equal(core.detectCount(titleMask(4,{shift:35})),null); // Misaligned boundaries should prompt calibration.
+console.log('OCR rewards: shared 30-day means, explicit fallback, 1–4 layout detection, blank and ambiguous layouts passed');

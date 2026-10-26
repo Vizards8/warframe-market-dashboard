@@ -67,11 +67,8 @@
   }
   function quoteInfo(r){
     if(!r.slug)return null;
-    const m=mrow(r.slug),current=ask(m);
-    const average=MarketStats.window(m,30).price;
-    if(average!=null&&DeskCore.fresh(m.stats_at,m.stats_error))return {value:average,basis:'mean30'};
-    if(current!=null&&DeskCore.fresh(m.orders_at,m.orders_error))return {value:current,basis:'ask'};
-    return null;
+    const q=DeskCore.rewardQuote(mrow(r.slug));
+    return q.valid?q:null;
   }
   function quote(r){return quoteInfo(r)?.value??null;}
   function allRewards(){return [0,1,2,3].flatMap(chosenRewards);}

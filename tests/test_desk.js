@@ -115,3 +115,13 @@ assert.equal(core.ducatPart(part,statPart,{},'owned',now).price,5.25); // Owned 
 console.log('整批收货：独立卖家、6 槽、整套数量、库存不足、整批取整和成交参考分离验证通过');
 
 assert.equal(core.ducatLot(set,{...setMarket,orders:{sell_offers:[{price:10,quantity:1,seller:'one'},{price:11,quantity:2,seller:'two'}]}},3,now).offer.seller,'two'); // Prefer two 3-part sets in a full trade.
+
+// OCR and relic drops share the same source, freshness and fallback rules.
+const meanQuote=core.rewardQuote(m,now);
+assert.equal(meanQuote.value,100);assert.equal(meanQuote.basis,'mean30');assert.equal(meanQuote.at,m.stats_at);
+assert.equal(core.rewardQuote({...m,stats_error:'offline'},now).basis,'ask');
+assert.equal(core.rewardQuote({...m,stats:{}},now).value,50);
+assert.equal(core.rewardQuote({...m,orders_error:'offline'},now).value,100);
+const oldMean=core.rewardQuote({...m,stats_error:'offline',orders_error:'offline'},now);
+assert.equal(oldMean.basis,'mean30');assert.equal(oldMean.valid,false);
+assert.equal(core.rewardQuote({},now).value,null);assert.equal(core.rewardQuote({},now).valid,false);

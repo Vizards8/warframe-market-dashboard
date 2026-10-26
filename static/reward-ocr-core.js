@@ -27,6 +27,28 @@ const RewardOcrCore=(()=>{
       return {x:left,y:b.top,width:right-left+1,height:b.bottom-b.top+1};
     }).filter(b=>b.width>0);
   }
+  function detectCount(pixels,cellWidth=pixels.width/4){
+    // Compare centered 1–4 card layouts against title ink, independently of OCR spelling.
+    // Reject a layout if it leaves text outside, cuts through a title, or has an empty card.
+    const {width:w,height:h,data:d}=pixels,cell=cellWidth,columns=new Float64Array(w);
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4]<128)columns[x]++;
+    for(let x=0;x<w;x++)if(columns[x]<Math.max(2,h*.03))columns[x]=0;
+    const total=columns.reduce((sum,n)=>sum+n,0),candidates=[];
+    if(total<Math.max(40,cell*h*.01)||total>w*h*.4)return null;
+    for(let count=1;count<=4;count++){
+      if(cell*count>w+1)continue;
+      const left=Math.max(0,(w-cell*count)/2);let inside=0,cuts=0,ok=true;
+      for(let i=0;i<count;i++){
+        const start=Math.round(left+i*cell),end=Math.min(w,Math.round(left+(i+1)*cell));let ink=0,moment=0,active=0;
+        for(let x=start;x<end;x++){ink+=columns[x];moment+=columns[x]*(x+.5);if(columns[x])active++;}
+        inside+=ink;
+        if(ink<Math.max(30,cell*h*.008)||active<cell*.10||Math.abs(moment/ink-(start+end)/2)>cell*.20)ok=false;
+        if(i){const pad=Math.max(1,Math.round(cell*.012));for(let x=Math.max(0,start-pad);x<Math.min(w,start+pad);x++)cuts+=columns[x];}
+      }
+      if(ok&&inside/total>=.96&&cuts/total<=.008)candidates.push({count,left:left/w,right:Math.min(1,(left+cell*count)/w)});
+    }
+    return candidates.length===1?candidates[0]:null;
+  }
   function normalize(text){return String(text||'').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\p{Script=Han}]/gu,'');}
   function aliases(item){
     const names=[item.name,item.english,...(item.ocrNames||[])].filter(Boolean),result=new Set();
@@ -68,10 +90,16 @@ const RewardOcrCore=(()=>{
     return results[0]||{status:'unknown',text:'',candidates:[]};
   }
   function compare(results,quote){
-    const compared=results.map(r=>{const q=r.item?.tradable?quote(r.item.slug):null;return {...r,q,display:!r.item?'—':!r.item.tradable?'不可交易':q?.value==null?'待查询':`${q.value}p`,note:!r.item?'未自动选定商品':!r.item.tradable?'不折算白金':q?.value==null?'无报价，不代表零价值':!q.valid?'旧值 / 刷新失败，不参与推荐':r.status!=='exact'?'近似匹配，先确认名称':'在线最低卖价 · 非成交价'};});
+    const compared=results.map(r=>{
+      const q=r.item?.tradable?quote(r.item.slug):null,basis=q?.basis==='mean30'?'30 天成交均价':'在线最低卖价';
+      const note=!r.item?'未自动选定商品':!r.item.tradable?'不折算白金':q?.value==null?'无报价，不代表零价值':
+        !q.valid?`${basis} · 旧值 / 刷新失败，不参与推荐`:r.status!=='exact'?`${basis} · 近似匹配，先确认名称`:
+        q.basis==='mean30'?basis:`${basis} · 无有效均价，挂价仅供参考`;
+      return {...r,q,display:!r.item?'—':!r.item.tradable?'不可交易':q?.value==null?'待查询':`${Number(q.value.toFixed(1))}p`,note};
+    });
     const eligible=compared.filter(r=>r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value!=null),max=eligible.length?Math.max(...eligible.map(r=>r.q.value)):null;
     return compared.map(r=>({...r,best:max!=null&&r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value===max}));
   }
-  return {rewardLayout,textMask,titleLines,normalize,aliases,catalog,match,slot,compare};
+  return {rewardLayout,textMask,titleLines,detectCount,normalize,aliases,catalog,match,slot,compare};
 })();
 if(typeof module!=='undefined')module.exports=RewardOcrCore;

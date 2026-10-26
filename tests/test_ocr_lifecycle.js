@@ -2,18 +2,24 @@
 const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const core=require('../static/reward-ocr-core.js');
 function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};}
-function setup({items=[],relics={items:[]},recognitions=null}={}){
- const nodes=new Map(),events={},trackEvents={},timers=new Map();let stopped=0,terminated=0,closedFrames=0,nextTimer=1,captured=0,recognized=0;
+function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null}={}){
+ const nodes=new Map(),events={},trackEvents={},timers=new Map();let stopped=0,terminated=0,closedFrames=0,nextTimer=1,captured=0,recognized=0,activeCount=0;
  const pendingShare=deferred(),pendingRecognize=deferred();
- const context={drawImage(){},fillRect(){},strokeRect(){},fillText(){},clearRect(){},getImageData(x,y,w,h){return {width:w,height:h,data:new Uint8ClampedArray(Math.max(1,w*h*4))};},putImageData(){},imageSmoothingEnabled:true};
- function node(id){if(!nodes.has(id))nodes.set(id,{value:{'ocr-left':'0','ocr-right':'100','ocr-top':'20','ocr-bottom':'65','ocr-count':'4','ocr-language':'eng'}[id]||'',hidden:false,disabled:false,innerHTML:'',textContent:'',addEventListener(){},prepend(){},getContext:()=>context});return nodes.get(id);}
+ const context={drawImage(){},fillRect(){},strokeRect(){},fillText(){},clearRect(){},getImageData(x,y,w,h){
+  const data=new Uint8ClampedArray(Math.max(1,w*h*4));
+  if(autoCounts&&w>800){const cell=w/4;for(let i=0;i<activeCount;i++){
+   const center=(w-activeCount*cell)/2+(i+.5)*cell;
+   for(let yy=10;yy<30;yy++)for(let xx=Math.round(center-cell*.3);xx<center+cell*.3;xx++)if(xx%9<6){const at=(yy*w+xx)*4;data[at]=20;data[at+1]=180;data[at+2]=210;data[at+3]=255;}
+  }}return {width:w,height:h,data};
+ },putImageData(){},imageSmoothingEnabled:true};
+ function node(id){if(!nodes.has(id))nodes.set(id,{value:{'ocr-left':'0','ocr-right':'100','ocr-top':'20','ocr-bottom':'65','ocr-count':'4','ocr-language':'eng'}[id]||'',hidden:false,disabled:false,innerHTML:'',textContent:'',style:{setProperty(){}},addEventListener(){},prepend(){},getContext:()=>context});return nodes.get(id);}
  const track={stop(){stopped++;},addEventListener:(name,fn)=>{trackEvents[name]=fn;}};
  const stream={getTracks:()=>[track],getVideoTracks:()=>[track]};
  const worker={setParameters:async()=>{},recognize:()=>{const index=recognized++;return recognitions?Promise.resolve(recognitions[index%recognitions.length]):pendingRecognize.promise;},terminate:async()=>{terminated++;}};
  const sandbox={URL,console,AbortController,RewardOcrCore:core,RewardOcrAssets:{prepare:async()=>({langs:[],scriptURL:"",workerURL:"",coreURL:""})},document:{currentScript:{src:'http://localhost/reward-ocr.js'},getElementById:node,createElement:type=>type==='video'?{muted:false,playsInline:false,readyState:2,play:async()=>{},pause(){}}:node('created-'+type),addEventListener(){},head:{append(){}}},
- navigator:{mediaDevices:{getDisplayMedia:()=>pendingShare.promise}},createImageBitmap:async()=>{captured++;return {width:1920,height:1080,close(){closedFrames++;}};},
+ navigator:{mediaDevices:{getDisplayMedia:()=>pendingShare.promise}},createImageBitmap:async()=>{activeCount=autoCounts?.[captured%autoCounts.length]||0;captured++;return {width:1920,height:1080,close(){closedFrames++;}};},
  setTimeout:fn=>{const id=nextTimer++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),
- Tesseract:{createWorker:async()=>worker},DeskCore:{target:()=>({value:null,valid:false})},mrow:()=>({}),esc:x=>String(x),timeLabel:()=>'',tab:'relics'};
+ Tesseract:{createWorker:async()=>worker},DeskCore:{rewardQuote:()=>({value:null,valid:false})},mrow:()=>({}),esc:x=>String(x),timeLabel:()=>'',tab:'relics'};
  sandbox.window=sandbox;sandbox.addEventListener=(name,fn)=>{events[name]=fn;};
  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../static/reward-ocr.js'),'utf8'),sandbox);
  sandbox.RewardOcr.mount(items,relics);
@@ -47,6 +53,16 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  await s.node('ocr-run').onclick();assert.equal(s.recognized(),8);assert.equal(s.captured(),2);
  assert.equal(s.closedFrames(),1);assert.equal(s.timers.size,0);
  s.sandbox.RewardOcr.leave();assert.equal(s.stopped(),1);assert.equal(s.closedFrames(),2);
+ // Auto count is recomputed for each captured frame; duplicate items stay in separate game slots.
+ s=setup({autoCounts:[2,3],relics:{items:[{grades:{intact:[{name:'Forma Blueprint',tradable:false}]}}]},recognitions:[{data:{text:'Forma Blueprint'}}]});s.node('ocr-count').value='auto';
+ start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
+ await s.node('ocr-run').onclick();assert.equal(s.recognized(),2);assert.match(s.node('ocr-status').textContent,/自动检测到 2 个/);
+ assert.equal((s.node('ocr-results').innerHTML.match(/<article/g)||[]).length,2);
+ await s.node('ocr-run').onclick();assert.equal(s.recognized(),5);assert.match(s.node('ocr-status').textContent,/自动检测到 3 个/);
+ s.sandbox.RewardOcr.leave();
+ s=setup({autoCounts:[0]});s.node('ocr-count').value='auto';start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
+ await s.node('ocr-run').onclick();assert.equal(s.recognized(),0);assert.match(s.node('ocr-status').textContent,/未能可靠判断奖励数/);
+ assert.equal(s.node('ocr-preview-details').open,true);assert.equal(s.node('ocr-run').disabled,false);s.sandbox.RewardOcr.leave();
  // Cancelling model preparation aborts its network request and does not create an engine.
  s=setup();let downloadSignal,engines=0;
  s.sandbox.RewardOcrAssets.prepare=(_base,_language,options)=>new Promise((resolve,reject)=>{downloadSignal=options.signal;options.signal.addEventListener('abort',()=>reject(new Error('cancelled')));});

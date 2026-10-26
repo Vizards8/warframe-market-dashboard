@@ -14,7 +14,7 @@ const sandbox={console,$:node,settings:{},tab:'relic-prices',state:{},
   document:{addEventListener(){},body:{classList:{contains:()=>false}}},
   request:async url=>url==='/api/relics'?{items:relics}:[{slug:'cheap',name:'cheap'},{slug:'dear',name:'dear'}],
   mrow:slug=>({mean:{cheap:10,dear:50}[slug],stats_at:slug==='unknown'?null:'fresh'}),ask:()=>1,
-  MarketStats:{window:m=>({price:m.mean??null})},DeskCore:{fresh:at=>at==='fresh'},
+  MarketStats:{window:m=>({price:m.mean??null})},DeskCore:{rewardQuote:m=>({value:m.mean??null,valid:m.stats_at==='fresh'&&m.mean!=null,basis:'mean30'})},
   esc:String,number:x=>String(x),notify:message=>{throw Error(message);}};
 sandbox.window=sandbox;
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../static/extras.js'),'utf8'),sandbox);

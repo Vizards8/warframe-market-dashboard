@@ -6,6 +6,13 @@ const DeskCore={
   const value=basis==='mean30'?MarketStats.window(m,30).price:basis==='buy'?m?.orders?.buy?.[0]?.price:m?.orders?.sell?.[0]?.price;
   return {value:value??null,valid:this.fresh(m?.[source+'_at'],m?.[source+'_error'],now)&&value!=null,label:{sell:'在线最低卖价',buy:'在线最高买价',mean30:'30 天成交均价'}[basis]||'在线最低卖价'};
  },
+ // Shared by relic drops and screenshot rewards. Never label an order as a mean.
+ rewardQuote(m,now=Date.now()){
+  const mean=this.target(m,'mean30',now),ask=this.target(m,'sell',now);
+  const q=mean.valid?{...mean,basis:'mean30',at:m.stats_at}:ask.valid?{...ask,basis:'ask',at:m.orders_at}:
+   mean.value!=null?{...mean,basis:'mean30',at:m?.stats_at}:{...ask,basis:'ask',at:m?.orders_at};
+  return q;
+ },
  manualCurrent(at,now=Date.now()){const n=Date.parse(at);return Number.isFinite(n)&&now>=n&&now-n<48*3600000;},
  depth(rows,quantity){let left=quantity,value=0,covered=0;for(const r of rows||[]){const n=Math.min(left,r.quantity);value+=n*r.price;covered+=n;left-=n;if(left<=0)break;}return {value,covered,left};},
  available(s){return Math.max(0,(s?.quantity||0)-(s?.reserve||0));},
