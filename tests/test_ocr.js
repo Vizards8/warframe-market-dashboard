@@ -105,19 +105,3 @@ assert.equal(core.chooseAttempt({status:'probable',score:.9,item:item('correct')
 assert.equal(core.chooseAttempt({status:'probable',score:.9,item:item('other')},retry).status,'ambiguous');
 assert.equal(core.chooseAttempt(retry,{...retry,item:item('other')}).status,'ambiguous');
 console.log('OCR shared frames: touching wrapped lines, bounded retry, preserved good matches and conflicting-name confirmation passed');
-
-// Stable frames trigger once; layout changes and OCR failures never cause a loop.
-const signature=core.frameSignature(titleMask(4)),sample={count:4,signature};
-assert.equal(core.frameDistance(signature,signature),0);
-const gate=core.rewardGate();
-assert.equal(gate.observe(sample,100),false);assert.equal(gate.observe(sample,1100),false);assert.equal(gate.observe(sample,2100),true);
-for(const time of [3100,5100,10000])assert.equal(gate.observe(sample,time),false);
-assert.equal(gate.observe(null,11000),false);assert.equal(gate.observe(sample,13000),false); // Brief disappearance is not a new reward.
-for(const time of [14000,17000,19000])gate.observe(null,time);
-assert.equal(gate.observe(sample,20000),false);assert.equal(gate.observe(sample,22000),true);
-gate.reset();gate.observe(sample,100);gate.observe({...sample,count:3},1100);assert.equal(gate.observe(sample,2100),false);
-gate.reset();gate.latch();assert.equal(gate.observe(sample,10000),false);
-// Gradual fading must settle against the initial frame, not just the preceding frame.
-gate.reset();const fade=n=>({count:4,signature:new Uint8Array(48*16).fill(n)});
-for(let n=0;n<30;n+=5)assert.equal(gate.observe(fade(n),100+n*200),false);
-console.log('OCR automatic gate: stable trigger, no repeated batch, absence rearm, manual latch and fading passed');

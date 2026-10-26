@@ -48,27 +48,6 @@ const RewardOcrCore=(()=>{
     }
     return groups.sort((a,b)=>a.top-b.top).map(g=>g.lines.sort((a,b)=>a.bbox.x0-b.bbox.x0).map(l=>l.text.trim()).join(' '));
   }
-  function frameSignature(pixels,columns=48,rows=16){
-    const {width:w,height:h,data:d}=pixels,values=new Uint8Array(columns*rows);
-    for(let gy=0;gy<rows;gy++)for(let gx=0;gx<columns;gx++){
-      const x0=Math.floor(gx*w/columns),x1=Math.min(w,Math.max(x0+1,Math.floor((gx+1)*w/columns))),y0=Math.floor(gy*h/rows),y1=Math.min(h,Math.max(y0+1,Math.floor((gy+1)*h/rows)));let ink=0;
-      for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++)if(d[(y*w+x)*4]<128)ink++;
-      values[gy*columns+gx]=Math.round(ink/((x1-x0)*(y1-y0))*255);
-    }
-    return values;
-  }
-  function frameDistance(a,b){return !a||!b||a.length!==b.length?1:a.reduce((sum,v,i)=>sum+Math.abs(v-b[i]),0)/(a.length*255);}
-  function rewardGate(){
-    let fired=false,previous=null,stable=0,absent=0;
-    return {reset(){fired=false;previous=null;stable=0;absent=0;},observe(sample,now){
-      if(!sample){previous=null;stable=0;if(!absent)absent=now;if(now-absent>=5000)fired=false;return false;}
-      absent=0;
-      if(fired)return false;
-      const same=previous&&previous.count===sample.count&&frameDistance(previous.signature,sample.signature)<.025;
-      if(!same){stable=now;previous=sample;}
-      if(same&&now-stable>=1800){fired=true;return true;}return false;
-    },latch(){fired=true;previous=null;stable=0;},get waiting(){return !fired;}};
-  }
   function detectCount(pixels,cellWidth=pixels.width/4){
     // Compare centered 1–4 card layouts against title ink, independently of OCR spelling.
     // Reject a layout if it leaves text outside, cuts through a title, or has an empty card.
@@ -151,6 +130,6 @@ const RewardOcrCore=(()=>{
     const eligible=compared.filter(r=>r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value!=null),max=eligible.length?Math.max(...eligible.map(r=>r.q.value)):null;
     return compared.map(r=>({...r,best:max!=null&&r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value===max}));
   }
-  return {rewardLayout,textMask,titleBlock,readingLines,frameSignature,frameDistance,rewardGate,detectCount,normalize,aliases,catalog,match,slot,chooseAttempt,compare};
+  return {rewardLayout,textMask,titleBlock,readingLines,detectCount,normalize,aliases,catalog,match,slot,chooseAttempt,compare};
 })();
 if(typeof module!=='undefined')module.exports=RewardOcrCore;
