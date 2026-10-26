@@ -1,51 +1,262 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>虚空账本 · Warframe 行情</title><!-- dashboard:styles --></head>
-<body class="home-mode">
-<aside class="sidebar">
-  <a class="brand" href="/" aria-label="虚空账本首页"><span class="brand-mark">◈</span><span>虚空账本<small>Warframe 行情</small></span></a>
-  <div class="nav-label">我的市场</div>
-  <nav aria-label="主导航"><button class="nav-item active" data-tab="home"><span>⌂</span> 首页</button><button class="nav-item" data-tab="inventory"><span>▦</span> 我的库存 <b id="inventory-count">—</b></button><button class="nav-item" data-tab="mods"><span>▤</span> 奸商货单</button><button class="nav-item" data-tab="ducats"><span>◇</span> 杜卡德兑换</button><button class="nav-item" data-tab="relics"><span>◉</span> 开核桃助手</button><button class="nav-item" data-tab="relic-prices"><span>▥</span> 核桃价格</button><button class="nav-item" data-tab="watch"><span>☆</span> 我的关注</button><button class="nav-item" data-tab="frames"><span>◇</span> Prime 战甲</button><button class="nav-item" data-tab="rivens"><span>◈</span> 0 洗紫卡</button><button class="nav-item" data-tab="sets"><span>▧</span> 散件凑套</button><button class="nav-item" data-tab="ledger"><span>↔</span> 交易记录</button><button class="nav-item" data-tab="routes"><span>◷</span> 赚钱效率</button></nav>
-  <div class="sidebar-note"><span class="status-dot"></span> 国际服 · PC 市场<br><small>MOD 按 R0</small></div>
-</aside>
-<main>
-  <header><div class="breadcrumb">虚空账本 <span>/</span> <span id="crumb">我的库存</span></div><div class="header-right"><button id="add-inventory" class="plain-button" disabled>＋ 添加库存</button><button id="undo-change" class="plain-button" hidden>撤销上次操作</button><button id="portable-export" class="plain-button">备份库存</button><button id="portable-share" class="plain-button">导入库存</button><span id="save-status">网页自动记住</span><span class="market-pill"><i></i> PC · 跨平台交易</span></div></header>
-  <section id="welcome" class="welcome" aria-label="虚空账本首页">
-    <div class="home-heading"><div><h1>虚空账本</h1><p>Warframe 国际服 · PC / 跨平台行情</p></div><button id="welcome-refresh" class="plain-button">检查行情更新</button></div>
-    <p id="welcome-snapshot" class="home-snapshot" aria-live="polite">正在读取行情…</p>
-    <div class="home-tools">
-      <button data-go="mods"><h2>奸商货单 <span>→</span></h2><p>按囤货效率、近 7 天成交量比较武器和 MOD。</p><small id="welcome-baro">查看本次货单</small></button>
-      <button data-go="ducats"><h2>杜卡德兑换 <span>→</span></h2><p>找低价部件，计算收货和兑换成本。</p><small>按每百杜卡德成本排序</small></button>
-      <button data-go="relics"><h2>开核桃助手 <span>→</span></h2><p>对照四个遗物的掉落，或截图识别奖励。</p><small>手动识别 · 奖励查价</small></button>
-      <button data-go="inventory"><h2>我的库存 <span>→</span></h2><p>查持有数量、价格走势和目标售价。</p><small id="welcome-holdings">查看库存</small></button>
-    </div>
-    <div class="home-links"><button id="welcome-add" class="plain-button">添加库存</button><button data-go="ledger" class="plain-button">查看交易账本</button><a href="https://warframe.market/" target="_blank" rel="noopener">打开 WFM ↗</a></div>
-    <div class="home-preferences"><label><input id="welcome-skip" type="checkbox"> 下次直接进入库存</label><p>库存保存在当前浏览器，换设备前请备份。行情为定时快照，挂售前请到 WFM 核价。</p></div>
-  </section>
-  <section class="page-heading"><div><h1 id="page-title">我的库存</h1><p id="page-subtitle">查看数量、行情与目标售价。</p></div><button id="refresh" class="primary">↻ <span>刷新库存行情</span></button></section>
-  <section id="inventory-summary" class="summary" aria-label="库存摘要">
-    <article class="metric"><div class="metric-label">持有库存</div><div class="metric-value" id="metric-items">—</div><p id="metric-items-note">正在加载库存</p></article>
-    <article class="metric"><div class="metric-label">成交均价估值</div><div class="metric-value" id="metric-value">—</div><p id="metric-value-note">按最近 7 天成交均价计算</p></article>
-    <article class="metric"><div class="metric-label">达到目标</div><div class="metric-value" id="metric-target">—</div><p id="metric-target-note">设置你愿意卖出的价格</p></article>
-  </section>
-  <div id="job-panel" class="job-panel" hidden aria-live="polite"><div><span id="job-spinner" class="spinner"></span><strong id="job-percent">0%</strong><span id="job-text"></span><span id="job-count"></span></div><div id="job-bar" class="progress-track" role="progressbar" aria-label="行情刷新进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="job-progress"></div></div><div id="job-other" class="job-other"></div></div>
-  <div id="notice" class="notice" role="status" hidden></div>
-  <div id="stats-controls" class="stats-controls"><label>成交统计窗口 <select id="stats-window" aria-label="成交统计窗口"><option value="7">7 天</option><option value="30" selected>30 天</option><option value="90">90 天</option></select></label></div>
-  <section id="desk-overview" hidden></section>
-  <section id="desk-custom" class="feature-section" hidden></section>
-  <section id="market-section" class="market-section">
-    <div class="section-heading"><div><h2 id="table-title">持仓明细 <span id="table-count"></span></h2><p id="table-description">点击商品查看走势。</p></div><span class="r0-pill">MOD 按 R0</span></div>
-    <div id="mod-panel" class="mod-panel" hidden></div><div class="toolbar"><label class="search"><span>⌕</span><input id="search" type="search" placeholder="搜索名称、简称、英文名…" aria-label="搜索商品"></label><div class="toolbar-filters"><select id="type-filter" aria-label="品类筛选"><option value="all">所有品类</option><option value="weapon">武器</option><option value="mod">MOD</option><option value="frame">P 甲</option><option value="component">散件</option><option value="watch">仅有库存 / 关注</option></select><select id="sort" aria-label="排序"><option value="default">默认排序</option><option value="price">成交价 ↓</option><option value="value">持仓估值 ↓</option><option value="volume">成交量 ↓</option><option value="change">窗口环比 ↓</option><option value="ducat">每百杜卡德回款 ↓</option><option value="target">目标进度 ↓</option></select></div></div>
-    <div class="table-scroll"><table><thead><tr><th>商品 / 品类</th><th>持有数量</th><th id="mean-heading">30 天成交均价</th><th>在线卖 / 买</th><th id="volume-heading">30 天记录量</th><th>目标售价</th><th>持仓估值</th><th></th></tr></thead><tbody id="rows"><tr><td colspan="8" class="empty">正在读取行情与库存…</td></tr></tbody></table></div>
-    <div class="table-footer"><span id="freshness">行情有独立时间戳，刷新后更新。</span><span>点击商品查看走势与挂单深度 ↗</span></div>
-  </section>
-  <section id="riven-section" class="feature-section" hidden></section>
-  <section id="relic-section" class="feature-section" hidden></section>
-  <section id="relic-prices-section" class="feature-section" hidden></section>
-  <details id="reading-notes" class="reading-notes"><summary>价格、成交量与返场日期说明</summary><p id="stats-note">近 30 天成交量加权均价；记录量不等于全服交易量。</p><p>在线卖价和买价均为挂单，不能保证成交。MOD 按 R0；返场日期为人工核对，详情中可修改。</p></details>
-  <footer><span>虚空账本 <span class="footer-dot">·</span> 库存由当前浏览器记住 · 行情来自 Warframe Market</span><div><a href="https://warframe.market/" target="_blank" rel="noopener">WFM ↗</a><a href="https://wiki.warframe.com/w/Baro_Ki%27Teer/Trades" target="_blank" rel="noopener">奸商历史货单 ↗</a><button id="help">使用说明</button></div></footer>
-</main>
-<div id="drawer-overlay" class="drawer-overlay" hidden></div><aside id="drawer" class="drawer" hidden aria-label="商品详情"><button id="close-drawer" class="close-button" aria-label="关闭商品详情">×</button><div id="drawer-content"></div></aside>
-<dialog id="help-dialog"><div class="dialog-heading"><h2>随时打开，按需刷新。</h2><button id="close-help" class="close-button" aria-label="关闭说明">×</button></div><p>以后双击文件夹里的「打开行情.command」，即可启动并打开网页。启动后的终端窗口可以关闭。</p><p>库存行内可直接输入或用加减按钮调整；目标价、成本、笔记修改后自动记住，不需要保存或导入导出。关闭网页后仍保留；换浏览器、设备或清除网站数据后不会同步。</p><p>打开页面时会自动刷新超过 6 小时未更新的库存；P 甲、MOD 和 0 洗紫卡按需点击刷新。进度条显示已完成的查询数和百分比。网络失败时保留旧值，并标记失败；旧值不等于当前行情。</p><p>MOD 全部按 R0；P 甲为蓝图套装；武器按可交易状态。成交估值不是利润，也不保证一次售完。目标价默认留空，不替你决定卖点。</p><p>返场日期来自人工核对，不会随刷新自动更新；商品详情可以手动修改。页面只查询行情，不替你发布挂单或交易。开核桃助手可预先选择四个遗物，查看所有掉落的实时挂价；“全屏对照”方便奖励选择时查阅。紫卡为 0 循环的公开直售挂单，不是成交价。</p><p>点击“备份库存”下载 JSON，在在线版或另一台电脑点击“导入库存”即可迁移；文件只在浏览器读取，不会上传。导入会更新同名商品，其余当前记录保留。图片需联网。</p></dialog>
-<!-- dashboard:scripts -->
-</body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>虚空账本 · Warframe 行情</title>
+    <!-- dashboard:styles -->
+  </head>
+  <body class="home-mode">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="虚空账本首页"
+        ><span class="brand-mark">◈</span><span>虚空账本<small>Warframe 行情</small></span></a
+      >
+      <div class="nav-label">我的市场</div>
+      <nav aria-label="主导航">
+        <button class="nav-item active" data-tab="home"><span>⌂</span> 首页</button
+        ><button class="nav-item" data-tab="inventory">
+          <span>▦</span> 我的库存 <b id="inventory-count">—</b></button
+        ><button class="nav-item" data-tab="mods"><span>▤</span> 奸商货单</button
+        ><button class="nav-item" data-tab="ducats"><span>◇</span> 杜卡德兑换</button
+        ><button class="nav-item" data-tab="relics"><span>◉</span> 开核桃助手</button
+        ><button class="nav-item" data-tab="relic-prices"><span>▥</span> 核桃价格</button
+        ><button class="nav-item" data-tab="watch"><span>☆</span> 我的关注</button
+        ><button class="nav-item" data-tab="frames"><span>◇</span> Prime 战甲</button
+        ><button class="nav-item" data-tab="rivens"><span>◈</span> 0 洗紫卡</button
+        ><button class="nav-item" data-tab="sets"><span>▧</span> 散件凑套</button
+        ><button class="nav-item" data-tab="ledger"><span>↔</span> 交易记录</button
+        ><button class="nav-item" data-tab="routes"><span>◷</span> 赚钱效率</button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="status-dot"></span> 国际服 · PC 市场<br /><small>MOD 按 R0</small>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div class="breadcrumb">虚空账本 <span>/</span> <span id="crumb">我的库存</span></div>
+        <div class="header-right">
+          <button id="add-inventory" class="plain-button" disabled>＋ 添加库存</button
+          ><button id="undo-change" class="plain-button" hidden>撤销上次操作</button
+          ><button id="portable-export" class="plain-button">备份库存</button
+          ><button id="portable-share" class="plain-button">导入库存</button
+          ><span id="save-status">网页自动记住</span
+          ><span class="market-pill"><i></i> PC · 跨平台交易</span>
+        </div>
+      </header>
+      <section id="welcome" class="welcome" aria-label="虚空账本首页">
+        <div class="home-heading">
+          <div>
+            <h1>虚空账本</h1>
+            <p>Warframe 国际服 · PC / 跨平台行情</p>
+          </div>
+          <button id="welcome-refresh" class="plain-button">检查行情更新</button>
+        </div>
+        <p id="welcome-snapshot" class="home-snapshot" aria-live="polite">正在读取行情…</p>
+        <div class="home-tools">
+          <button data-go="mods">
+            <h2>奸商货单 <span>→</span></h2>
+            <p>按囤货效率、近 7 天成交量比较武器和 MOD。</p>
+            <small id="welcome-baro">查看本次货单</small>
+          </button>
+          <button data-go="ducats">
+            <h2>杜卡德兑换 <span>→</span></h2>
+            <p>找低价部件，计算收货和兑换成本。</p>
+            <small>按每百杜卡德成本排序</small>
+          </button>
+          <button data-go="relics">
+            <h2>开核桃助手 <span>→</span></h2>
+            <p>对照四个遗物的掉落，或截图识别奖励。</p>
+            <small>手动识别 · 奖励查价</small>
+          </button>
+          <button data-go="inventory">
+            <h2>我的库存 <span>→</span></h2>
+            <p>查持有数量、价格走势和目标售价。</p>
+            <small id="welcome-holdings">查看库存</small>
+          </button>
+        </div>
+        <div class="home-links">
+          <button id="welcome-add" class="plain-button">添加库存</button
+          ><button data-go="ledger" class="plain-button">查看交易账本</button
+          ><a href="https://warframe.market/" target="_blank" rel="noopener">打开 WFM ↗</a>
+        </div>
+        <div class="home-preferences">
+          <label><input id="welcome-skip" type="checkbox" /> 下次直接进入库存</label>
+          <p>库存保存在当前浏览器，换设备前请备份。行情为定时快照，挂售前请到 WFM 核价。</p>
+        </div>
+      </section>
+      <section class="page-heading">
+        <div>
+          <h1 id="page-title">我的库存</h1>
+          <p id="page-subtitle">查看数量、行情与目标售价。</p>
+        </div>
+        <button id="refresh" class="primary">↻ <span>刷新库存行情</span></button>
+      </section>
+      <section id="inventory-summary" class="summary" aria-label="库存摘要">
+        <article class="metric">
+          <div class="metric-label">持有库存</div>
+          <div class="metric-value" id="metric-items">—</div>
+          <p id="metric-items-note">正在加载库存</p>
+        </article>
+        <article class="metric">
+          <div class="metric-label">成交均价估值</div>
+          <div class="metric-value" id="metric-value">—</div>
+          <p id="metric-value-note">按最近 7 天成交均价计算</p>
+        </article>
+        <article class="metric">
+          <div class="metric-label">达到目标</div>
+          <div class="metric-value" id="metric-target">—</div>
+          <p id="metric-target-note">设置你愿意卖出的价格</p>
+        </article>
+      </section>
+      <div id="job-panel" class="job-panel" hidden aria-live="polite">
+        <div>
+          <span id="job-spinner" class="spinner"></span><strong id="job-percent">0%</strong
+          ><span id="job-text"></span><span id="job-count"></span>
+        </div>
+        <div
+          id="job-bar"
+          class="progress-track"
+          role="progressbar"
+          aria-label="行情刷新进度"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div id="job-progress"></div>
+        </div>
+        <div id="job-other" class="job-other"></div>
+      </div>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <div id="stats-controls" class="stats-controls">
+        <label
+          >成交统计窗口
+          <select id="stats-window" aria-label="成交统计窗口">
+            <option value="7">7 天</option>
+            <option value="30" selected>30 天</option>
+            <option value="90">90 天</option>
+          </select></label
+        >
+      </div>
+      <section id="desk-overview" hidden></section>
+      <section id="desk-custom" class="feature-section" hidden></section>
+      <section id="market-section" class="market-section">
+        <div class="section-heading">
+          <div>
+            <h2 id="table-title">持仓明细 <span id="table-count"></span></h2>
+            <p id="table-description">点击商品查看走势。</p>
+          </div>
+          <span class="r0-pill">MOD 按 R0</span>
+        </div>
+        <div id="mod-panel" class="mod-panel" hidden></div>
+        <div class="toolbar">
+          <label class="search"
+            ><span>⌕</span
+            ><input
+              id="search"
+              type="search"
+              placeholder="搜索名称、简称、英文名…"
+              aria-label="搜索商品"
+          /></label>
+          <div class="toolbar-filters">
+            <select id="type-filter" aria-label="品类筛选">
+              <option value="all">所有品类</option>
+              <option value="weapon">武器</option>
+              <option value="mod">MOD</option>
+              <option value="frame">P 甲</option>
+              <option value="component">散件</option>
+              <option value="watch">仅有库存 / 关注</option></select
+            ><select id="sort" aria-label="排序">
+              <option value="default">默认排序</option>
+              <option value="price">成交价 ↓</option>
+              <option value="value">持仓估值 ↓</option>
+              <option value="volume">成交量 ↓</option>
+              <option value="change">窗口环比 ↓</option>
+              <option value="ducat">每百杜卡德回款 ↓</option>
+              <option value="target">目标进度 ↓</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>商品 / 品类</th>
+                <th>持有数量</th>
+                <th id="mean-heading">30 天成交均价</th>
+                <th>在线卖 / 买</th>
+                <th id="volume-heading">30 天记录量</th>
+                <th>目标售价</th>
+                <th>持仓估值</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rows">
+              <tr>
+                <td colspan="8" class="empty">正在读取行情与库存…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="freshness">行情有独立时间戳，刷新后更新。</span
+          ><span>点击商品查看走势与挂单深度 ↗</span>
+        </div>
+      </section>
+      <section id="riven-section" class="feature-section" hidden></section>
+      <section id="relic-section" class="feature-section" hidden></section>
+      <section id="relic-prices-section" class="feature-section" hidden></section>
+      <details id="reading-notes" class="reading-notes">
+        <summary>价格、成交量与返场日期说明</summary>
+        <p id="stats-note">近 30 天成交量加权均价；记录量不等于全服交易量。</p>
+        <p>在线卖价和买价均为挂单，不能保证成交。MOD 按 R0；返场日期为人工核对，详情中可修改。</p>
+      </details>
+      <footer>
+        <span
+          >虚空账本 <span class="footer-dot">·</span> 库存由当前浏览器记住 · 行情来自 Warframe
+          Market</span
+        >
+        <div>
+          <a href="https://warframe.market/" target="_blank" rel="noopener">WFM ↗</a
+          ><a
+            href="https://wiki.warframe.com/w/Baro_Ki%27Teer/Trades"
+            target="_blank"
+            rel="noopener"
+            >奸商历史货单 ↗</a
+          ><button id="help">使用说明</button>
+        </div>
+      </footer>
+    </main>
+    <div id="drawer-overlay" class="drawer-overlay" hidden></div>
+    <aside id="drawer" class="drawer" hidden aria-label="商品详情">
+      <button id="close-drawer" class="close-button" aria-label="关闭商品详情">×</button>
+      <div id="drawer-content"></div>
+    </aside>
+    <dialog id="help-dialog">
+      <div class="dialog-heading">
+        <h2>随时打开，按需刷新。</h2>
+        <button id="close-help" class="close-button" aria-label="关闭说明">×</button>
+      </div>
+      <p>以后双击文件夹里的「打开行情.command」，即可启动并打开网页。启动后的终端窗口可以关闭。</p>
+      <p>
+        库存行内可直接输入或用加减按钮调整；目标价、成本、笔记修改后自动记住，不需要保存或导入导出。关闭网页后仍保留；换浏览器、设备或清除网站数据后不会同步。
+      </p>
+      <p>
+        打开页面时会自动刷新超过 6 小时未更新的库存；P 甲、MOD 和 0
+        洗紫卡按需点击刷新。进度条显示已完成的查询数和百分比。网络失败时保留旧值，并标记失败；旧值不等于当前行情。
+      </p>
+      <p>
+        MOD 全部按 R0；P
+        甲为蓝图套装；武器按可交易状态。成交估值不是利润，也不保证一次售完。目标价默认留空，不替你决定卖点。
+      </p>
+      <p>
+        返场日期来自人工核对，不会随刷新自动更新；商品详情可以手动修改。页面只查询行情，不替你发布挂单或交易。开核桃助手可预先选择四个遗物，查看所有掉落的实时挂价；“全屏对照”方便奖励选择时查阅。紫卡为
+        0 循环的公开直售挂单，不是成交价。
+      </p>
+      <p>
+        点击“备份库存”下载
+        JSON，在在线版或另一台电脑点击“导入库存”即可迁移；文件只在浏览器读取，不会上传。导入会更新同名商品，其余当前记录保留。图片需联网。
+      </p>
+    </dialog>
+    <!-- dashboard:scripts -->
+  </body>
+</html>
