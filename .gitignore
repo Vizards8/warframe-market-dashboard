@@ -4,6 +4,7 @@ __pycache__/
 .env
 .env.*
 .venv/
+.ruff_cache/
 _site/
 # Personal inventory stays on the machine, never in Git history.
 data/initial_holdings.json
@@ -15,6 +16,7 @@ data/wfcd/
 data/relics_raw.json
 data/riven_probe.json
 data/new_mod_slugs.json
+data/refresh_status.json
 # Personal snapshots, archives and screenshots from local use.
 /虚空账本-*.html
 /虚空账本-*.zip

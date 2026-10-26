@@ -17,7 +17,7 @@ const sandbox={console,$:node,settings:{},tab:'relic-prices',state:{},
   MarketStats:{window:m=>({price:m.mean??null})},DeskCore:{rewardQuote:m=>({value:m.mean??null,valid:m.stats_at==='fresh'&&m.mean!=null,basis:'mean30'})},
   esc:String,number:x=>String(x),notify:message=>{throw Error(message);}};
 sandbox.window=sandbox;
-vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../static/extras.js'),'utf8'),sandbox);
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../static/js/pages/extras.js'),'utf8'),sandbox);
 const ids=()=>[...node('relic-advice-list').innerHTML.matchAll(/data-advice-relic="([^"]+)"/g)].map(m=>m[1]);
 const change=(id,value)=>node(id).onchange({target:{value}});
 (async()=>{

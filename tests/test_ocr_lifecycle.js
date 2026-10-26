@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
-const core=require('../static/reward-ocr-core.js');
+const core=require('../static/js/ocr/reward-ocr-core.js');
 function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};}
 function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null}={}){
  const nodes=new Map(),events={},trackEvents={},timers=new Map();let stopped=0,terminated=0,closedFrames=0,nextTimer=1,captured=0,recognized=0,activeCount=0,captureRequest;
@@ -16,12 +16,12 @@ function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null}={}
  const track={getSettings:()=>({width:2560,height:1440,displaySurface:'monitor'}),stop(){stopped++;},addEventListener:(name,fn)=>{trackEvents[name]=fn;}};
  const stream={getTracks:()=>[track],getVideoTracks:()=>[track]};
  const worker={setParameters:async()=>{},recognize:()=>{const index=recognized++;return recognitions?Promise.resolve(recognitions[index%recognitions.length]):pendingRecognize.promise;},terminate:async()=>{terminated++;}};
- const sandbox={URL,console,AbortController,RewardOcrCore:core,RewardOcrAssets:{prepare:async()=>({langs:[],scriptURL:"",workerURL:"",coreURL:""})},document:{currentScript:{src:'http://localhost/reward-ocr.js'},getElementById:node,createElement:type=>type==='video'?{muted:false,playsInline:false,readyState:2,isVideo:true,videoWidth:1920,videoHeight:1080,play:async()=>{},pause(){}}:node('created-'+type),addEventListener:(name,fn)=>{events['document-'+name]=fn;},head:{append(){}}},
+ const sandbox={URL,console,AbortController,RewardOcrCore:core,RewardOcrAssets:{prepare:async()=>({langs:[],scriptURL:"",workerURL:"",coreURL:""})},document:{baseURI:'http://localhost/',currentScript:{src:'http://localhost/reward-ocr.js'},getElementById:node,createElement:type=>type==='video'?{muted:false,playsInline:false,readyState:2,isVideo:true,videoWidth:1920,videoHeight:1080,play:async()=>{},pause(){}}:node('created-'+type),addEventListener:(name,fn)=>{events['document-'+name]=fn;},head:{append(){}}},
  navigator:{mediaDevices:{getDisplayMedia:options=>{captureRequest=options;return pendingShare.promise;}}},createImageBitmap:async()=>{activeCount=autoCounts?.[captured%autoCounts.length]||0;captured++;return {width:1920,height:1080,close(){closedFrames++;}};},
  setTimeout:fn=>{const id=nextTimer++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),
  Tesseract:{createWorker:async()=>worker},DeskCore:{rewardQuote:()=>({value:null,valid:false})},mrow:()=>({}),esc:x=>String(x),timeLabel:()=>'',tab:'relics'};
  sandbox.window=sandbox;sandbox.addEventListener=(name,fn)=>{events[name]=fn;};
- vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../static/reward-ocr.js'),'utf8'),sandbox);
+ vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../static/js/ocr/reward-ocr.js'),'utf8'),sandbox);
  sandbox.RewardOcr.mount(items,relics);
  return {sandbox,node,stream,pendingShare,pendingRecognize,trackEvents,timers,stopped:()=>stopped,terminated:()=>terminated,closedFrames:()=>closedFrames,captured:()=>captured,recognized:()=>recognized,captureRequest:()=>captureRequest,track,events};
 }

@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),zlib=require('node:zlib');
 const path=require('node:path'),crypto=require('node:crypto').webcrypto;
-const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'static/reward-ocr-assets.js'),'utf8');
+const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'static/js/ocr/reward-ocr-assets.js'),'utf8');
 function setup({badMirror=false,allBad=false,cache=new Map()}={}){
  const requests=[],blobs=new Map();let id=0;
  const sandbox={module:{exports:{}},TextDecoder,Uint8Array,Map,URL:{createObjectURL:blob=>{const url='blob:test/'+(++id);blobs.set(url,blob);return url;}},Blob,Response,TransformStream,DecompressionStream,AbortController,crypto,setTimeout,clearTimeout,

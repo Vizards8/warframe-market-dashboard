@@ -38,10 +38,10 @@
 
 - 使用 Tesseract.js 5.1.1（Apache-2.0）与 tesseract.js-core / Tesseract 中英模型。组件和模型随网站部署；下载可选择 npmmirror 国内镜像或本站，均使用相同的固定版本与 SHA-256 校验。镜像只收到公共依赖下载请求，不收到截图或识别文字。下载完成后识别在浏览器 Worker 内运行。许可与来源见 `static/ocr/NOTICE.md`。没有截图上传 API、个人账号接口或本机连接器。
 - 图片、共享流及 OCR 结果仅保存在当前页面内存；不写入浏览器库存、备份或 GitHub。关闭 / 停止后清除共享画面与结果，关闭页面释放 OCR 引擎。截图文件只有用户主动选择时才读取。
-- `static/reward-ocr-core.js`：卡位计算、奖励数判断、蓝字提取、完整文字块、坐标阅读顺序、候选匹配、报价与推荐规则。
-- `static/reward-ocr-assets.js`：依赖下载、换源、校验、缓存及 Worker 资源映射；不接收截图。浏览器不支持缓存或隐私模式禁止写入时，仍可使用本次下载，关闭页面后可能需要重下。
-- `static/reward-ocr.js`：网页输入、共享流生命周期、OCR Worker、区域预览、取消与可选画中画。
-- `static/extras.js`：开核桃模块挂载、更新价格、离开时停止采集。
+- `static/js/ocr/reward-ocr-core.js`：卡位计算、奖励数判断、蓝字提取、完整文字块、坐标阅读顺序、候选匹配、报价与推荐规则。
+- `static/js/ocr/reward-ocr-assets.js`：依赖下载、换源、校验、缓存及 Worker 资源映射；不接收截图。浏览器不支持缓存或隐私模式禁止写入时，仍可使用本次下载，关闭页面后可能需要重下。
+- `static/js/ocr/reward-ocr.js`：网页输入、共享流生命周期、OCR Worker、区域预览、取消与可选画中画。
+- `static/js/pages/extras.js`：开核桃模块挂载、更新价格、离开时停止采集。
 
 ## 本次截图回放
 

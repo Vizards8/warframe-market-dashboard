@@ -62,17 +62,31 @@ python3 server.py --serve
 ## 本地构建与验证
 
 ```sh
-python3 -m unittest discover -s tests -v
-node tests/test_stats.js
-node tests/test_desk.js
-node tests/test_ocr.js
-node tests/test_ocr_lifecycle.js
-node tests/test_ocr_assets.js
+python3 scripts/check.py
 python3 scripts/build_pages.py
 python3 -m http.server 18866 --bind 127.0.0.1 --directory _site
 ```
 
-`_site` 是 Pages 发布产物。`scripts/refresh_market.py` 查询主要目录的挂单与成交统计、全部不同遗物奖励的挂单，以及紫卡候选和轮询批次，使用限速与重试；部分非遗物武器目前只支持库存录入 / WFM 跳转，不承诺全部 762 项都有定时行情。通常无需在本地手动执行。
+`scripts/check.py` 运行与 GitHub Actions 相同的 unittest 测试集。其中 `test_frontend.py` 检查前端语法，并分进程运行各组 JavaScript 测试，不访问外部行情接口。
+
+`_site` 是可删除重建的 Pages 产物。构建先在临时目录完成，成功后替换旧站点，旧脚本和遗留文件不会混入新发布；失败时保留上次构建。自定义输出可用 `--output /tmp/void-ledger-site`，已有的非站点目录会拒绝覆盖。`scripts/refresh_market.py` 负责限速查询公开行情，通常无需在本地手动执行。
+
+## 代码目录
+
+- `dashboard/`：本地服务、行情计算、公共数据和 HTML 快照；根目录 `server.py` 保留启动入口。
+- `static/js/`：主程序，以及 `core` 计算、`pages` 页面、`ocr` 识别、`adapters` 在线版和快照适配。
+- `static/css/`：页面样式；`static/ocr/`：固定版本的第三方 OCR 资源与许可证。
+- `scripts/`：检查、行情更新和 Pages 构建；`tests/`：计算、识别、路由与导出测试。
+- `data/`：公共目录与行情快照；个人库存、设置和日志仍被 Git 排除。
+
+三种运行方式共用 `dashboard/assets.py` 的资源清单和脚本顺序。详细依赖与维护步骤见 [代码结构](docs/code-layout.md)。
+
+整理代码格式（只供开发维护，网页用户无需安装）：
+
+```sh
+npx --yes prettier@3.6.2 --write 'static/js/**/*.js' static/css/style.css static/index.html 'tests/*.js'
+uvx --from ruff==0.14.2 ruff format dashboard server.py scripts tests
+```
 
 ## 统计口径与来源
 

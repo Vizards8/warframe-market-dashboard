@@ -6,16 +6,16 @@
 
 | 使用任务 | 主要文件 | 核验 |
 | --- | --- | --- |
-| 持仓、关注、全局添加与独立观察依据 | `static/app.js`、`static/desk.js`、`static/desk-core.js` | UI 添加、买卖、撤销；新鲜度和依据单测 |
-| 库存买卖与成本 | `static/desk.js`、`static/desk-core.js` | FIFO、多批成本、未知成本、数量校正不当收入、保留数量 |
-| 奸商货单与预算 | `public_data.py`、`static/desk.js` | 接口失败保留旧时间；手动核对失效；部分未知兑换成本不虚算完整合计 |
-| 战斗查核桃与常用组合 | `static/extras.js`、`static/style.css` | 四人同核桃、统一光辉、保存组合、退出恢复排序；1366×768 与 390×844 检查 |
-| 散件凑套 | `data/prime_sets.json`、`static/desk.js` | 51 套配方引用验证；导入四散件各 2 / 保留 1 后显示 1 套 |
-| 备份及回滚 | `static/inventory.js`、`static/desk-core.js` | UI 下载 / 导入 / 撤销；非法数量、账本数量不一致拒绝 |
-| 紫卡轮询 | `scripts/refresh_market.py`、`scripts/build_pages.py`、`static/extras.js` | 原有样本去重、0 洗与等级区分测试；候选从已覆盖报价重选 |
-| 长期日均价 | `public_data.py`、`scripts/build_pages.py` | 旧数据保留、新修正优先、旧 seed 不覆盖新历史、私有键剔除、当日未完结数据剔除 |
-| 个人路线效率 | `static/desk.js` | 手动记录实际游玩分钟、报价折算、已售收入及成本；独立页面与备份 |
-| 公开导出与本地兼容 | `scripts/build_pages.py`、`server.py`、`portable.py` | 输出白名单、不读取个人文件、JS/Python 语法与现有便携构建测试 |
+| 持仓、关注、全局添加与独立观察依据 | `static/js/app.js`、`static/js/pages/desk.js`、`static/js/core/desk-core.js` | UI 添加、买卖、撤销；新鲜度和依据单测 |
+| 库存买卖与成本 | `static/js/pages/desk.js`、`static/js/core/desk-core.js` | FIFO、多批成本、未知成本、数量校正不当收入、保留数量 |
+| 奸商货单与预算 | `dashboard/public_data.py`、`static/js/pages/desk.js` | 接口失败保留旧时间；手动核对失效；部分未知兑换成本不虚算完整合计 |
+| 战斗查核桃与常用组合 | `static/js/pages/extras.js`、`static/css/style.css` | 四人同核桃、统一光辉、保存组合、退出恢复排序；1366×768 与 390×844 检查 |
+| 散件凑套 | `data/prime_sets.json`、`static/js/pages/desk.js` | 51 套配方引用验证；导入四散件各 2 / 保留 1 后显示 1 套 |
+| 备份及回滚 | `static/js/pages/inventory.js`、`static/js/core/desk-core.js` | UI 下载 / 导入 / 撤销；非法数量、账本数量不一致拒绝 |
+| 紫卡轮询 | `scripts/refresh_market.py`、`scripts/build_pages.py`、`static/js/pages/extras.js` | 原有样本去重、0 洗与等级区分测试；候选从已覆盖报价重选 |
+| 长期日均价 | `dashboard/public_data.py`、`scripts/build_pages.py` | 旧数据保留、新修正优先、旧 seed 不覆盖新历史、私有键剔除、当日未完结数据剔除 |
+| 个人路线效率 | `static/js/pages/desk.js` | 手动记录实际游玩分钟、报价折算、已售收入及成本；独立页面与备份 |
+| 公开导出与本地兼容 | `scripts/build_pages.py`、`server.py`、`dashboard/portable.py` | 输出白名单、不读取个人文件、JS/Python 语法与现有便携构建测试 |
 
 `data/catalog.json` 的大量变动主要来自目录从 143 扩到 762 条和元数据，不是交易逻辑。新增的 Prime 部位为可交易蓝图；Prisma / Vandal / Wraith 变体仅作可交易目录，只有有来源标记的商品进入奸商补仓列表。未确认武器不推断为奸商商品。
 
@@ -42,11 +42,11 @@
 ```sh
 python3 -m unittest discover -s tests -v
 node tests/test_stats.js
-node --check static/app.js
-node --check static/desk-core.js
-node --check static/desk.js
-node --check static/extras.js
-node --check static/inventory.js
+node --check static/js/app.js
+node --check static/js/core/desk-core.js
+node --check static/js/pages/desk.js
+node --check static/js/pages/extras.js
+node --check static/js/pages/inventory.js
 python3 scripts/build_pages.py
 git diff --check
 ```

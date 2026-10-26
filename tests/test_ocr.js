@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),cp=require('node:child_process');
-const core=require('../static/reward-ocr-core.js');
-const publicData=JSON.parse(cp.execFileSync('python3',['-c','import features,json;print(json.dumps({"items":features.ITEMS,"relics":features.RELICS},ensure_ascii=False))'],{cwd:require('node:path').resolve(__dirname,'..'),maxBuffer:8*1024*1024}));
+const core=require('../static/js/ocr/reward-ocr-core.js');
+const publicData=JSON.parse(cp.execFileSync('python3',['-c','from dashboard import features;import json;print(json.dumps({"items":features.ITEMS,"relics":features.RELICS},ensure_ascii=False))'],{cwd:require('node:path').resolve(__dirname,'..'),maxBuffer:8*1024*1024}));
 const rows=core.catalog(publicData.items,publicData.relics);
 for(const fixture of JSON.parse(fs.readFileSync(__dirname+'/fixtures/ocr-cases.json','utf8'))){
   const m=core.match(fixture.text,rows);assert.equal(m.status,fixture.status,fixture.text+': '+JSON.stringify(m.candidates.map(c=>[c.item.slug,c.score])));assert.equal(m.item?.slug??null,fixture.slug,fixture.text);
@@ -64,8 +64,8 @@ for(const scale of [.8,1.25]){
 }
 
 // Two order books would rank these the other way: recommendation must use the shared mean.
-global.MarketStats=require('../static/stats.js');
-const desk=require('../static/desk-core.js'),now=Date.now(),at=new Date(now).toISOString();
+global.MarketStats=require('../static/js/core/stats.js');
+const desk=require('../static/js/core/desk-core.js'),now=Date.now(),at=new Date(now).toISOString();
 const market={a:{stats_at:at,stats:{end:'2026-10-20',history:[{date:'2026-10-20',price:12.3456,volume:3}]},orders_at:at,orders:{sell:[{price:99}]}},b:{stats_at:at,stats:{end:'2026-10-20',history:[{date:'2026-10-20',price:20,volume:1}]},orders_at:at,orders:{sell:[{price:1}]}}};
 const means=core.compare(['a','b'].map(slug=>({status:'exact',item:item(slug)})),slug=>desk.rewardQuote(market[slug],now));
 assert.deepEqual(means.map(r=>r.best),[false,true]);assert.equal(means[0].display,'12.3p');

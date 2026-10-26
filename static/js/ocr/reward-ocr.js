@@ -4,7 +4,7 @@
   let capture=null,video=null,generation=0,pip=null,resultAt=null,disposed=false,requesting=false;
   let loading=null,detectedLayout=null,pipExpanded=false;
   const byId=id=>document.getElementById(id),core=RewardOcrCore;
-  const assets=new URL('ocr/v5/',window.Portable?'https://vizards8.github.io/warframe-market-dashboard/':document.currentScript?.src||location.href).href;
+  const assets=new URL('ocr/v5/',window.Portable?'https://vizards8.github.io/warframe-market-dashboard/':document.baseURI||location.href).href;
   const status=text=>{if(built){byId('ocr-status').textContent=text;byId('ocr-status').hidden=!text;}};
   function baseLayout(width=imageSource?.width||video?.videoWidth||1920,height=imageSource?.height||video?.videoHeight||1080){
     const count=Number(byId('ocr-count').value)||4;

@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
-global.MarketStats=require('../static/stats.js');
-const core=require('../static/desk-core.js');
+global.MarketStats=require('../static/js/core/stats.js');
+const core=require('../static/js/core/desk-core.js');
 const now=Date.parse('2026-10-21T08:00:00Z');
 const m={orders_at:'2026-10-21T07:00:00Z',orders:{sell:[{price:50,quantity:1}],buy:[{price:40,quantity:1},{price:30,quantity:2}]},stats_at:'2026-10-21T07:00:00Z',stats:{end:'2026-10-20',history:[{date:'2026-10-20',price:100,volume:1}]}};
 assert.equal(core.target(m,'sell',now).value,50);assert.equal(core.target(m,'mean30',now).value,100);
