@@ -37,11 +37,24 @@ for(const count of [1,2,3,4]){
 }
 const colors={width:3,height:1,data:new Uint8ClampedArray([30,180,210,255,80,80,80,255,240,230,220,255])};
 core.textMask(colors);assert.deepEqual([...colors.data],[0,0,0,255,255,255,255,255,255,255,255,255]);
-const image={width:100,height:30,data:new Uint8ClampedArray(100*30*4).fill(255)};
-for(const [top,bottom] of [[2,7],[9,15]])for(let y=top;y<=bottom;y++)for(let x=10;x<30;x++)image.data[(y*100+x)*4]=0;
-image.data[(24*100+2)*4]=0; // An isolated dot is not a title line.
-assert.deepEqual(core.titleLines(image),[{x:10,y:2,width:20,height:6},{x:10,y:9,width:20,height:7}]);
-console.log('OCR preprocessing: centered layouts, blue-text isolation and wrapped title separation passed');
+// Whole blocks retain all rows, including touching rows; never concatenate pixels.
+for(const count of [1,2,3,4]){
+ const image={width:100,height:110,data:new Uint8ClampedArray(100*110*4).fill(255)};
+ for(let i=0;i<count;i++)for(let y=5+i*22;y<19+i*22;y++)for(let x=20;x<75;x++)image.data[(y*100+x)*4]=0;
+ image.data[(105*100+2)*4]=0;
+ const block=core.titleBlock(image);assert.equal(block.y,5);assert.equal(block.height,14+(count-1)*22);assert.equal(block.width,55);
+}
+assert.equal(core.titleBlock({width:10,height:10,data:new Uint8ClampedArray(400).fill(255)}),null);
+assert.equal(core.slot(['Ash','Prime','Systems','Blue','print'],rows).item.slug,zh.slug);
+const ordered=core.readingLines({lines:[
+ {text:'print',bbox:{x0:20,x1:50,y0:70,y1:80}},
+ {text:'Prime',bbox:{x0:60,x1:90,y0:11,y1:21}},
+ {text:'Blue',bbox:{x0:20,x1:50,y0:50,y1:60}},
+ {text:'Ash',bbox:{x0:10,x1:40,y0:10,y1:20}},
+ {text:'Systems',bbox:{x0:20,x1:90,y0:30,y1:40}}
+]});assert.deepEqual(ordered,['Ash Prime','Systems','Blue','print']);
+assert.equal(core.slot(ordered,rows).item.slug,zh.slug);
+console.log('OCR preprocessing: centered layouts, whole multiline blocks, coordinate order and unrestricted row joining passed');
 
 // Calibration follows the pixel transform around screen center, independently of monitor resolution.
 for(const scale of [.8,1.25]){
@@ -84,7 +97,7 @@ for(let y=15;y<=77;y++){
  const ink=y<46?200:y===46?32:y===47?17:31,left=y<46?20:157;
  for(let x=left;x<left+ink;x++)touching.data[(y*360+x)*4]=0;
 }
-assert.deepEqual(core.titleLines(touching).map(b=>[b.y,b.height]),[[15,33],[48,30]]);
+assert.deepEqual([core.titleBlock(touching).y,core.titleBlock(touching).height],[15,63]);
 const primary={status:'unknown',score:0},retry={status:'exact',score:1,item:item('correct')};
 assert.equal(core.chooseAttempt(primary,retry),retry);
 assert.equal(core.chooseAttempt(retry,primary),retry);
@@ -92,3 +105,19 @@ assert.equal(core.chooseAttempt({status:'probable',score:.9,item:item('correct')
 assert.equal(core.chooseAttempt({status:'probable',score:.9,item:item('other')},retry).status,'ambiguous');
 assert.equal(core.chooseAttempt(retry,{...retry,item:item('other')}).status,'ambiguous');
 console.log('OCR shared frames: touching wrapped lines, bounded retry, preserved good matches and conflicting-name confirmation passed');
+
+// Stable frames trigger once; layout changes and OCR failures never cause a loop.
+const signature=core.frameSignature(titleMask(4)),sample={count:4,signature};
+assert.equal(core.frameDistance(signature,signature),0);
+const gate=core.rewardGate();
+assert.equal(gate.observe(sample,100),false);assert.equal(gate.observe(sample,1100),false);assert.equal(gate.observe(sample,2100),true);
+for(const time of [3100,5100,10000])assert.equal(gate.observe(sample,time),false);
+assert.equal(gate.observe(null,11000),false);assert.equal(gate.observe(sample,13000),false); // Brief disappearance is not a new reward.
+for(const time of [14000,17000,19000])gate.observe(null,time);
+assert.equal(gate.observe(sample,20000),false);assert.equal(gate.observe(sample,22000),true);
+gate.reset();gate.observe(sample,100);gate.observe({...sample,count:3},1100);assert.equal(gate.observe(sample,2100),false);
+gate.reset();gate.latch();assert.equal(gate.observe(sample,10000),false);
+// Gradual fading must settle against the initial frame, not just the preceding frame.
+gate.reset();const fade=n=>({count:4,signature:new Uint8Array(48*16).fill(n)});
+for(let n=0;n<30;n+=5)assert.equal(gate.observe(fade(n),100+n*200),false);
+console.log('OCR automatic gate: stable trigger, no repeated batch, absence rearm, manual latch and fading passed');

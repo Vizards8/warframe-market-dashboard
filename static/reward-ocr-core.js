@@ -4,7 +4,7 @@ const RewardOcrCore=(()=>{
   function rewardLayout(width,height,count,scale=1,offset=0){
     // Reward cards are centered and sized against the 16:9 safe area, not the full monitor width.
     const safe=Math.min(width,height*16/9),span=safe*.126*count*scale;
-    return {left:Math.max(0,(width-span)/2/width),right:Math.min(1,(width+span)/2/width),top:Math.max(0,.5+(.375-.5)*scale+offset),bottom:Math.min(1,.5+(.44-.5)*scale+offset),count};
+    return {left:Math.max(0,(width-span)/2/width),right:Math.min(1,(width+span)/2/width),top:Math.max(0,.5+(.36-.5)*scale+offset),bottom:Math.min(1,.5+(.49-.5)*scale+offset),count};
   }
   function textMask(pixels){
     const d=pixels.data;
@@ -15,27 +15,59 @@ const RewardOcrCore=(()=>{
     }
     return pixels;
   }
-  function titleLines(pixels){
-    const {width:w,height:h,data:d}=pixels,bands=[],hits=new Uint32Array(h);
-    for(let y=0;y<h;y++){
-      let count=0;for(let x=0;x<w;x++)if(d[(y*w+x)*4]<128)count++;
-      hits[y]=count;if(count<Math.max(5,w*.035))continue;
-      const last=bands[bands.length-1];if(!last||y-last.bottom>1)bands.push({top:y,bottom:y});else last.bottom=y;
+  function titleBlock(pixels){
+    // Keep the original two-dimensional layout. Connected ink filters tiny specks;
+    // it does not guess line breaks, split tall bands, or join rows into a strip.
+    const {width:w,height:h,data:d}=pixels,seen=new Uint8Array(w*h),parts=[];
+    for(let i=0;i<w*h;i++){
+      if(seen[i]||d[i*4]>=128)continue;
+      const queue=[i];seen[i]=1;let left=w,right=0,top=h,bottom=0;
+      for(let k=0;k<queue.length;k++){
+        const at=queue[k],x=at%w,y=Math.floor(at/w);
+        left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);
+        for(let yy=Math.max(0,y-1);yy<=Math.min(h-1,y+1);yy++)for(let xx=Math.max(0,x-1);xx<=Math.min(w-1,x+1);xx++){
+          const next=yy*w+xx;if(!seen[next]&&d[next*4]<128){seen[next]=1;queue.push(next);}
+        }
+      }
+      if(queue.length>=Math.max(3,w*h*.00008)&&bottom-top>=2)parts.push({left,right,top,bottom,ink:queue.length});
     }
-    // A short wrapped line can touch the previous line after capture resampling.
-    // Split only a tall band with a deep ink valley followed by a narrower line.
-    const separated=bands.flatMap(b=>{
-      if(b.bottom-b.top<h*.48)return [b];
-      const min=Math.max(6,Math.round(h*.16));let cut=-1,lowest=Infinity;
-      for(let y=b.top+min;y<=b.bottom-min;y++)if(hits[y]<lowest){cut=y;lowest=hits[y];}
-      if(cut<0)return [b];
-      const before=Math.max(...hits.slice(b.top,cut)),after=Math.max(...hits.slice(cut+1,b.bottom+1));
-      return lowest<before*.18&&after>lowest*1.4&&after<before*.4?[{top:b.top,bottom:cut},{top:cut+1,bottom:b.bottom}]:[b];
-    });
-    return separated.filter(b=>b.bottom-b.top>=Math.max(5,h*.06)).slice(0,3).map(b=>{
-      let left=w,right=0;for(let y=b.top;y<=b.bottom;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4]<128){left=Math.min(left,x);right=Math.max(right,x);}
-      return {x:left,y:b.top,width:right-left+1,height:b.bottom-b.top+1};
-    }).filter(b=>b.width>0);
+    if(!parts.length)return null;
+    const left=Math.min(...parts.map(b=>b.left)),right=Math.max(...parts.map(b=>b.right)),top=Math.min(...parts.map(b=>b.top)),bottom=Math.max(...parts.map(b=>b.bottom));
+    const heights=parts.map(b=>b.bottom-b.top+1).sort((a,b)=>a-b);
+    return {x:left,y:top,width:right-left+1,height:bottom-top+1,glyphHeight:heights[Math.floor(heights.length*.7)]};
+  }
+  function readingLines(data){
+    const lines=(data.lines?.length?data.lines:String(data.text||'').split(/\n/).map(text=>({text}))).filter(l=>String(l.text||'').trim());
+    // PSM 11 can return blocks out of order. Rebuild rows from overlapping boxes,
+    // then read left to right; preserve duplicate lines and an arbitrary row count.
+    if(!lines.every(l=>l.bbox&&['x0','x1','y0','y1'].every(k=>Number.isFinite(l.bbox[k]))))return lines.map(l=>l.text.trim());
+    const groups=[];
+    for(const line of [...lines].sort((a,b)=>a.bbox.y0-b.bbox.y0||a.bbox.x0-b.bbox.x0)){
+      const b=line.bbox,g=groups.find(g=>Math.min(g.bottom,b.y1)-Math.max(g.top,b.y0)>Math.min(g.bottom-g.top,b.y1-b.y0)*.5);
+      if(g){g.lines.push(line);g.top=Math.min(g.top,b.y0);g.bottom=Math.max(g.bottom,b.y1);}else groups.push({top:b.y0,bottom:b.y1,lines:[line]});
+    }
+    return groups.sort((a,b)=>a.top-b.top).map(g=>g.lines.sort((a,b)=>a.bbox.x0-b.bbox.x0).map(l=>l.text.trim()).join(' '));
+  }
+  function frameSignature(pixels,columns=48,rows=16){
+    const {width:w,height:h,data:d}=pixels,values=new Uint8Array(columns*rows);
+    for(let gy=0;gy<rows;gy++)for(let gx=0;gx<columns;gx++){
+      const x0=Math.floor(gx*w/columns),x1=Math.min(w,Math.max(x0+1,Math.floor((gx+1)*w/columns))),y0=Math.floor(gy*h/rows),y1=Math.min(h,Math.max(y0+1,Math.floor((gy+1)*h/rows)));let ink=0;
+      for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++)if(d[(y*w+x)*4]<128)ink++;
+      values[gy*columns+gx]=Math.round(ink/((x1-x0)*(y1-y0))*255);
+    }
+    return values;
+  }
+  function frameDistance(a,b){return !a||!b||a.length!==b.length?1:a.reduce((sum,v,i)=>sum+Math.abs(v-b[i]),0)/(a.length*255);}
+  function rewardGate(){
+    let fired=false,previous=null,stable=0,absent=0;
+    return {reset(){fired=false;previous=null;stable=0;absent=0;},observe(sample,now){
+      if(!sample){previous=null;stable=0;if(!absent)absent=now;if(now-absent>=5000)fired=false;return false;}
+      absent=0;
+      if(fired)return false;
+      const same=previous&&previous.count===sample.count&&frameDistance(previous.signature,sample.signature)<.025;
+      if(!same){stable=now;previous=sample;}
+      if(same&&now-stable>=1800){fired=true;return true;}return false;
+    },latch(){fired=true;previous=null;stable=0;},get waiting(){return !fired;}};
   }
   function detectCount(pixels,cellWidth=pixels.width/4){
     // Compare centered 1–4 card layouts against title ink, independently of OCR spelling.
@@ -88,10 +120,12 @@ const RewardOcrCore=(()=>{
     return {status:exact?'exact':confident?'probable':best?'ambiguous':'unknown',item:exact||confident?best.item:null,score:best?.score||0,candidates:ranked.slice(0,4)};
   }
   function slot(lines,rows){
-    // Keep spatial order supplied by OCR. Try wrapped titles up to three lines.
+    // Combine all OCR rows in spatial order; no fixed one/two/three-line cases.
     const texts=lines.map(x=>typeof x==='string'?x:x.text).filter(Boolean).slice(0,45),results=[];
-    for(let i=0;i<texts.length;i++)for(let n=1;n<=3&&i+n<=texts.length;n++){
-      const text=texts.slice(i,i+n).join(' '),m=match(text,rows);results.push({...m,text});
+    const maxLength=Math.max(0,...rows.flatMap(r=>(r.ocrAliases||aliases(r)).map(a=>a.length)))*1.6;
+    for(let i=0;i<texts.length;i++)for(let n=1;i+n<=texts.length;n++){
+      const text=texts.slice(i,i+n).join(' ');if(normalize(text).length>maxLength)break;
+      const m=match(text,rows);results.push({...m,text});
     }
     results.sort((a,b)=>({exact:3,probable:2,ambiguous:1,unknown:0}[b.status]-{exact:3,probable:2,ambiguous:1,unknown:0}[a.status])||b.score-a.score);
     // More than one exact reward in one crop indicates a bad crop; never choose by price.
@@ -117,6 +151,6 @@ const RewardOcrCore=(()=>{
     const eligible=compared.filter(r=>r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value!=null),max=eligible.length?Math.max(...eligible.map(r=>r.q.value)):null;
     return compared.map(r=>({...r,best:max!=null&&r.item?.tradable&&r.status==='exact'&&r.q?.valid&&r.q.value===max}));
   }
-  return {rewardLayout,textMask,titleLines,detectCount,normalize,aliases,catalog,match,slot,chooseAttempt,compare};
+  return {rewardLayout,textMask,titleBlock,readingLines,frameSignature,frameDistance,rewardGate,detectCount,normalize,aliases,catalog,match,slot,chooseAttempt,compare};
 })();
 if(typeof module!=='undefined')module.exports=RewardOcrCore;

@@ -2,12 +2,12 @@
 const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const core=require('../static/reward-ocr-core.js');
 function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};}
-function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null}={}){
- const nodes=new Map(),events={},trackEvents={},timers=new Map();let stopped=0,terminated=0,closedFrames=0,nextTimer=1,captured=0,recognized=0,activeCount=0,captureRequest;
+function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null,watchCount=0}={}){
+ const nodes=new Map(),events={},trackEvents={},timers=new Map();let stopped=0,terminated=0,closedFrames=0,nextTimer=1,captured=0,recognized=0,activeCount=0,captureRequest,clock=100,watchReads=0,watchingFrame=false;
  const pendingShare=deferred(),pendingRecognize=deferred();
- const context={drawImage(){},fillRect(){},strokeRect(){},fillText(){},clearRect(){},getImageData(x,y,w,h){
+ const context={drawImage(source){watchingFrame=source?.isVideo||false;},fillRect(){},strokeRect(){},fillText(){},clearRect(){},getImageData(x,y,w,h){
   const data=new Uint8ClampedArray(Math.max(1,w*h*4));
-  if(autoCounts&&w>800){const cell=w/4;for(let i=0;i<activeCount;i++){
+  if((autoCounts&&w>800)||watchingFrame){const cell=w/4;const count=watchingFrame?watchCount:activeCount;if(watchingFrame)watchReads++;for(let i=0;i<count;i++){
    const center=(w-activeCount*cell)/2+(i+.5)*cell;
    for(let yy=10;yy<30;yy++)for(let xx=Math.round(center-cell*.3);xx<center+cell*.3;xx++)if(xx%9<6){const at=(yy*w+xx)*4;data[at]=20;data[at+1]=180;data[at+2]=210;data[at+3]=255;}
   }}return {width:w,height:h,data};
@@ -16,14 +16,14 @@ function setup({items=[],relics={items:[]},recognitions=null,autoCounts=null}={}
  const track={getSettings:()=>({width:2560,height:1440,displaySurface:'monitor'}),stop(){stopped++;},addEventListener:(name,fn)=>{trackEvents[name]=fn;}};
  const stream={getTracks:()=>[track],getVideoTracks:()=>[track]};
  const worker={setParameters:async()=>{},recognize:()=>{const index=recognized++;return recognitions?Promise.resolve(recognitions[index%recognitions.length]):pendingRecognize.promise;},terminate:async()=>{terminated++;}};
- const sandbox={URL,console,AbortController,RewardOcrCore:core,RewardOcrAssets:{prepare:async()=>({langs:[],scriptURL:"",workerURL:"",coreURL:""})},document:{currentScript:{src:'http://localhost/reward-ocr.js'},getElementById:node,createElement:type=>type==='video'?{muted:false,playsInline:false,readyState:2,play:async()=>{},pause(){}}:node('created-'+type),addEventListener(){},head:{append(){}}},
+ const sandbox={URL,console,AbortController,performance:{now:()=>clock},RewardOcrCore:core,RewardOcrAssets:{prepare:async()=>({langs:[],scriptURL:"",workerURL:"",coreURL:""})},document:{currentScript:{src:'http://localhost/reward-ocr.js'},getElementById:node,createElement:type=>type==='video'?{muted:false,playsInline:false,readyState:2,isVideo:true,videoWidth:1920,videoHeight:1080,play:async()=>{},pause(){}}:node('created-'+type),addEventListener:(name,fn)=>{events['document-'+name]=fn;},head:{append(){}}},
  navigator:{mediaDevices:{getDisplayMedia:options=>{captureRequest=options;return pendingShare.promise;}}},createImageBitmap:async()=>{activeCount=autoCounts?.[captured%autoCounts.length]||0;captured++;return {width:1920,height:1080,close(){closedFrames++;}};},
  setTimeout:fn=>{const id=nextTimer++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),
  Tesseract:{createWorker:async()=>worker},DeskCore:{rewardQuote:()=>({value:null,valid:false})},mrow:()=>({}),esc:x=>String(x),timeLabel:()=>'',tab:'relics'};
  sandbox.window=sandbox;sandbox.addEventListener=(name,fn)=>{events[name]=fn;};
  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../static/reward-ocr.js'),'utf8'),sandbox);
  sandbox.RewardOcr.mount(items,relics);
- return {sandbox,node,stream,pendingShare,pendingRecognize,trackEvents,timers,stopped:()=>stopped,terminated:()=>terminated,closedFrames:()=>closedFrames,captured:()=>captured,recognized:()=>recognized,captureRequest:()=>captureRequest,track};
+ return {sandbox,node,stream,pendingShare,pendingRecognize,trackEvents,timers,stopped:()=>stopped,terminated:()=>terminated,closedFrames:()=>closedFrames,captured:()=>captured,recognized:()=>recognized,captureRequest:()=>captureRequest,track,events,watchReads:()=>watchReads,setWatchCount:n=>{watchCount=n;},tick:async()=>{clock+=1000;const entry=timers.entries().next().value;if(entry){timers.delete(entry[0]);await entry[1]();}}};
 }
 const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
 (async()=>{
@@ -70,8 +70,32 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  s=setup({items:[{slug:'bronco_prime_barrel',name:'野马 Prime 枪管'}],relics:{items:[{grades:{intact:[{slug:'bronco_prime_barrel',name:'Bronco Prime Barrel',tradable:true}]}}]},recognitions:[{data:{text:'TRENE Prime &'}},{data:{text:'野马 Prime 枪管'}}]});
  s.node('ocr-count').value='1';start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
  await s.node('ocr-run').onclick();assert.equal(s.recognized(),2);assert.equal(s.captured(),1);assert.match(s.node('ocr-results').innerHTML,/<h3>野马 Prime 枪管<\/h3>/);
- assert.match(s.node('ocr-results').innerHTML,/标准处理：TRENE Prime/);assert.match(s.node('ocr-results').innerHTML,/紧凑拼行：野马/);
+ assert.match(s.node('ocr-results').innerHTML,/多行文本：TRENE Prime/);assert.match(s.node('ocr-results').innerHTML,/按坐标读取：野马/);
  s.sandbox.RewardOcr.leave();
+ // Opt-in monitoring does not OCR until a stable layout; it latches even when names are wrong.
+ s=setup({watchCount:4,recognitions:[{data:{text:'unmatched'}}]});start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
+ assert.equal(s.node('ocr-auto').disabled,false);assert.equal(s.timers.size,0);
+ s.node('ocr-auto').checked=true;s.node('ocr-auto').onchange();assert.equal(s.timers.size,1);
+ await s.tick();await s.tick();assert.equal(s.recognized(),0);assert.equal(s.captured(),0);
+ await s.tick();assert.equal(s.captured(),1);assert.equal(s.recognized(),8); // Four slots plus one bounded retry each.
+ for(let i=0;i<8;i++)await s.tick();assert.equal(s.captured(),1);assert.equal(s.recognized(),8);
+ s.setWatchCount(0);for(let i=0;i<6;i++)await s.tick();s.setWatchCount(4);
+ for(let i=0;i<3;i++)await s.tick();assert.equal(s.captured(),2);
+ s.node('ocr-auto').checked=false;s.node('ocr-auto').onchange();assert.equal(s.timers.size,0);
+ const reads=s.watchReads();await s.tick();assert.equal(s.watchReads(),reads);
+ s.node('ocr-auto').checked=true;s.node('ocr-auto').onchange();s.sandbox.RewardOcr.leave();assert.equal(s.timers.size,0);assert.equal(s.node('ocr-auto').checked,false);
+ // Disabling/re-enabling during OCR must not create a second monitoring loop.
+ s=setup({watchCount:4});start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
+ s.node('ocr-auto').checked=true;s.node('ocr-auto').onchange();await s.tick();await s.tick();
+ const inFlight=s.tick();await flush();assert.equal(s.captured(),1);
+ s.node('ocr-auto').checked=false;s.node('ocr-auto').onchange();s.node('ocr-auto').checked=true;s.node('ocr-auto').onchange();
+ assert.equal(s.timers.size,1);s.pendingRecognize.resolve({data:{text:'Forma Blueprint'}});await inFlight;assert.equal(s.timers.size,1);
+ s.sandbox.RewardOcr.leave();assert.equal(s.timers.size,0);assert.equal(s.stopped(),1);
+ // Ctrl+Enter only handles focused webpage events; repeat and editable fields are ignored.
+ s=setup({recognitions:[{data:{text:'Forma Blueprint'}}]});start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
+ const key={key:'Enter',ctrlKey:true,preventDefault(){},target:{closest:()=>null}};
+ s.events['document-keydown']({...key,repeat:true});s.events['document-keydown']({...key,target:{closest:()=>({})}});assert.equal(s.captured(),0);
+ s.events['document-keydown'](key);await flush();assert.equal(s.captured(),1);s.sandbox.RewardOcr.leave();
  // Cancelling model preparation aborts its network request and does not create an engine.
  s=setup();let downloadSignal,engines=0;
  s.sandbox.RewardOcrAssets.prepare=(_base,_language,options)=>new Promise((resolve,reject)=>{downloadSignal=options.signal;options.signal.addEventListener('abort',()=>reject(new Error('cancelled')));});
@@ -110,5 +134,5 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  assert.match(s.node('ocr-candidate-status').textContent,/仅作核对/);
  s.sandbox.RewardOcr.leave();s.node('ocr-text').value=catalog[1].name+'\n'+catalog[2].name;
  s.node('ocr-match-text').onclick();for(const x of catalog.slice(1,3))assert.ok(s.node('ocr-results').innerHTML.includes('<h3>'+x.name+'</h3>'));
- console.log('OCR lifecycle: late permission, cancellation during recognition, browser stop, manual-only single-frame batches and resource cleanup passed');
+ console.log('OCR lifecycle: late permission, cancellation during recognition, browser stop, manual default, multiline batches, opt-in one-shot monitoring, focused shortcuts and cleanup passed');
 })().catch(e=>{console.error(e);process.exitCode=1;});
