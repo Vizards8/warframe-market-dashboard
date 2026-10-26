@@ -125,7 +125,7 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  // Zero recognized rewards keep the source preview visible and report captured pixels, not monitor size.
  s=setup();start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;
  const empty=s.node('ocr-run').onclick();await flush();s.pendingRecognize.resolve({data:{text:'',lines:[]}});await empty;
- assert.equal(s.node('ocr-preview-details').open,true);assert.match(s.node('ocr-status').textContent,/1920 × 1080/);assert.match(s.node('ocr-status').textContent,/实际裁剪/);
+ assert.equal(s.node('ocr-preview-details').open,true);assert.match(s.node('ocr-status').textContent,/1920 × 1080/);assert.match(s.node('ocr-status').textContent,/识别详情/);
  assert.match(s.node('ocr-frame-info').textContent,/屏幕共享/);
  s.node('ocr-ui-scale').value='80';s.node('ocr-ui-scale').onchange();assert.equal(s.node('ocr-area-mode').value,'auto');
  s.node('ocr-ui-scale').value='0';await s.node('ocr-run').onclick();assert.match(s.node('ocr-status').textContent,/60–150/);
@@ -142,7 +142,7 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
  s.sandbox.RewardOcr.setCandidates([catalog[3]]);
  start=s.node('ocr-share').onclick();s.pendingShare.resolve(s.stream);await start;await s.node('ocr-run').onclick();
  for(const x of catalog)assert.ok(s.node('ocr-results').innerHTML.includes('<h3>'+x.name+'</h3>'),x.name);
- assert.match(s.node('ocr-results').innerHTML,/近似匹配，确认名称后再比较/);
+ assert.match(s.node('ocr-results').innerHTML,/近似匹配，先确认名称/);
  assert.match(s.node('ocr-results').innerHTML,/不在已填遗物/);
  assert.match(s.node('ocr-candidate-status').textContent,/仅作核对/);
  s.sandbox.RewardOcr.leave();s.node('ocr-text').value=catalog[1].name+'\n'+catalog[2].name;
