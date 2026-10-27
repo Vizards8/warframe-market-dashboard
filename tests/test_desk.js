@@ -368,8 +368,52 @@ assert.equal(
     3,
     now
   ).offer.seller,
-  'two'
-); // Prefer two 3-part sets in a full trade.
+  'one'
+); // A single 160D set now qualifies; do not pay more just to fill six slots.
+
+const bundleRows = [
+  {
+    slug: 'a',
+    name: 'A Prime 蓝图',
+    ducats: 45,
+    slots: 1,
+    market: {
+      orders_at: m.orders_at,
+      orders: {
+        sell_offers: [
+          { price: 3, quantity: 3, seller: 'combo', name: 'Combo' },
+          { price: 3.1, quantity: 6, seller: 'deep', name: 'Deep' }
+        ]
+      }
+    }
+  },
+  {
+    slug: 'b',
+    name: 'B Prime 枪管',
+    ducats: 15,
+    slots: 1,
+    market: {
+      orders_at: m.orders_at,
+      orders: {
+        sell_offers: [
+          { price: 1, quantity: 1, seller: 'combo', name: 'Combo' },
+          { price: 4, quantity: 1, seller: 'deep', name: 'Deep' }
+        ]
+      }
+    }
+  }
+];
+assert.deepEqual(
+  core.ducatTrashReference().tiers.map(x => x.per100),
+  [100 / 15, 100 / 15, 10]
+);
+const bundles = core.ducatBundles(bundleRows, 6, 150, now);
+assert.equal(bundles[0].seller, 'combo');
+assert.equal(bundles[0].ducats, 150);
+assert.equal(bundles[0].cost, 10);
+assert.equal(bundles[0].entries.length, 2);
+assert.equal(bundles[0].slots, 4);
+console.log('杜卡德组合：同一卖家多商品、低门槛、垃圾价基准和六槽限制验证通过');
 
 // OCR and relic drops share the same source, freshness and fallback rules.
 const meanQuote = core.rewardQuote(m, now);

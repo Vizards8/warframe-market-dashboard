@@ -210,8 +210,16 @@ const DeskCore = {
       )
     };
   },
-  ducatLot(item, m, slots = 1, now = Date.now()) {
-    if (!(item?.ducats > 0) || !Number.isInteger(slots) || slots < 1 || slots > 6) return null;
+  ducatLot(item, m, slots = 1, now = Date.now(), minYield = 150) {
+    if (
+      !(item?.ducats > 0) ||
+      !Number.isInteger(slots) ||
+      slots < 1 ||
+      slots > 6 ||
+      !Number.isFinite(minYield) ||
+      minYield < 0
+    )
+      return null;
     const capacity = Math.floor(6 / slots),
       offers = m?.orders?.sell_offers || [];
     if (!this.fresh(m?.orders_at, m?.orders_error, now)) return null;
@@ -228,7 +236,7 @@ const DeskCore = {
         )
           return false;
         seen.add(o.seller);
-        return slots > 1 || o.quantity >= 6;
+        return true;
       })
       .map(offer => {
         const units = Math.min(capacity, offer.quantity),
@@ -243,15 +251,152 @@ const DeskCore = {
           per100: (cost / ducats) * 100,
           stock: offer.quantity
         };
-      });
-    lots.sort(
-      (a, b) =>
-        Number(b.units === capacity) - Number(a.units === capacity) ||
-        a.per100 - b.per100 ||
-        b.ducats - a.ducats ||
-        b.stock - a.stock
-    );
+      })
+      .filter(lot => lot.ducats >= minYield);
+    lots.sort((a, b) => a.per100 - b.per100 || b.ducats - a.ducats || b.stock - a.stock);
     return lots[0] || null;
+  },
+  ducatTrashReference() {
+    const tiers = [
+      { name: '铜垃圾', ducats: 15, price: 1 },
+      { name: '银垃圾', ducats: 45, price: 3 },
+      { name: '金垃圾', ducats: 100, price: 10 }
+    ].map(x => ({ ...x, per100: (x.price / x.ducats) * 100 }));
+    return {
+      tiers,
+      lowest: Math.min(...tiers.map(x => x.per100)),
+      highest: Math.max(...tiers.map(x => x.per100))
+    };
+  },
+  ducatBundles(rows, slots = 6, minYield = 150, now = Date.now()) {
+    if (
+      !Array.isArray(rows) ||
+      !Number.isInteger(slots) ||
+      slots < 1 ||
+      slots > 6 ||
+      !Number.isFinite(minYield) ||
+      minYield < 0
+    )
+      return [];
+    const sellers = new Map();
+    for (const row of rows) {
+      if (
+        !(row?.ducats > 0) ||
+        !Number.isInteger(row.slots) ||
+        row.slots < 1 ||
+        row.slots > slots ||
+        !this.fresh(row.market?.orders_at, row.market?.orders_error, now)
+      )
+        continue;
+      for (const offer of row.market?.orders?.sell_offers || []) {
+        if (
+          !offer?.seller ||
+          !Number.isFinite(offer.price) ||
+          offer.price <= 0 ||
+          !Number.isInteger(offer.quantity) ||
+          offer.quantity < 1
+        )
+          continue;
+        const seller = sellers.get(offer.seller) || {
+          seller: offer.seller,
+          name: offer.name || offer.slug || offer.seller,
+          slug: offer.slug,
+          items: new Map()
+        };
+        const old = seller.items.get(row.slug);
+        if (!old || offer.price < old.offer.price) seller.items.set(row.slug, { row, offer });
+        sellers.set(offer.seller, seller);
+      }
+    }
+    const compare = (a, b) =>
+      a.cost * b.ducats - b.cost * a.ducats || b.ducats - a.ducats || b.slots - a.slots;
+    const trash = this.ducatTrashReference();
+    const keep = (list, candidate) => {
+      const dominates = (a, b) =>
+        a.cost <= b.cost && a.ducats >= b.ducats;
+      if (list.some(x => dominates(x, candidate))) return;
+      list.splice(0, list.length, ...list.filter(x => !dominates(candidate, x)), candidate);
+      // Six slots make a very large Pareto frontier unnecessary and expensive to render.
+      if (list.length > 256) {
+        list.sort(compare);
+        list.length = 256;
+      }
+    };
+    const output = [];
+    for (const seller of sellers.values()) {
+      const choices = [...seller.items.values()];
+      const parent = choices.map((_, i) => i);
+      const find = i => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+      const union = (a, b) => {
+        const ra = find(a), rb = find(b);
+        if (ra !== rb) parent[rb] = ra;
+      };
+      const conflicts = (a, b) => {
+        const ap = a.recipe?.parts || [], bp = b.recipe?.parts || [];
+        return (
+          ap.some(p => p.slug === b.slug) ||
+          bp.some(p => p.slug === a.slug) ||
+          ap.some(p => bp.some(q => p.slug === q.slug))
+        );
+      };
+      for (let i = 0; i < choices.length; i++)
+        for (let j = i + 1; j < choices.length; j++)
+          if (conflicts(choices[i].row, choices[j].row)) union(i, j);
+      const groups = new Map();
+      choices.forEach((choice, i) => {
+        const key = find(i);
+        groups.set(key, [...(groups.get(key) || []), choice]);
+      });
+      let states = Array.from({ length: slots + 1 }, () => []);
+      states[0] = [{ slots: 0, cost: 0, ducats: 0, entries: [] }];
+      for (const group of groups.values()) {
+        const next = states.map(list => [...list]);
+        for (let used = 0; used <= slots; used++) {
+          for (const state of states[used]) {
+            for (const { row, offer } of group) {
+              const max = Math.min(offer.quantity, Math.floor((slots - used) / row.slots));
+              for (let units = 1; units <= max; units++) {
+                const entry = {
+                  slug: row.slug,
+                  name: row.name,
+                  units,
+                  slots: units * row.slots,
+                  ducats: units * row.ducats,
+                  cost: units * offer.price,
+                  price: offer.price,
+                  isSet: !!row.isSet,
+                  at: row.market.orders_at
+                };
+                keep(next[used + entry.slots], {
+                  slots: used + entry.slots,
+                  cost: state.cost + entry.cost,
+                  ducats: state.ducats + entry.ducats,
+                  entries: [...state.entries, entry]
+                });
+              }
+            }
+          }
+        }
+        states = next;
+      }
+      const bundles = states
+        .flat()
+        .filter(x => x.ducats > 0 && x.ducats >= minYield)
+        .map(x => ({
+          ...x,
+          seller: seller.seller,
+          sellerName: seller.name,
+          sellerSlug: seller.slug,
+          per100: (x.cost / x.ducats) * 100,
+          trashGap: trash.lowest - (x.cost / x.ducats) * 100
+        }));
+      if (bundles.length) {
+        bundles.sort(compare);
+        output.push(bundles[0]);
+      }
+    }
+    output.sort(compare);
+    return output;
   },
   ducatSet(recipe, catalog) {
     const index = new Map(catalog.map(x => [x.slug, x]));

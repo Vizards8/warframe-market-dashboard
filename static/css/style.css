@@ -4644,6 +4644,54 @@ footer {
   align-items: center;
   gap: 8px;
 }
+.ducat-bundle-panel {
+  margin: 0 23px 18px;
+  padding: 18px 20px 14px;
+  border: 1px solid #d9e5dc;
+  border-radius: 10px;
+  background: #f7fbf7;
+}
+.ducat-bundle-panel h3,
+.ducat-single-heading {
+  margin: 0 0 8px;
+  color: #293a31;
+}
+.ducat-bundle-panel > p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.ducat-benchmark {
+  padding: 8px 10px;
+  border-left: 3px solid #87b596;
+  background: #edf6ee;
+}
+.ducat-bundle-table {
+  min-width: 820px;
+  margin-top: 12px;
+}
+.ducat-bundle-table td {
+  vertical-align: top;
+}
+.ducat-bundle-table td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+.ducat-bundle-table td:nth-child(2) div + div {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px dashed #d9e5dc;
+}
+.ducat-bundle-table td:nth-child(3) strong {
+  color: #2f6849;
+  font-size: 16px;
+}
+.ducat-single-heading {
+  margin: 20px 23px 10px;
+  font-size: 15px;
+}
 .ducat-method {
   margin: 20px 23px;
   font-size: 12px;
