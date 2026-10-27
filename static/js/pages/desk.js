@@ -169,7 +169,7 @@ window.Desk = (() => {
     const r = state.refresh_status,
       b = state.baro;
     $('data-health').innerHTML =
-      `<span>行情更新 ${timeLabel(state.server_time)}</span><details><summary>数据状态${fail ? ' · ' + fail + ' 项失败' : ''}</summary><p>${focus.length ? '持仓 / 关注' : '主要目录'}：${good}/${scope.length} 项报价在 6 小时内，${unknown} 项未查询，${fail} 项失败。</p><p>定时快照；刷新只获取已发布数据。每项查询时间见商品详情，过期或缺价不按零计算。货单：${b?.at ? age(b.at) : '未查询'}${b?.error ? '，获取失败' : ''}。</p><a class="link" href="https://github.com/Vizards8/warframe-market-dashboard/actions" target="_blank" rel="noopener">更新记录 ↗</a></details>`;
+      `<span>行情更新 ${timeLabel(state.server_time)}</span><details><summary>数据状态${fail ? ' · ' + fail + ' 项失败' : ''}</summary><p>${focus.length ? '持仓 / 关注' : '主要目录'}：${good}/${scope.length} 项报价在 2 小时内，${unknown} 项未查询，${fail} 项失败。</p><p>定时快照；刷新只获取已发布数据。每项查询时间见商品详情，过期或缺价不按零计算。货单：${b?.at ? age(b.at) : '未查询'}${b?.error ? '，获取失败' : ''}。</p><a class="link" href="https://github.com/Vizards8/warframe-market-dashboard/actions" target="_blank" rel="noopener">更新记录 ↗</a></details>`;
   }
   function render() {
     if (!initialized) return;
@@ -427,7 +427,7 @@ window.Desk = (() => {
       list.length +
       ' 种</span>';
     $('table-description').textContent = '';
-    el.innerHTML = `<div class="mod-panel-head"><div><h3>${statusText}${status === 'active' ? ` · ${active.length} 种（武器 ${active.filter(x => x.kind === 'weapon').length} / MOD ${active.filter(x => x.kind === 'mod').length}）` : ''}</h3><p>${status === 'active' ? `${esc(state.baro.location)} · 离场 ${timeLabel(state.baro.expiry)}` : status === 'upcoming' ? `预计到访 ${timeLabel(state.baro.activation)}，尚无本次货单。` : status === 'departed' ? `已于 ${timeLabel(state.baro.expiry)} 离场，旧货单不再作为在售。` : '自动货单不可用，可在历史目录中手动核对游戏货单。'} ${state.baro?.at ? (state.baro.source === 'https://api.warframe.com/cdn/worldState.php' ? 'DE 官方货单 · ' : '备用货单 · ') + '查询 ' + timeLabel(state.baro.at) : ''} ${!snapshotFresh && status === 'active' ? '<span class="quality-warning">货单快照已超过 6 小时，购买前请核对游戏内货单</span>' : ''}</p></div><a class="link" href="https://wiki.warframe.com/w/Baro_Ki%27Teer/Current_PC_Items" target="_blank" rel="noopener">完整货单（含外观等）↗</a></div>
+    el.innerHTML = `<div class="mod-panel-head"><div><h3>${statusText}${status === 'active' ? ` · ${active.length} 种（武器 ${active.filter(x => x.kind === 'weapon').length} / MOD ${active.filter(x => x.kind === 'mod').length}）` : ''}</h3><p>${status === 'active' ? `${esc(state.baro.location)} · 离场 ${timeLabel(state.baro.expiry)}` : status === 'upcoming' ? `预计到访 ${timeLabel(state.baro.activation)}，尚无本次货单。` : status === 'departed' ? `已于 ${timeLabel(state.baro.expiry)} 离场，旧货单不再作为在售。` : '自动货单不可用，可在历史目录中手动核对游戏货单。'} ${state.baro?.at ? (state.baro.source === 'https://api.warframe.com/cdn/worldState.php' ? 'DE 官方货单 · ' : '备用货单 · ') + '查询 ' + timeLabel(state.baro.at) : ''} ${!snapshotFresh && status === 'active' ? '<span class="quality-warning">货单快照已超过 2 小时，购买前请核对游戏内货单</span>' : ''}</p></div><a class="link" href="https://wiki.warframe.com/w/Baro_Ki%27Teer/Current_PC_Items" target="_blank" rel="noopener">完整货单（含外观等）↗</a></div>
   <div class="desk-actions baro-tabs">${[
     ['current', '本次全部商品'],
     ['plan', '我的购买计划'],
@@ -733,6 +733,8 @@ window.Desk = (() => {
               ''
             )}</select></label><label>每笔总杜卡德至少 <select id="ducat-min-yield" aria-label="每笔总杜卡德筛选">${[
             [0, '不限'],
+            [50, '50D'],
+            [100, '100D'],
             [150, '150D（默认）'],
             [200, '200D'],
             [270, '270（6×45D）'],

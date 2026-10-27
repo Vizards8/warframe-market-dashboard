@@ -24,7 +24,7 @@ Warframe 国际服 PC 行情看板：库存管理、Prime 与奸商 MOD 趋势�
 | | GitHub Pages 在线版 | 本地 Python 服务版 |
 |---|---|---|
 | 使用 | 直接访问上方网址 | 启动后访问 `http://127.0.0.1:18765/` |
-| 行情 | GitHub Actions 约每 6 小时更新 | 按需查询 WFM |
+| 行情 | GitHub Actions 约每小时更新 | 按需查询 WFM |
 | 刷新按钮 | 获取最新已发布快照 | 发起商品行情查询 |
 | 紫卡 | 热门候选较频繁更新，其余每次轮询 20 种；可跳转 WFM | 可逐个查询全部武器 |
 | 遗物掉落 | 定时查询所有不同的可交易奖励 | 按选定的四遗物查询 |
@@ -54,7 +54,7 @@ python3 server.py --serve
 
 1. 在自己的仓库进入 **Settings → Pages → Source → GitHub Actions**。
 2. 推送到 `main` 会执行 `.github/workflows/pages.yml`。首次部署使用仓库现有公共快照，避免等待全量抓取。
-3. 定时任务每 6 小时刷新；也可以在 **Actions → Publish market dashboard → Run workflow** 手动运行。默认更新行情后部署，约需 15 分钟；取消 `refresh` 可直接部署当前缓存。
+3. 定时任务每小时刷新；也可以在 **Actions → Publish market dashboard → Run workflow** 手动运行。默认更新行情后部署，约需 15 分钟；取消 `refresh` 可直接部署当前缓存。
 
 工作流只需内置 `GITHUB_TOKEN` 的 Pages 部署权限，不需要 WFM 账号、第三方代理或自建服务器。公开行情缓存保存于 Actions Cache，不逐次提交 Git 历史。长期日均价从上次公开部署读取、合并后随站点发布；读取失败（首次 404 除外）会停止发布，避免截断历史。网络失败保留旧值并显示错误，不更改旧数据时间；全部请求失败时不部署。
 
@@ -94,7 +94,7 @@ uvx --from ruff==0.14.2 ruff format dashboard server.py scripts tests
 - [Warframe Market](https://warframe.market/)：PC 市场的公开可见在线 / 游戏中 R0 买卖单；成交统计是用户标记记录，并非全服交易总量，也不是保证成交价。
 - 7 / 30 / 90 天均价按各商品快照截止日计算，成交量加权；缺少记录的日子不补零。WFM 只提供近 90 天，无法计算完整的前 90 天环比。
 - 紫卡候选按已覆盖报价重选，种子候选来自 2026-10-19 扫描；并非实时全市场排名。其余未显示不能理解为低于 20p；不同词条的紫卡不能用同一成交均价估算。
-- [WARFRAME Wiki 历史货单](https://wiki.warframe.com/w/Baro_Ki%27Teer/Trades)：兑换成本及常规返场记录，核对于 2026-10-21，历史目录和返场日期不会自动更新。本次货单优先从 [DE 官方公开世界状态](https://api.warframe.com/cdn/worldState.php) 获取，使用 [WFCD warframe-items](https://github.com/WFCD/warframe-items) 的精确物品路径映射和已核实的备用名称别名（`data/baro_item_names.json`），备用来源为 WarframeStat。官方返回的未知物品不会模糊匹配为已知商品；目录外外观等商品可在 Wiki 完整货单查看。随 GitHub 定时发布更新，6 小时内快照才用于购买参考；来源均失败时可手动核对（48 小时失效）。近期供应、TennoCon 与特别活动都可能压价，历史均价不保证未来回款。
+- [WARFRAME Wiki 历史货单](https://wiki.warframe.com/w/Baro_Ki%27Teer/Trades)：兑换成本及常规返场记录，核对于 2026-10-21，历史目录和返场日期不会自动更新。本次货单优先从 [DE 官方公开世界状态](https://api.warframe.com/cdn/worldState.php) 获取，使用 [WFCD warframe-items](https://github.com/WFCD/warframe-items) 的精确物品路径映射和已核实的备用名称别名（`data/baro_item_names.json`），备用来源为 WarframeStat。官方返回的未知物品不会模糊匹配为已知商品；目录外外观等商品可在 Wiki 完整货单查看。随 GitHub 定时发布更新，2 小时内快照才用于购买参考；来源均失败时可手动核对（48 小时失效）。近期供应、TennoCon 与特别活动都可能压价，历史均价不保证未来回款。
 - [WFCD / Warframe Items](https://github.com/WFCD/warframe-items)：遗物目录及备用图片，目录核对于 2026-10-21，后续新物品需更新。
 
 代码沿用 [MIT License](LICENSE)。Wiki 派生数据（`data/baro_wiki.json` 及目录里的奸商货单字段）依据来源的 **CC BY-NC-SA 3.0** 使用，保留来源及相同方式共享要求；第三方数据和游戏图片不因本项目 MIT 许可而重新授权。Warframe 为 Digital Extremes 的商标，本项目非官方。

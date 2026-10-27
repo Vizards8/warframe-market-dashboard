@@ -1,4 +1,5 @@
 'use strict';
+const MARKET_FRESH_MS = 2 * 3600000;
 const DeskCore = {
   fresh(at, error, now = Date.now()) {
     return (
@@ -6,7 +7,7 @@ const DeskCore = {
       !error &&
       Number.isFinite(Date.parse(at)) &&
       now >= Date.parse(at) &&
-      now - Date.parse(at) < 6 * 3600000
+      now - Date.parse(at) < MARKET_FRESH_MS
     );
   },
   target(m, basis = 'sell', now = Date.now()) {

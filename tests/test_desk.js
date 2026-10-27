@@ -104,6 +104,8 @@ console.log(
 assert.equal(core.manualCurrent('2026-10-20T08:00:00Z', now), true);
 assert.equal(core.manualCurrent('2026-10-18T08:00:00Z', now), false);
 assert.equal(core.manualCurrent(undefined, now), false);
+assert.equal(core.fresh('2026-10-21T07:30:00Z', null, now), true);
+assert.equal(core.fresh('2026-10-21T05:00:00Z', null, now), false);
 assert.equal(core.fresh('2026-10-22T08:00:00Z', null, now), false);
 assert.throws(() => core.backup({ ...raw, items: { a: { quantity: 4 } } }, [{ slug: 'a' }]));
 assert.throws(() =>
