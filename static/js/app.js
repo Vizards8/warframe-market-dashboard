@@ -55,6 +55,84 @@ function notify(message, success = false) {
   $('notice').className = 'notice' + (success ? ' success' : '');
   $('notice').hidden = false;
 }
+function wfmTradeButton(item, offer, quantity = 1, label = '复制私聊') {
+  return wfmPurchaseButton([{ item, offer, quantity }], label);
+}
+function wfmPurchaseButton(purchases, label) {
+  const rows = purchases.map(p => ({
+      ...p,
+      at: mrow(p.item.slug).orders_at,
+      error: mrow(p.item.slug).orders_error
+    })),
+    message = DeskCore.purchaseWhisper(rows),
+    selection = rows.map(p => ({
+      slug: p.item.slug,
+      seller: p.offer?.seller,
+      quantity: p.quantity,
+      price: p.offer?.price,
+      at: p.at
+    }));
+  return message
+    ? `<button type="button" class="plain-button trade-copy" data-copy-trade="${esc(JSON.stringify(selection))}" title="${esc(message)}" aria-label="${esc(label)} · ${esc(rows[0].offer.name)}">${esc(label)}</button>`
+    : '';
+}
+function wfmBundleButton(bundle, label = '复制组合私聊') {
+  const purchases = bundle.entries.map(e => {
+    const item = state.catalog.find(x => x.slug === e.slug),
+      offer = mrow(e.slug).orders?.sell_offers?.find(
+        o => o.seller === bundle.seller && o.price === e.price
+      );
+    return { item, offer, quantity: e.units };
+  });
+  return purchases.every(p => p.item && p.offer) ? wfmPurchaseButton(purchases, label) : '';
+}
+function wfmPurchasePanel(item, market) {
+  const offers = market.orders?.sell_offers || [];
+  if (!DeskCore.fresh(market.orders_at, market.orders_error) || !offers.length) return '';
+  return `<section class="purchase-offers"><h3>向卖家购买</h3><p class="drawer-muted">复制后粘贴到游戏聊天。按所列卖家的单件 / 单套报价，成交前确认仍有货。</p>${offers
+    .slice(0, 5)
+    .map(
+      offer =>
+        `<div class="purchase-offer"><div><b>${esc(offer.name || offer.slug)}</b><small>${number(offer.price)}p / ${item.slug.endsWith('_set') ? '套' : '份'} · 挂有 ${number(offer.quantity)}</small></div>${wfmTradeButton(item, offer)}</div>`
+    )
+    .join('')}</section>`;
+}
+function resolveTradeMessage(selection) {
+  const rows = selection.map(p => {
+    const item = state.catalog.find(x => x.slug === p.slug),
+      market = mrow(p.slug),
+      offer = market.orders?.sell_offers?.find(o => o.seller === p.seller && o.price === p.price);
+    return {
+      item,
+      offer,
+      quantity: p.quantity,
+      at: market.orders_at === p.at ? market.orders_at : null,
+      error: market.orders_error
+    };
+  });
+  return DeskCore.purchaseWhisper(rows);
+}
+async function copyTradeText(text) {
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    let dialog = $('trade-copy-dialog');
+    if (!dialog) {
+      dialog = document.createElement('dialog');
+      dialog.id = 'trade-copy-dialog';
+      dialog.innerHTML =
+        '<div class="dialog-heading"><h2>购买私聊</h2><button type="button" class="close-button" aria-label="关闭购买私聊">×</button></div><p>浏览器未允许复制，请选中后按 Ctrl+C。</p><textarea readonly aria-label="购买私聊内容"></textarea>';
+      dialog.querySelector('button').onclick = () => dialog.close();
+      document.body.append(dialog);
+    }
+    dialog.querySelector('textarea').value = text;
+    dialog.showModal();
+    dialog.querySelector('textarea').select();
+    return false;
+  }
+}
 async function request(path, body) {
   if (window.Hosted) return window.Hosted.request(path, body);
   if (window.Portable) return window.Portable.request(path, body);
@@ -488,7 +566,7 @@ function renderDrawer(slug) {
   $('drawer-content').innerHTML =
     `<div class="drawer-label">${esc(kindLabel[x.kind] || '商品')} · ${x.kind === 'mod' ? 'R0' : 'PC'}</div><div class="drawer-art">${itemImage(x, true)}</div><h2>${esc(x.name)}</h2><div class="english">${esc(x.english)}${x.alias ? ' · ' + esc(x.alias) : ''}</div><a class="link" href="https://warframe.market/items/${encodeURIComponent(slug)}/statistics" target="_blank" rel="noopener">在 Warframe Market 查看 ↗</a>
   <div class="detail-metrics"><div><small>${statsDays()} 天成交均价</small><strong>${price(mean(m))}</strong></div><div><small>在线最低卖价</small><strong>${price(ask(m))}</strong></div><div><small>在线最高买价</small><strong>${price(bid(m))}</strong></div></div>
-  <h3>成交均价走势 <select id="chart-window" aria-label="走势窗口">${[7, 30, 90].map(n => `<option value="${n}" ${n === chartWindow ? 'selected' : ''}>${n} 天</option>`).join('')}</select></h3>${chart(m)}${window.Desk?.history(slug) || ''}
+  ${wfmPurchasePanel(x, m)}<h3>成交均价走势 <select id="chart-window" aria-label="走势窗口">${[7, 30, 90].map(n => `<option value="${n}" ${n === chartWindow ? 'selected' : ''}>${n} 天</option>`).join('')}</select></h3>${chart(m)}${window.Desk?.history(slug) || ''}
   <div class="detail-metrics">${[7, 30, 90]
     .map(n => {
       const v = statsFor(m, n);
@@ -621,6 +699,26 @@ $('drawer-overlay').onclick = closeDrawer;
 $('close-drawer').onclick = closeDrawer;
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeDrawer();
+});
+document.addEventListener('click', e => {
+  const button = e.target.closest('[data-copy-trade]');
+  if (!button) return;
+  const original = button.textContent;
+  let message;
+  try {
+    message = resolveTradeMessage(JSON.parse(button.dataset.copyTrade));
+  } catch {}
+  if (!message) return notify('这笔报价已过期或发生变化，请检查行情更新后重试。');
+  copyTradeText(message)
+    .then(copied => {
+      if (copied === false) return;
+      button.textContent = '已复制';
+      notify('WFM 私聊模板已复制，可以直接粘贴到游戏聊天。', true);
+      window.setTimeout(() => {
+        if (button.isConnected) button.textContent = original;
+      }, 1600);
+    })
+    .catch(error => notify('复制失败：' + error.message));
 });
 $('help').onclick = () => $('help-dialog').showModal();
 $('close-help').onclick = () => $('help-dialog').close();

@@ -437,6 +437,45 @@ const DeskCore = {
     if (!slots || slots > 6 || ducats !== recipe.ducats || slots !== recipe.slots) return null;
     return { ducats, slots };
   },
+  purchaseWhisper(purchases, now = Date.now()) {
+    if (!Array.isArray(purchases) || !purchases.length) return null;
+    const first = purchases[0]?.offer;
+    // The profile slug may differ from the in-game name used by /w.
+    if (!first?.seller || !/^[\p{L}\p{N}_.-]+$/u.test(first.name || '')) return null;
+    let total = 0;
+    const labels = [],
+      seen = new Set();
+    for (const p of purchases) {
+      const { item, offer, quantity, at, error } = p || {};
+      if (
+        !item?.slug ||
+        seen.has(item.slug) ||
+        typeof item.english !== 'string' ||
+        !item.english.trim() ||
+        /["\x00-\x1f\x7f]/.test(item.english) ||
+        !offer ||
+        offer.seller !== first.seller ||
+        offer.name !== first.name ||
+        !Number.isInteger(offer.price) ||
+        offer.price <= 0 ||
+        !Number.isInteger(quantity) ||
+        quantity < 1 ||
+        !Number.isInteger(offer.quantity) ||
+        quantity > offer.quantity ||
+        (offer.rank != null && offer.rank !== 0) ||
+        !this.fresh(at, error, now)
+      )
+        return null;
+      seen.add(item.slug);
+      total += offer.price * quantity;
+      const name = item.english.trim() + (item.kind === 'mod' ? ' (rank 0)' : '');
+      labels.push(
+        `${quantity > 1 ? quantity + ' x ' : ''}"${name}"${purchases.length > 1 ? ` (${offer.price} platinum each)` : ''}`
+      );
+    }
+    if (!Number.isSafeInteger(total)) return null;
+    return `/w ${first.name} Hi! I want to buy: ${labels.join(', ')} for ${total} platinum${purchases.length > 1 ? ' total' : ''}. (warframe.market)`;
+  },
   ducatCycle(
     part,
     partMarket,

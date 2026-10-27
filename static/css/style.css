@@ -855,6 +855,29 @@ footer button {
   line-height: 1.9;
   color: #8f9ba5;
 }
+.purchase-offer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.purchase-offer small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.trade-copy {
+  margin-top: 6px;
+}
+#trade-copy-dialog textarea {
+  width: 100%;
+  min-height: 140px;
+  box-sizing: border-box;
+  font: 13px/1.7 monospace;
+}
 .drawer-time {
   color: #a2aeb5;
   font-size: 9px;
