@@ -312,15 +312,9 @@ const DeskCore = {
       a.cost * b.ducats - b.cost * a.ducats || b.ducats - a.ducats || b.slots - a.slots;
     const trash = this.ducatTrashReference();
     const keep = (list, candidate) => {
-      const dominates = (a, b) =>
-        a.cost <= b.cost && a.ducats >= b.ducats;
+      const dominates = (a, b) => a.cost <= b.cost && a.ducats >= b.ducats;
       if (list.some(x => dominates(x, candidate))) return;
       list.splice(0, list.length, ...list.filter(x => !dominates(candidate, x)), candidate);
-      // Six slots make a very large Pareto frontier unnecessary and expensive to render.
-      if (list.length > 256) {
-        list.sort(compare);
-        list.length = 256;
-      }
     };
     const output = [];
     for (const seller of sellers.values()) {
@@ -328,11 +322,13 @@ const DeskCore = {
       const parent = choices.map((_, i) => i);
       const find = i => (parent[i] === i ? i : (parent[i] = find(parent[i])));
       const union = (a, b) => {
-        const ra = find(a), rb = find(b);
+        const ra = find(a),
+          rb = find(b);
         if (ra !== rb) parent[rb] = ra;
       };
       const conflicts = (a, b) => {
-        const ap = a.recipe?.parts || [], bp = b.recipe?.parts || [];
+        const ap = a.recipe?.parts || [],
+          bp = b.recipe?.parts || [];
         return (
           ap.some(p => p.slug === b.slug) ||
           bp.some(p => p.slug === a.slug) ||
@@ -350,28 +346,51 @@ const DeskCore = {
       let states = Array.from({ length: slots + 1 }, () => []);
       states[0] = [{ slots: 0, cost: 0, ducats: 0, entries: [] }];
       for (const group of groups.values()) {
-        const next = states.map(list => [...list]);
+        // Enumerate compatible purchases within each related set/component group.
+        // Distinct components may coexist even when they both overlap one set listing.
+        const options = Array.from({ length: slots + 1 }, () => []);
+        const visit = (start, purchase, chosen) => {
+          keep(options[purchase.slots], purchase);
+          for (let i = start; i < group.length; i++) {
+            const { row, offer } = group[i];
+            if (chosen.some(other => conflicts(row, other))) continue;
+            const max = Math.min(offer.quantity, Math.floor((slots - purchase.slots) / row.slots));
+            for (let units = 1; units <= max; units++) {
+              const entry = {
+                slug: row.slug,
+                name: row.name,
+                units,
+                slots: units * row.slots,
+                ducats: units * row.ducats,
+                cost: units * offer.price,
+                price: offer.price,
+                isSet: !!row.isSet,
+                at: row.market.orders_at
+              };
+              visit(
+                i + 1,
+                {
+                  slots: purchase.slots + entry.slots,
+                  cost: purchase.cost + entry.cost,
+                  ducats: purchase.ducats + entry.ducats,
+                  entries: [...purchase.entries, entry]
+                },
+                [...chosen, row]
+              );
+            }
+          }
+        };
+        visit(0, { slots: 0, cost: 0, ducats: 0, entries: [] }, []);
+        const next = Array.from({ length: slots + 1 }, () => []);
         for (let used = 0; used <= slots; used++) {
           for (const state of states[used]) {
-            for (const { row, offer } of group) {
-              const max = Math.min(offer.quantity, Math.floor((slots - used) / row.slots));
-              for (let units = 1; units <= max; units++) {
-                const entry = {
-                  slug: row.slug,
-                  name: row.name,
-                  units,
-                  slots: units * row.slots,
-                  ducats: units * row.ducats,
-                  cost: units * offer.price,
-                  price: offer.price,
-                  isSet: !!row.isSet,
-                  at: row.market.orders_at
-                };
-                keep(next[used + entry.slots], {
-                  slots: used + entry.slots,
-                  cost: state.cost + entry.cost,
-                  ducats: state.ducats + entry.ducats,
-                  entries: [...state.entries, entry]
+            for (let added = 0; added <= slots - used; added++) {
+              for (const option of options[added]) {
+                keep(next[used + added], {
+                  slots: used + added,
+                  cost: state.cost + option.cost,
+                  ducats: state.ducats + option.ducats,
+                  entries: [...state.entries, ...option.entries]
                 });
               }
             }
