@@ -3843,23 +3843,6 @@ button.drop-row:hover {
   gap: 12px;
   align-items: center;
 }
-.ducat-owned-note {
-  margin: 16px 23px;
-  padding: 14px;
-  background: #f8f1dd;
-  font-size: 12px;
-  line-height: 1.8;
-  color: #88743d;
-}
-.custom-intro #ducat-search {
-  max-width: 420px;
-}
-.custom-intro #ducat-sort {
-  padding: 9px;
-  border: 1px solid #d6e3d6;
-  border-radius: 5px;
-  color: #426347;
-}
 @media (max-width: 700px) {
   .ducat-flow {
     flex-direction: column;
@@ -4129,8 +4112,7 @@ header {
   color: #294a3b;
 }
 .desk-actions select,
-.baro-filters select,
-.custom-intro #ducat-sort {
+.baro-filters select {
   color: #45515e;
   border-color: #d8dde3;
 }
@@ -4354,10 +4336,6 @@ header {
 }
 .ducat-table .baro-efficiency {
   color: #293a31;
-}
-.ducat-owned-note {
-  background: #faf7ef;
-  border-radius: 3px;
 }
 .ducat-list-footer {
   color: var(--muted);
@@ -4658,44 +4636,89 @@ footer {
   color: #293a31;
   font-variant-numeric: tabular-nums;
 }
+/* Ducat lists use the page width and the document's vertical scroll. */
+main:has(.ducat-workspace) {
+  max-width: none;
+}
+.ducat-intro {
+  padding: 12px 20px 14px;
+}
+.ducat-tabs {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.ducat-tabs button {
+  padding: 12px 0;
+  color: var(--muted);
+  background: transparent;
+  border-bottom: 2px solid transparent;
+}
+.ducat-tabs button[aria-pressed='true'] {
+  color: var(--ink);
+  border-bottom-color: var(--green);
+  font-weight: 600;
+}
+.ducat-view-tabs {
+  margin: 0 20px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
 .ducat-bulk-filters {
   font-size: 12px;
   color: var(--muted);
 }
-.ducat-bulk-filters label {
+.ducat-bulk-filters label,
+.ducat-list-tools label {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.ducat-bundle-panel {
-  margin: 0 23px 18px;
-  padding: 18px 20px 14px;
-  border: 1px solid #d9e5dc;
-  border-radius: 10px;
-  background: #f7fbf7;
+.ducat-intro .ducat-bulk-filters {
+  margin: 12px 0 0;
+  gap: 12px 20px;
 }
-.ducat-bundle-panel h3,
-.ducat-single-heading {
-  margin: 0 0 8px;
-  color: #293a31;
+.ducat-bundle-panel,
+.ducat-single-panel {
+  padding: 0 20px 16px;
 }
-.ducat-bundle-panel > p {
-  margin: 0 0 10px;
+.ducat-list-tools {
+  margin: 14px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ducat-list-tools input[type='search'] {
+  max-width: 360px;
+}
+.ducat-benchmark {
+  margin: 0 0 12px;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.7;
 }
-.ducat-benchmark {
-  padding: 8px 10px;
-  border-left: 3px solid #87b596;
-  background: #edf6ee;
+.ducat-workspace .compare-scroll {
+  max-height: none;
+  overflow-x: auto;
+  border: 0;
+  border-radius: 0;
+}
+.ducat-workspace .ducat-table-wrap,
+.ducat-workspace .ducat-list-footer,
+.ducat-bundle-panel .ducat-method {
+  margin: 14px 0;
+}
+.ducat-workspace .compare-table {
+  white-space: normal;
+  font-size: 13px;
 }
 .ducat-bundle-table {
-  min-width: 820px;
-  margin-top: 12px;
+  min-width: 680px !important;
 }
-.ducat-bundle-table td {
-  vertical-align: top;
+.ducat-bundle-table th:first-child {
+  width: 22%;
+}
+.ducat-bundle-table th:nth-child(2) {
+  width: 40%;
 }
 .ducat-bundle-table td small {
   display: block;
@@ -4705,15 +4728,33 @@ footer {
 .ducat-bundle-table td:nth-child(2) div + div {
   margin-top: 7px;
   padding-top: 7px;
-  border-top: 1px dashed #d9e5dc;
+  border-top: 1px solid var(--line);
 }
 .ducat-bundle-table td:nth-child(3) strong {
   color: #2f6849;
-  font-size: 16px;
+  font-size: 18px;
 }
-.ducat-single-heading {
-  margin: 20px 23px 10px;
-  font-size: 15px;
+@media (max-width: 700px) {
+  .ducat-intro {
+    padding: 10px 12px;
+  }
+  .ducat-intro .desk-title {
+    align-items: start;
+  }
+  .ducat-tabs {
+    gap: 14px;
+  }
+  .ducat-view-tabs {
+    margin-inline: 12px;
+  }
+  .ducat-bundle-panel,
+  .ducat-single-panel {
+    padding-inline: 12px;
+  }
+  .ducat-list-tools input[type='search'] {
+    max-width: none;
+    flex-basis: 100%;
+  }
 }
 .ducat-method {
   margin: 20px 23px;
@@ -4725,10 +4766,10 @@ footer {
   cursor: pointer;
 }
 .ducat-table {
-  min-width: 1080px;
+  min-width: 960px !important;
 }
 .ducat-table th:first-child {
-  width: 230px;
+  width: 210px;
 }
 .ducat-table th:nth-child(4) {
   min-width: 165px;
