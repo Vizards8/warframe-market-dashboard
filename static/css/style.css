@@ -5159,3 +5159,70 @@ main:has(.ducat-workspace) {
     margin: 5px 0 0;
   }
 }
+
+/* Prime sets: evidence for a sale, with controls scoped to this page. */
+.frame-guide {
+  padding: 0 22px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+  border-bottom: 1px solid var(--line);
+}
+.frame-guide p {
+  margin: 6px 0;
+}
+.frame-guide summary {
+  cursor: pointer;
+}
+.frame-view .r0-pill {
+  display: none;
+}
+.frame-view .table-scroll {
+  max-height: none;
+}
+.frame-view table {
+  min-width: 960px;
+  white-space: normal;
+}
+.frame-view td {
+  vertical-align: top;
+  padding: 15px 10px;
+}
+.frame-view th:first-child {
+  width: 190px;
+}
+.frame-view td:nth-child(7) {
+  min-width: 135px;
+}
+.frame-view .price {
+  font-size: 18px;
+}
+.frame-view .target-status {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.frame-view td:last-child button {
+  font-size: 12px;
+}
+.frame-view td:last-child button {
+  display: block;
+  margin-bottom: 10px;
+}
+.frame-signal {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.frame-signal-active {
+  color: #326d59;
+  font-weight: 600;
+}
+#stats-controls #target-basis-note {
+  max-width: none;
+  font-size: 12px;
+}
+main:has(.frame-view:not([hidden])) {
+  max-width: none;
+}

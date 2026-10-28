@@ -12,6 +12,7 @@ SCRIPTS = (
     STATS,
     'js/core/desk-core.js',
     'js/app.js',
+    'js/pages/frames.js',
     'js/ocr/reward-ocr-core.js',
     'js/ocr/reward-ocr-assets.js',
     'js/ocr/reward-ocr.js',

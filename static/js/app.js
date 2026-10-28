@@ -211,7 +211,8 @@ function visibleItems() {
           ? x.kind === 'frame'
           : !!x.baro
   );
-  if (filter !== 'all')
+  if (tab === 'frames') rows = rows.filter(x => window.Frames.matches(x, filter));
+  else if (filter !== 'all')
     rows = rows.filter(x => (filter === 'watch' ? watched(x) : x.kind === filter));
   if (query)
     rows = rows.filter(x =>
@@ -232,7 +233,8 @@ function visibleItems() {
       }[sort] ?? -Infinity
     );
   };
-  if (sort !== 'default') rows.sort((a, b) => key(b) - key(a) || a.name.localeCompare(b.name));
+  if (tab === 'frames') rows.sort((a, b) => window.Frames.compare(a, b, sort));
+  else if (sort !== 'default') rows.sort((a, b) => key(b) - key(a) || a.name.localeCompare(b.name));
   else if (tab !== 'inventory')
     rows.sort((a, b) => (mean(mrow(b.slug)) ?? -1) - (mean(mrow(a.slug)) ?? -1));
   else rows.sort((a, b) => Number(held(b)) - Number(held(a)));
@@ -283,39 +285,46 @@ function renderMetrics() {
   window.Desk?.render();
 }
 function renderTable() {
+  if ($('target-basis-note'))
+    $('target-basis-note').textContent =
+      `按${targetQuote({}).label}判断目标；成交均价不随此项切换。`;
   $('mean-heading').textContent = statsDays() + ' 天成交均价';
   $('volume-heading').textContent = statsDays() + ' 天记录量';
   $('stats-note').textContent =
-    `WFM 用户标记成交的近 ${statsDays()} 个完整 UTC 日成交量加权均价；记录量不等于全服交易量。`;
+    tab === 'frames'
+      ? '7 / 30 天均价按完整 UTC 日成交量加权；90 天高位比较滚动周均价，记录量不等于全服交易量。'
+      : `WFM 用户标记成交的近 ${statsDays()} 个完整 UTC 日成交量加权均价；记录量不等于全服交易量。`;
   renderModPanel();
   if (tab === 'mods') return;
   const rows = visibleItems();
   $('table-count').textContent = `${rows.length} 种`;
-  $('rows').innerHTML = rows.length
-    ? rows
-        .map(x => {
-          const s = srow(x.slug),
-            m = mrow(x.slug),
-            p = mean(m),
-            summary = statsFor(m),
-            change = summary.change;
-          const updateTitle = `成交数据查询：${timeLabel(m.stats_at)}\n挂单查询：${timeLabel(m.orders_at)}${m.stats_error ? '\n成交数据刷新失败' : ''}${m.orders_error ? '\n挂单刷新失败' : ''}`;
-          const changeText =
-            change == null
-              ? '无等长前窗对比'
-              : `${change >= 0 ? '+' : ''}${number(change, 1)}% 较前 ${statsDays()} 天`;
-          const inventory = tab === 'inventory' || tab === 'watch' || watched(x);
-          return `<tr data-slug="${esc(x.slug)}"><td><div class="item-cell">${itemImage(x)}<div><button class="item-name" data-detail="${esc(x.slug)}">${esc(x.name)}${x.alias ? ` <span class="neutral">· ${esc(x.alias)}</span>` : ''}</button><div class="item-meta"><span class="pill">${esc(kindLabel[x.kind] || '商品')}</span><span title="${esc(updateTitle)}">${stale(m.stats_at) || stale(m.orders_at) ? '<i class="stale-dot"></i> ' : ''}${m.stats_error || m.orders_error ? '刷新失败 · 保留旧值' : !m.orders_at ? '挂单待刷新' : timeLabel(m.orders_at)}</span></div></div></div></td>
+  if (tab === 'frames') window.Frames.table(rows);
+  else
+    $('rows').innerHTML = rows.length
+      ? rows
+          .map(x => {
+            const s = srow(x.slug),
+              m = mrow(x.slug),
+              p = mean(m),
+              summary = statsFor(m),
+              change = summary.change;
+            const updateTitle = `成交数据查询：${timeLabel(m.stats_at)}\n挂单查询：${timeLabel(m.orders_at)}${m.stats_error ? '\n成交数据刷新失败' : ''}${m.orders_error ? '\n挂单刷新失败' : ''}`;
+            const changeText =
+              change == null
+                ? '无等长前窗对比'
+                : `${change >= 0 ? '+' : ''}${number(change, 1)}% 较前 ${statsDays()} 天`;
+            const inventory = tab === 'inventory' || tab === 'watch' || watched(x);
+            return `<tr data-slug="${esc(x.slug)}"><td><div class="item-cell">${itemImage(x)}<div><button class="item-name" data-detail="${esc(x.slug)}">${esc(x.name)}${x.alias ? ` <span class="neutral">· ${esc(x.alias)}</span>` : ''}</button><div class="item-meta"><span class="pill">${esc(kindLabel[x.kind] || '商品')}</span><span title="${esc(updateTitle)}">${stale(m.stats_at) || stale(m.orders_at) ? '<i class="stale-dot"></i> ' : ''}${m.stats_error || m.orders_error ? '刷新失败 · 保留旧值' : !m.orders_at ? '挂单待刷新' : timeLabel(m.orders_at)}</span></div></div></div></td>
     <td>${inventory ? `<div class="quantity-stepper"><button data-step="-1" data-item="${esc(x.slug)}" aria-label="减少 ${esc(x.name)} 持有数量" ${s.quantity <= 0 ? 'disabled' : ''}>−</button><input class="number-input" data-quantity="${esc(x.slug)}" type="number" min="0" max="100000" step="1" value="${s.quantity}" aria-label="${esc(x.name)} 持有数量"><button data-step="1" data-item="${esc(x.slug)}" aria-label="增加 ${esc(x.name)} 持有数量">＋</button></div>` : '<span class="neutral">—</span>'}</td>
     <td><div class="price">${price(p)}</div><div class="subline ${change == null ? '' : change >= 0 ? 'positive' : 'negative'}" title="相邻两个 ${statsDays()} 天窗口的成交量加权均价对比；低样本涨幅参考价值有限">${changeText}</div></td>
     <td title="${esc(updateTitle)}"><div class="order-pair"><span class="price">${price(ask(m))}</span><span class="slash">/</span><span class="buy">${number(bid(m))}</span></div><div class="subline">${m.orders ? `${m.orders.sell_count} 卖家 · ${m.orders.buy_count} 买家` : '尚未查询，请到 WFM 核价'}</div></td>
     <td><div class="volume-cell"><span class="volume-num">${m.stats?.end ? number(summary.volume) : '—'}</span>${spark(MarketStats.history(m, 90))}</div><div class="subline">${m.stats ? `${summary.days} 天有记录${summary.volume < 20 ? ' · 样本少' : ''}` : '暂无成交统计'}</div></td>
-    <td>${inventory ? `<div class="target-wrap"><input class="number-input target-input" data-target="${esc(x.slug)}" type="number" min="1" max="1000000" step="1" value="${s.target ?? ''}" placeholder="未设定" aria-label="${esc(x.name)} 目标售价"><span class="unit">p</span></div><div class="target-status">${s.target ? (targetHit(s, m) ? '✓ ' + targetQuote(m).label + '达线' : !targetQuote(m).valid ? '报价过期 / 缺价，暂不判断' : '观察依据：' + targetQuote(m).label) : ''}</div>` : '<span class="neutral">—</span>'}</td>
+    <td>${inventory ? window.Frames.targetCell(x) : '<span class="neutral">—</span>'}</td>
     <td><div class="price">${s.quantity && p != null ? price(s.quantity * p) : '<span class="neutral">—</span>'}</div>${s.quantity && s.cost != null && p != null ? `<div class="subline ${p >= s.cost ? 'positive' : 'negative'}">账面差额 ${p >= s.cost ? '+' : ''}${number((p - s.cost) * s.quantity)}p</div>` : ''}</td>
     <td>${inventory ? `<button class="detail-btn" data-detail="${esc(x.slug)}" aria-label="查看 ${esc(x.name)} 详情">↗</button>` : `<button class="watch-btn" data-watch="${esc(x.slug)}">＋ 关注</button>`}</td></tr>`;
-        })
-        .join('')
-    : '<tr><td colspan="8" class="empty">没有匹配的商品。试试英文名，或清除筛选。</td></tr>';
+          })
+          .join('')
+      : '<tr><td colspan="8" class="empty">没有匹配的商品。试试英文名，或清除筛选。</td></tr>';
   const times = rows
     .map(x => mrow(x.slug).stats_at)
     .filter(Boolean)
@@ -336,6 +345,7 @@ function setTab(next) {
   $('search').value = '';
   $('type-filter').value = 'all';
   $('sort').value = 'default';
+  window.Frames?.controls();
   document
     .querySelectorAll('[data-tab]')
     .forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -366,7 +376,7 @@ function setTab(next) {
     frames: [
       'Prime 战甲',
       'Prime 战甲',
-      '整套蓝图的成交价与成交量。',
+      '看近期涨幅、成交量和历史价位，再决定是否分批卖出。',
       '战甲套装',
       '按蓝图及组件蓝图整套统计。'
     ],
@@ -574,7 +584,7 @@ function renderDrawer(slug) {
     })
     .join('')}</div>
   <p class="drawer-muted">${m.stats ? `行情快照窗口 ${summary.start} — ${summary.end}（UTC）；最多获取 WFM 近 90 天。最新成交记录：${esc(m.stats.latest || '无')}。` : '成交统计尚未获取。'}不足 20 件记录时参考性低；90 天前窗不足，不显示环比。</p>
-  ${x.baro ? modDecision(x, m) : ''}${window.Desk?.quoteDetail(slug) || ''}
+  ${x.kind === 'frame' ? window.Frames.detail(x) : ''}${x.baro ? modDecision(x, m) : ''}${window.Desk?.quoteDetail(slug) || ''}
   <h3>当前在线挂单 · 前 5 档</h3><div class="depth"><div><div class="depth-title">卖单 ${m.orders?.sell_count ?? '—'} 个卖家</div>${depth(m.orders?.sell, 'sell')}</div><div><div class="depth-title">买单 ${m.orders?.buy_count ?? '—'} 个买家</div>${depth(m.orders?.buy, 'buy')}</div></div><div class="drawer-time">成交数据查询 ${timeLabel(m.stats_at)} / 挂单查询 ${timeLabel(m.orders_at)}</div>${m.stats_error || m.orders_error ? '<p class="drawer-muted negative">最近查询失败；以上可能是旧数据。</p>' : ''}
   ${x.baro ? `<div class="drawer-baro">常规返场：${baro ? esc(baro) : '未录入'}${s.baro_date ? ' · 手动记录' : x.baro_verified ? ' · ' + esc(x.baro_verified) + ' 核对' : ''}<br>日期不自动更新；2026 年 7 月 TennoCon 全货活动也补过供应。<br><a class="link" href="https://wiki.warframe.com/w/Baro_Ki%27Teer/Trades" target="_blank" rel="noopener">核对历史货单 ↗</a>${x.ducats ? ` · 兑换 ${number(x.ducats)} 杜卡德 + ${number(x.credits)} 现金` : ''}</div>` : ''}
   <p class="drawer-muted">参考成本用于期初录入与估值；已有交易账本的收益按实际记录计算，改参考成本不改历史买入记录。</p><h3>我的持有计划 <small class="auto-label">修改自动记住</small></h3><form id="item-form" class="drawer-form"><label>持有数量<input name="quantity" type="number" min="0" max="100000" step="1" value="${s.quantity}" required></label><label>目标售价 / p<input name="target" type="number" min="1" max="1000000" step="1" value="${s.target ?? ''}" placeholder="留空，自行决定"></label><label>参考单件成本 / p<input name="cost" type="number" min="0" max="1000000" step="0.1" value="${s.cost ?? ''}" placeholder="可选，不猜测成本"></label>${x.baro ? `<label>最近常规返场<input name="baro_date" type="date" value="${esc(baro || '')}"></label>` : '<span></span>'}<label class="full">持有笔记<textarea name="note" aria-label="持有笔记" maxlength="1000" placeholder="例如：等成交均价到目标，再分批挂售。">${esc(s.note)}</textarea></label></form><button class="remove-watch" id="toggle-watch">${srow(slug).watch ? '取消关注（库存保留）' : '加入我的关注'}</button>`;

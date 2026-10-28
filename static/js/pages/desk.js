@@ -121,10 +121,15 @@ window.Desk = (() => {
       .map(([k, v]) => `<option value="${k}">${v}</option>`)
       .join('')}</select>`;
     $('stats-controls').append(controls);
+    const basisNote = document.createElement('span');
+    basisNote.id = 'target-basis-note';
+    basisNote.setAttribute('role', 'status');
+    $('stats-controls').append(basisNote);
     $('target-basis').value = settings.targetBasis;
     $('target-basis').onchange = e => {
       settings.targetBasis = e.target.value;
       persist();
+      if (selected && !$('drawer').hidden) renderDrawer(selected);
     };
     for (const id of ['add-dialog', 'trade-dialog']) {
       const d = document.createElement('dialog');

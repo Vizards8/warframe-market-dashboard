@@ -39,6 +39,68 @@ const DeskCore = {
           : { ...ask, basis: 'ask', at: m?.orders_at };
     return q;
   },
+  frameSignal(m, now = Date.now()) {
+    const week = MarketStats.window(m, 7),
+      month = MarketStats.window(m, 30),
+      history = MarketStats.history(m, 90),
+      end = Date.parse(m?.stats?.end + 'T00:00:00Z'),
+      previous = MarketStats.window(
+        {
+          stats: {
+            ...m?.stats,
+            end: new Date((Number.isFinite(end) ? end : 0) - 7 * 86400000)
+              .toISOString()
+              .slice(0, 10)
+          }
+        },
+        7
+      ),
+      enough = x => x.price > 0 && x.days >= 4 && x.volume >= 20,
+      fresh = this.fresh(m?.stats_at, m?.stats_error, now),
+      recent =
+        Number.isFinite(end) &&
+        now - (end + 86400000) >= 0 &&
+        now - (end + 86400000) < 3 * 86400000,
+      reliable = fresh && recent && enough(week),
+      comparable = reliable && enough(previous),
+      premium = week.price != null && month.price > 0 ? (week.price / month.price - 1) * 100 : null;
+    // Compare like with like: rolling weekly means, not a single day's outlier.
+    const rolling = history
+        .map(row => MarketStats.window({ stats: { history, end: row.date } }, 7))
+        .filter(enough),
+      peak =
+        history.length >= 60 && rolling.length >= 30
+          ? Math.max(...rolling.map(x => x.price))
+          : null,
+      rising = comparable && week.change >= 10,
+      high = reliable && peak != null && week.price >= peak * 0.9,
+      rank = !reliable ? -1 : rising && high ? 3 : rising ? 2 : high ? 1 : 0;
+    return {
+      week,
+      month,
+      previous,
+      premium,
+      peak,
+      rising,
+      high,
+      reliable,
+      comparable,
+      rank,
+      label: !fresh
+        ? '行情过期 / 缺失'
+        : !recent
+          ? '近期成交缺失'
+          : !enough(week)
+            ? '近 7 天样本少'
+            : rising && high
+              ? '涨价且接近高位'
+              : rising
+                ? '近期涨价'
+                : high
+                  ? '接近 90 天高位'
+                  : '暂无明显信号'
+    };
+  },
   manualCurrent(at, now = Date.now()) {
     const n = Date.parse(at);
     return Number.isFinite(n) && now >= n && now - n < 48 * 3600000;
