@@ -173,10 +173,9 @@ window.Desk = (() => {
     ).length;
     const unknown = scope.filter(x => !mrow(x.slug).orders_at).length,
       fail = scope.filter(x => mrow(x.slug).orders_error || mrow(x.slug).stats_error).length;
-    const r = state.refresh_status,
-      b = state.baro;
+    const b = state.baro;
     $('data-health').innerHTML =
-      `<span>行情更新 ${timeLabel(state.server_time)}</span><details><summary>数据状态${fail ? ' · ' + fail + ' 项失败' : ''}</summary><p>${focus.length ? '持仓 / 关注' : '主要目录'}：${good}/${scope.length} 项报价在 2 小时内，${unknown} 项未查询，${fail} 项失败。</p><p>定时快照；刷新只获取已发布数据。每项查询时间见商品详情，过期或缺价不按零计算。货单：${b?.at ? age(b.at) : '未查询'}${b?.error ? '，获取失败' : ''}。</p><a class="link" href="https://github.com/Vizards8/warframe-market-dashboard/actions" target="_blank" rel="noopener">更新记录 ↗</a></details>`;
+      `<span>${snapshotLabel()}</span><details><summary>数据状态${fail ? ' · ' + fail + ' 项失败' : ''}</summary><p>${focus.length ? '持仓 / 关注' : '主要目录'}：${good}/${scope.length} 项报价在 2 小时内，${unknown} 项未查询，${fail} 项失败。</p><p>网页发布不代表重新抓取行情；行情抓取完成也不代表所有商品查询成功。每项查询时间见商品详情，过期或缺价不按零计算。货单：${b?.at ? age(b.at) : '未查询'}${b?.error ? '，获取失败' : ''}。</p><a class="link" href="https://github.com/Vizards8/warframe-market-dashboard/actions/workflows/pages.yml" target="_blank" rel="noopener">更新记录 / 手动抓取 ↗</a></details>`;
   }
   function render() {
     if (!initialized) return;

@@ -37,6 +37,10 @@ const timeLabel = x =>
         hour12: false
       })
     : '尚未更新';
+const snapshotLabel = () =>
+  window.Hosted
+    ? `行情抓取完成 ${timeLabel(state.refresh_status?.finished)} · 网页发布 ${timeLabel(state.server_time)}`
+    : '各商品报价时间见详情';
 const kindLabel = { weapon: '可交易武器', mod: 'MOD', frame: 'P 甲套装', component: 'Prime 散件' };
 const srow = slug =>
   settings.items[slug] || { quantity: 0, target: null, cost: null, watch: false, note: '' };

@@ -26,8 +26,7 @@ window.Welcome = (() => {
     }
     const count = state.catalog.filter(held).length;
     $('welcome-holdings').textContent = count ? `${count} 种商品持有中` : '尚未添加库存';
-    $('welcome-snapshot').textContent =
-      `行情更新 ${timeLabel(state.server_time)} · ${state.catalog.length} 种商品`;
+    $('welcome-snapshot').textContent = `${snapshotLabel()} · ${state.catalog.length} 种商品`;
     const status = DeskCore.baro(state.baro);
     $('welcome-baro').textContent = {
       active: '本次在售',
