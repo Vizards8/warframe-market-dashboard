@@ -1,5 +1,6 @@
 'use strict';
 const MARKET_FRESH_MS = 2 * 3600000;
+const STATS_FRESH_MS = 8 * 3600000;
 const DeskCore = {
   fresh(at, error, now = Date.now()) {
     return (
@@ -8,6 +9,21 @@ const DeskCore = {
       Number.isFinite(Date.parse(at)) &&
       now >= Date.parse(at) &&
       now - Date.parse(at) < MARKET_FRESH_MS
+    );
+  },
+  statsFresh(m, now = Date.now()) {
+    const at = Date.parse(m?.stats_at),
+      end = Date.parse(m?.stats?.end + 'T00:00:00Z') + 86400000;
+    // Daily closed trades refresh every six hours, with two hours of grace.
+    // A newly fetched response with an old or unfinished cutoff is still invalid.
+    return (
+      !m?.stats_error &&
+      Number.isFinite(at) &&
+      now >= at &&
+      now - at < STATS_FRESH_MS &&
+      Number.isFinite(end) &&
+      now >= end &&
+      now - end < 3 * 86400000
     );
   },
   target(m, basis = 'sell', now = Date.now()) {
@@ -20,7 +36,10 @@ const DeskCore = {
           : m?.orders?.sell?.[0]?.price;
     return {
       value: value ?? null,
-      valid: this.fresh(m?.[source + '_at'], m?.[source + '_error'], now) && value != null,
+      valid:
+        (source === 'stats'
+          ? this.statsFresh(m, now)
+          : this.fresh(m?.orders_at, m?.orders_error, now)) && value != null,
       label:
         { sell: '在线最低卖价', buy: '在线最高买价', mean30: '30 天成交均价' }[basis] ||
         '在线最低卖价'
@@ -56,7 +75,7 @@ const DeskCore = {
         7
       ),
       enough = x => x.price > 0 && x.days >= 4 && x.volume >= 20,
-      fresh = this.fresh(m?.stats_at, m?.stats_error, now),
+      fresh = this.statsFresh(m, now),
       recent =
         Number.isFinite(end) &&
         now - (end + 86400000) >= 0 &&
@@ -199,8 +218,7 @@ const DeskCore = {
       month.price != null && week.price != null ? Math.min(month.price, week.price) : null;
     const current = market?.orders?.sell?.[0]?.price ?? null;
     const valid =
-      this.fresh(market?.stats_at, market?.stats_error, now) &&
-      this.fresh(market?.orders_at, market?.orders_error, now);
+      this.statsFresh(market, now) && this.fresh(market?.orders_at, market?.orders_error, now);
     const efficiency = history != null && item.ducats > 0 ? (history / item.ducats) * 100 : null;
     const currentEfficiency =
       current != null && item.ducats > 0 ? (current / item.ducats) * 100 : null;
@@ -230,7 +248,7 @@ const DeskCore = {
     const known = !!m?.stats?.end,
       week = MarketStats.window(m, 7),
       month = MarketStats.window(m, 30);
-    const valid = known && this.fresh(m.stats_at, m.stats_error, now);
+    const valid = known && this.statsFresh(m, now);
     const tier = !valid ? -1 : week.volume >= 70 ? 2 : week.volume >= 14 ? 1 : 0;
     return {
       week: known ? week.volume : null,
@@ -255,11 +273,7 @@ const DeskCore = {
       !item.tags.includes('set');
     const summary = MarketStats.window(m, 30),
       price = summary.price;
-    const valid =
-      eligible &&
-      Number.isFinite(price) &&
-      price > 0 &&
-      this.fresh(m?.stats_at, m?.stats_error, now);
+    const valid = eligible && Number.isFinite(price) && price > 0 && this.statsFresh(m, now);
     return {
       eligible,
       valid,
@@ -579,8 +593,7 @@ const DeskCore = {
     const sellValid =
       this.fresh(targetMarket?.orders_at, targetMarket?.orders_error, now) && sellDepth.left === 0;
     const history = this.baroValue(target, targetMarket, {}, now).history;
-    const historyValid =
-      this.fresh(targetMarket?.stats_at, targetMarket?.stats_error, now) && history != null;
+    const historyValid = this.statsFresh(targetMarket, now) && history != null;
     const credits = target.credits * copies,
       creditP =
         Number.isFinite(creditCost) && creditCost >= 0 ? (credits / 1e6) * creditCost : null;

@@ -173,9 +173,17 @@ window.Desk = (() => {
     ).length;
     const unknown = scope.filter(x => !mrow(x.slug).orders_at).length,
       fail = scope.filter(x => mrow(x.slug).orders_error || mrow(x.slug).stats_error).length;
-    const b = state.baro;
+    const b = state.baro,
+      statsGood = scope.filter(x => DeskCore.statsFresh(mrow(x.slug))).length,
+      phases = state.refresh_status?.sources,
+      statsTime = phases?.stats?.finished
+        ? timeLabel(phases.stats.finished)
+        : '批次时间未记录，见商品详情',
+      rivenTime = phases?.rivens?.finished
+        ? timeLabel(phases.rivens.finished)
+        : '批次时间未记录，见商品详情';
     $('data-health').innerHTML =
-      `<span>${snapshotLabel()}</span><details><summary>数据状态${fail ? ' · ' + fail + ' 项失败' : ''}</summary><p>${focus.length ? '持仓 / 关注' : '主要目录'}：${good}/${scope.length} 项报价在 2 小时内，${unknown} 项未查询，${fail} 项失败。</p><p>网页发布不代表重新抓取行情；行情抓取完成也不代表所有商品查询成功。每项查询时间见商品详情，过期或缺价不按零计算。货单：${b?.at ? age(b.at) : '未查询'}${b?.error ? '，获取失败' : ''}。</p><a class="link" href="https://github.com/Vizards8/warframe-market-dashboard/actions/workflows/pages.yml" target="_blank" rel="noopener">更新记录 / 手动抓取 ↗</a></details>`;
+      `<span>${snapshotLabel()}</span><details><summary>数据状态${fail ? ' · ' + fail + ' 项失败' : ''}</summary><p>${focus.length ? '持仓 / 关注' : '主要目录'}：${good}/${scope.length} 项报价在 2 小时内，${unknown} 项未查询，${fail} 项失败；${statsGood}/${scope.length} 项成交统计有效（8 小时内采集，统计截止日通过检查）。</p><p>成交统计最近抓取：${statsTime}；紫卡最近批次：${rivenTime}。挂单每小时更新，成交统计 / 紫卡每 6 小时检查更新。</p><p>网页发布不代表重新抓取行情；行情抓取完成也不代表所有商品查询成功。每项查询时间见商品详情，过期或缺价不按零计算。货单：${b?.at ? age(b.at) : '未查询'}${b?.error ? '，获取失败' : ''}。</p><a class="link" href="https://github.com/Vizards8/warframe-market-dashboard/actions/workflows/pages.yml" target="_blank" rel="noopener">更新记录 / 手动抓取 ↗</a></details>`;
   }
   function render() {
     if (!initialized) return;

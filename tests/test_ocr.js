@@ -137,7 +137,7 @@ for (const scale of [0.8, 1.25]) {
 // Two order books would rank these the other way: recommendation must use the shared mean.
 global.MarketStats = require('../static/js/core/stats.js');
 const desk = require('../static/js/core/desk-core.js'),
-  now = Date.now(),
+  now = Date.parse('2026-10-21T08:00:00Z'),
   at = new Date(now).toISOString();
 const market = {
   a: {

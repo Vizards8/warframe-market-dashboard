@@ -24,6 +24,7 @@ assert.equal(q.peak, 150);
 assert.equal(q.rising, true);
 assert.equal(q.high, true);
 assert.equal(q.rank, 3);
+assert.equal(core.frameSignal({ ...market, stats_at: '2026-10-27T20:00:00Z' }, now).rank, 3);
 const old = core.frameSignal({ ...market, stats_at: '2026-10-27T01:30:00Z' }, now);
 assert.equal(old.rank, -1);
 assert.equal(old.rising, false);

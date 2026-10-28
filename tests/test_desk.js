@@ -107,6 +107,18 @@ assert.equal(core.manualCurrent(undefined, now), false);
 assert.equal(core.fresh('2026-10-21T07:30:00Z', null, now), true);
 assert.equal(core.fresh('2026-10-21T05:00:00Z', null, now), false);
 assert.equal(core.fresh('2026-10-22T08:00:00Z', null, now), false);
+// Six-hour statistics cadence must not extend the two-hour executable quote window.
+const sixHourStats = { ...m, stats_at: '2026-10-21T02:00:00Z', orders_at: '2026-10-21T02:00:00Z' };
+assert.equal(core.statsFresh(sixHourStats, now), true);
+assert.equal(core.target(sixHourStats, 'mean30', now).valid, true);
+assert.equal(core.rewardQuote(sixHourStats, now).valid, true);
+assert.equal(core.target(sixHourStats, 'sell', now).valid, false);
+assert.equal(core.statsFresh({ ...m, stats_at: '2026-10-21T00:00:00Z' }, now), false);
+assert.equal(core.statsFresh({ ...m, stats_error: '429' }, now), false);
+assert.equal(core.statsFresh({ ...m, stats_at: '2026-10-22T00:00:00Z' }, now), false);
+assert.equal(core.statsFresh({ ...m, stats: { ...m.stats, end: '2026-10-21' } }, now), false);
+assert.equal(core.statsFresh({ ...m, stats: { ...m.stats, end: '2026-10-16' } }, now), false);
+assert.equal(core.statsFresh({ ...m, stats: {} }, now), false);
 assert.throws(() => core.backup({ ...raw, items: { a: { quantity: 4 } } }, [{ slug: 'a' }]));
 assert.throws(() =>
   core.backup({ ...raw, transactions: [{ ...raw.transactions[0], slug: 'b' }] }, [
