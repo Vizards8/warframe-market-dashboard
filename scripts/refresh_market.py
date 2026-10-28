@@ -65,13 +65,20 @@ def refresh(mode='orders', due=False):
                         cache[slug].pop(phase + '_error', None)
             except Exception as error:
                 with write_lock:
-                    cache.setdefault(slug, {})['error' if phase == 'rivens' else phase + '_error'] = str(error)[:160]
+                    cache.setdefault(slug, {})[
+                        'error' if phase == 'rivens' else phase + '_error'
+                    ] = str(error)[:160]
                     failures.append({'slug': slug, 'source': phase, 'message': str(error)[:160]})
             with write_lock:
                 completed += 1
                 if completed % 25 == 0:
-                    print(f'{phase}: {completed}/{len(queries)} queries; {len(failures)} failures', flush=True)
-                    server.atomic_json(features.RIVEN_FILE if phase == 'rivens' else server.CACHE_FILE, cache)
+                    print(
+                        f'{phase}: {completed}/{len(queries)} queries; {len(failures)} failures',
+                        flush=True,
+                    )
+                    server.atomic_json(
+                        features.RIVEN_FILE if phase == 'rivens' else server.CACHE_FILE, cache
+                    )
 
         if phase == 'rivens':
             previous = sources.get(phase, {})
@@ -85,42 +92,79 @@ def refresh(mode='orders', due=False):
             scanned = weapons[batch * 20 : (batch + 1) * 20]
             candidates = sorted(
                 [k for k in weapons if features.RIVENS.get(k, {}).get('reference') is not None],
-                key=lambda k: features.RIVENS[k]['reference'], reverse=True,
+                key=lambda k: features.RIVENS[k]['reference'],
+                reverse=True,
             )[:30]
             slugs = sorted(set(candidates + features.CANDIDATES['slugs'][:10] + scanned))
             for slug in slugs:
-                params = urlencode({'type': 'riven', 'weapon_url_name': slug, 're_rolls_min': 0,
-                                    're_rolls_max': 0, 'sort_by': 'price_asc', 'platform': 'pc'})
-                queries.append((slug, 'https://api.warframe.market/v1/auctions/search?' + params,
-                                lambda raw, slug=slug: features.riven_summary(raw, slug), features.RIVENS))
+                params = urlencode(
+                    {
+                        'type': 'riven',
+                        'weapon_url_name': slug,
+                        're_rolls_min': 0,
+                        're_rolls_max': 0,
+                        'sort_by': 'price_asc',
+                        'platform': 'pc',
+                    }
+                )
+                queries.append(
+                    (
+                        slug,
+                        'https://api.warframe.market/v1/auctions/search?' + params,
+                        lambda raw, slug=slug: features.riven_summary(raw, slug),
+                        features.RIVENS,
+                    )
+                )
             extra = {'riven_batch': scanned, 'riven_candidates': candidates}
         else:
             for item in server.CATALOG:
-                if not (item.get('baro') or item['kind'] == 'frame'
-                        or 'prime' in item.get('tags', []) and (item.get('ducats') or 0) > 0):
+                if not (
+                    item.get('baro')
+                    or item['kind'] == 'frame'
+                    or 'prime' in item.get('tags', [])
+                    and (item.get('ducats') or 0) > 0
+                ):
                     continue
                 slug = item['slug']
                 if phase == 'stats' and due and not stats_due(server.CACHE.get(slug, {}), clock):
                     continue
-                url = (f'https://api.warframe.market/v2/orders/item/{slug}' if phase == 'orders'
-                       else f'https://api.warframe.market/v1/items/{slug}/statistics')
-                queries.append((slug, url, server.summarize_orders if phase == 'orders'
-                                else server.summarize_stats, server.CACHE))
+                url = (
+                    f'https://api.warframe.market/v2/orders/item/{slug}'
+                    if phase == 'orders'
+                    else f'https://api.warframe.market/v1/items/{slug}/statistics'
+                )
+                queries.append(
+                    (
+                        slug,
+                        url,
+                        server.summarize_orders if phase == 'orders' else server.summarize_stats,
+                        server.CACHE,
+                    )
+                )
         if not queries:
             print(f'{phase}: no queries due; skipped', flush=True)
             continue
         print(f'{phase}: starting {len(queries)} queries', flush=True)
         # Phases run separately so ordinary quotes can be published before slow data.
         # Existing global limits remain unchanged, including auction search limits.
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1 if phase == 'rivens' else 6) as pool:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=1 if phase == 'rivens' else 6
+        ) as pool:
             list(pool.map(lambda args: record(*args), queries))
         if len(failures) == len(queries):
             raise SystemExit(f'All {phase} requests failed; keep the previous deployment')
-        server.atomic_json(features.RIVEN_FILE if phase == 'rivens' else server.CACHE_FILE,
-                           features.RIVENS if phase == 'rivens' else server.CACHE)
+        server.atomic_json(
+            features.RIVEN_FILE if phase == 'rivens' else server.CACHE_FILE,
+            features.RIVENS if phase == 'rivens' else server.CACHE,
+        )
         finished = server.now()
-        sources[phase] = {'started': started, 'finished': finished, 'queries': completed,
-                          'failures': failures, **extra}
+        sources[phase] = {
+            'started': started,
+            'finished': finished,
+            'queries': completed,
+            'failures': failures,
+            **extra,
+        }
         # Keep the legacy field tied to orders, never to a later Riven publication.
         if phase == 'orders':
             status['finished'] = finished
@@ -136,7 +180,9 @@ def refresh(mode='orders', due=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mode', choices=('orders', 'stats', 'rivens', 'full'), default='orders')
-    parser.add_argument('--due', action='store_true', help='Only query slow data missing or older than 6 hours')
+    parser.add_argument(
+        '--due', action='store_true', help='Only query slow data missing or older than 6 hours'
+    )
     args = parser.parse_args()
     changed = refresh(args.mode, args.due)
     if os.environ.get('GITHUB_OUTPUT'):

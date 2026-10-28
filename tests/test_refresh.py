@@ -25,15 +25,23 @@ class RefreshCoverageTests(unittest.TestCase):
         ]:
             with tempfile.TemporaryDirectory() as tmp:
                 output = Path(tmp) / 'output'
-                with patch.object(refresh_market.sys, 'argv', argv), \
-                        patch.object(refresh_market, 'refresh', return_value=changed) as run, \
-                        patch.dict(os.environ, {'GITHUB_OUTPUT': str(output)}):
+                with patch.object(refresh_market.sys, 'argv', argv), patch.object(
+                    refresh_market, 'refresh', return_value=changed
+                ) as run, patch.dict(os.environ, {'GITHUB_OUTPUT': str(output)}):
                     refresh_market.main()
                 run.assert_called_once_with(*expected)
                 self.assertEqual(output.read_text(), f'updated={str(changed).lower()}\n')
 
-    def run_refresh(self, fail_stats=False, mode='full', due=False, cache=None,
-                    status=None, rivens=None, fail_source=None):
+    def run_refresh(
+        self,
+        fail_stats=False,
+        mode='full',
+        due=False,
+        cache=None,
+        status=None,
+        rivens=None,
+        fail_source=None,
+    ):
         module = refresh_market
         catalog = [
             {'slug': 'part', 'kind': 'component', 'tags': ['prime'], 'ducats': 45},
@@ -50,8 +58,7 @@ class RefreshCoverageTests(unittest.TestCase):
 
         def fetch(url):
             seen.append(url)
-            if (fail_stats and '/part/statistics' in url or
-                    fail_source and fail_source in url):
+            if fail_stats and '/part/statistics' in url or fail_source and fail_source in url:
                 raise RuntimeError('HTTP 429')
             return {}
 
@@ -68,13 +75,27 @@ class RefreshCoverageTests(unittest.TestCase):
             ]:
                 stack.enter_context(patch.object(owner, key, value))
             stack.enter_context(patch.object(module.time, 'time', return_value=NOW))
-            stack.enter_context(patch.object(module.server, 'now', return_value='2026-10-28T08:00:00Z'))
+            stack.enter_context(
+                patch.object(module.server, 'now', return_value='2026-10-28T08:00:00Z')
+            )
             stack.enter_context(patch.object(module.public_data, 'read', return_value=status))
             stack.enter_context(patch.object(module.server, 'market_get', side_effect=fetch))
             stack.enter_context(patch.object(module.server, 'atomic_json', side_effect=save))
-            stack.enter_context(patch.object(module.server, 'summarize_orders', return_value={'offer_schema': 1}))
-            stack.enter_context(patch.object(module.server, 'summarize_stats', return_value={'history': ['new'], 'end': '2026-10-27'}))
-            stack.enter_context(patch.object(module.features, 'riven_summary', side_effect=lambda *a: {'reference': 30}))
+            stack.enter_context(
+                patch.object(module.server, 'summarize_orders', return_value={'offer_schema': 1})
+            )
+            stack.enter_context(
+                patch.object(
+                    module.server,
+                    'summarize_stats',
+                    return_value={'history': ['new'], 'end': '2026-10-27'},
+                )
+            )
+            stack.enter_context(
+                patch.object(
+                    module.features, 'riven_summary', side_effect=lambda *a: {'reference': 30}
+                )
+            )
             stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
             changed = module.refresh(mode, due)
         return cache, seen, status, changed, writes
@@ -100,7 +121,9 @@ class RefreshCoverageTests(unittest.TestCase):
 
     def test_orders_only_preserves_stats_rivens_and_phase_status(self):
         stats = {'finished': FRESH, 'queries': 2, 'failures': []}
-        cache, seen, status, _, _ = self.run_refresh(mode='orders', status={'sources': {'stats': stats}})
+        cache, seen, status, _, _ = self.run_refresh(
+            mode='orders', status={'sources': {'stats': stats}}
+        )
         self.assertEqual(len(seen), 2)
         self.assertTrue(all('/v2/orders/item/' in url for url in seen))
         self.assertEqual(cache['part']['stats_at'], OLD)
@@ -109,13 +132,21 @@ class RefreshCoverageTests(unittest.TestCase):
 
     def test_due_statistics_skip_recent_success_and_refetch_missing_failed_or_old_cutoff(self):
         good = {'stats_at': FRESH, 'stats': {'end': '2026-10-27', 'history': ['keep']}}
-        cache, seen, _, _, _ = self.run_refresh(mode='stats', due=True, cache={'part': copy.deepcopy(good)})
+        cache, seen, _, _, _ = self.run_refresh(
+            mode='stats', due=True, cache={'part': copy.deepcopy(good)}
+        )
         self.assertEqual(len(seen), 1)
         self.assertIn('/set/statistics', seen[0])
         self.assertEqual(cache['part']['stats']['history'], ['keep'])
-        for changed in ({'stats_error': '429'}, {'stats_at': OLD},
-                        {'stats': {'end': '2026-10-26'}}, {'stats_at': '2026-10-29T00:00:00Z'}):
-            _, seen, _, _, _ = self.run_refresh(mode='stats', due=True, cache={'part': {**good, **changed}, 'set': good})
+        for changed in (
+            {'stats_error': '429'},
+            {'stats_at': OLD},
+            {'stats': {'end': '2026-10-26'}},
+            {'stats_at': '2026-10-29T00:00:00Z'},
+        ):
+            _, seen, _, _, _ = self.run_refresh(
+                mode='stats', due=True, cache={'part': {**good, **changed}, 'set': good}
+            )
             self.assertEqual(len(seen), 1)
             self.assertIn('/part/statistics', seen[0])
 
@@ -123,12 +154,16 @@ class RefreshCoverageTests(unittest.TestCase):
         self.assertTrue(refresh_market.recent('2026-10-28T02:00:01Z', NOW))
         self.assertFalse(refresh_market.recent('2026-10-28T02:00:00Z', NOW))
         self.assertFalse(refresh_market.recent('invalid', NOW))
-        self.assertTrue(refresh_market.stats_due({'stats_at': FRESH, 'stats': {'end': '2026-10-26'}}, NOW))
+        self.assertTrue(
+            refresh_market.stats_due({'stats_at': FRESH, 'stats': {'end': '2026-10-26'}}, NOW)
+        )
 
     def test_nothing_due_does_not_change_status_or_persist(self):
         good = {'stats_at': FRESH, 'stats': {'end': '2026-10-27', 'history': []}}
         status = {'finished': OLD, 'sources': {'stats': {'finished': FRESH}}}
-        _, seen, out, changed, writes = self.run_refresh(mode='stats', due=True, cache={'part': good, 'set': good}, status=status)
+        _, seen, out, changed, writes = self.run_refresh(
+            mode='stats', due=True, cache={'part': good, 'set': good}, status=status
+        )
         self.assertEqual(seen, [])
         self.assertFalse(changed)
         self.assertEqual(writes, [])
@@ -137,17 +172,23 @@ class RefreshCoverageTests(unittest.TestCase):
 
     def test_manual_stats_forces_recent_data_but_keeps_orders_timestamp(self):
         good = {'stats_at': FRESH, 'stats': {'end': '2026-10-27', 'history': []}}
-        _, seen, status, _, _ = self.run_refresh(mode='stats', cache={'part': good, 'set': copy.deepcopy(good)}, status={'finished': OLD})
+        _, seen, status, _, _ = self.run_refresh(
+            mode='stats', cache={'part': good, 'set': copy.deepcopy(good)}, status={'finished': OLD}
+        )
         self.assertEqual(len(seen), 2)
         self.assertEqual(status['finished'], OLD)
 
     def test_riven_batch_cadence_force_and_failure_recovery(self):
         status = {'sources': {'rivens': {'finished': FRESH, 'failures': []}}}
-        _, seen, _, changed, _ = self.run_refresh(mode='rivens', due=True, status=copy.deepcopy(status))
+        _, seen, _, changed, _ = self.run_refresh(
+            mode='rivens', due=True, status=copy.deepcopy(status)
+        )
         self.assertEqual(seen, [])
         self.assertFalse(changed)
         rivens = {'weapon': {'at': OLD, 'error': '429', 'reference': 20}}
-        _, seen, _, changed, _ = self.run_refresh(mode='rivens', status=copy.deepcopy(status), rivens=rivens)
+        _, seen, _, changed, _ = self.run_refresh(
+            mode='rivens', status=copy.deepcopy(status), rivens=rivens
+        )
         self.assertEqual(len(seen), 1)
         self.assertTrue(changed)
         self.assertEqual(rivens['weapon']['reference'], 30)
@@ -157,7 +198,11 @@ class RefreshCoverageTests(unittest.TestCase):
         self.assertEqual(len(seen), 1)
 
     def test_total_phase_failure_stops_publication_without_success_timestamp(self):
-        for mode, path in [('orders', '/v2/orders/'), ('stats', '/statistics'), ('rivens', '/auctions/')]:
+        for mode, path in [
+            ('orders', '/v2/orders/'),
+            ('stats', '/statistics'),
+            ('rivens', '/auctions/'),
+        ]:
             status = {'finished': OLD, 'sources': {}}
             with self.assertRaisesRegex(SystemExit, f'All {mode} requests failed'):
                 self.run_refresh(mode=mode, status=status, fail_source=path)
