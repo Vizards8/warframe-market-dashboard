@@ -745,7 +745,7 @@
           .join('')}</div></div>
         <p id="ocr-capture-info" class="ocr-capture-info" hidden></p><p id="ocr-candidate-status" class="ocr-candidate-status">${candidateStatus()}</p>
         <details id="ocr-text-area" class="ocr-text-entry"><summary>按奖励名称查价</summary><textarea id="ocr-text" rows="4" aria-label="四个奖励名称" placeholder="每行一个奖励，最多四个"></textarea><button id="ocr-match-text" class="plain-button">查价</button></details>
-        <div class="ocr-help"><p>共享时选择游戏窗口或游戏所在屏幕，不选本站标签页。点击按钮或网页获得焦点时按 Ctrl + Enter 才取一帧；不读取游戏内存。共享会持续连接，点击停止、离开本页或关闭网页即结束。悬浮窗可收起，位置需手动拖动；独占全屏可能无法覆盖。</p><p>首次识别会下载模型，也可提前加载。默认自动判断奖励数；其他文字颜色需手选数量。框偏位或名称被截断时，展开预览后校准。</p><p>价格优先用 30 天成交均价，无有效均价时标明挂价；旧价和未确认名称不参与最高价提示。</p></div>
+        <div class="ocr-help"><p>共享时选择游戏窗口或游戏所在屏幕，不选本站标签页。点击按钮或网页获得焦点时按 Ctrl + Enter 才取一帧；不读取游戏内存。切换到其他网页功能时共享会保持，点击“停止共享”、关闭网页或浏览器结束共享。悬浮窗可收起，位置需手动拖动；独占全屏可能无法覆盖。</p><p>首次识别会下载模型，也可提前加载。默认自动判断奖励数；其他文字颜色需手选数量。框偏位或名称被截断时，展开预览后校准。</p><p>价格优先用 30 天成交均价，无有效均价时标明挂价；旧价和未确认名称不参与最高价提示。</p></div>
       </details><div id="ocr-image-area"><details id="ocr-preview-details" hidden><summary>截图预览与校准</summary><p id="ocr-frame-info"></p><canvas id="ocr-preview" aria-label="奖励识别区域预览"></canvas></details></div><progress id="ocr-progress" max="100" value="0" hidden></progress><p id="ocr-status" role="status" hidden></p><div id="ocr-results" class="ocr-results"></div>`;
     byId('relic-section').prepend(panel);
     document.addEventListener('keydown', shortcut);

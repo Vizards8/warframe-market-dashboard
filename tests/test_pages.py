@@ -12,6 +12,10 @@ spec.loader.exec_module(build_pages)
 
 
 class PagesTests(unittest.TestCase):
+    def test_relic_capture_is_not_stopped_by_dashboard_tab_switch(self):
+        extras = (ROOT / 'static/js/pages/extras.js').read_text(encoding='utf-8')
+        self.assertNotIn("if (next !== 'relics') {\n      window.RewardOcr?.leave();", extras)
+
     def test_public_build_does_not_read_private_files_or_ship_them(self):
         original = Path.read_text
 

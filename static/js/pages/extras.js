@@ -836,7 +836,6 @@
   }
   async function activate(next) {
     if (next !== 'relics') {
-      window.RewardOcr?.leave();
       if (document.body.classList.contains('relic-focus')) toggleFocus();
     }
     if (next === 'rivens') {
