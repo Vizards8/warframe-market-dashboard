@@ -12,7 +12,9 @@ const row = (slug, ducats, price, quantity = 1, extra = {}) => ({
   market: {
     orders_at: at,
     orders: {
-      sell_offers: [{ seller: 'same', name: 'Same', slug: 'same', price, quantity }]
+      sell_offers: [
+        { seller: 'same', status: 'ingame', name: 'Same', slug: 'same', price, quantity }
+      ]
     }
   },
   ...extra
@@ -26,7 +28,7 @@ assert.deepEqual(
       row('b', 15, 1, 1, {
         market: {
           orders_at: at,
-          orders: { sell_offers: [{ seller: 'other', price: 1, quantity: 1 }] }
+          orders: { sell_offers: [{ seller: 'other', status: 'ingame', price: 1, quantity: 1 }] }
         }
       })
     ],
@@ -40,6 +42,17 @@ const small = row('a', 45, 3, 4);
 assert.equal(core.ducatLot(small, small.market, 1, now, 150).units, 4);
 assert.equal(core.ducatLot(small, small.market, 1, now, 200), null);
 assert.equal(core.ducatLot(row('c', 15, 1), small.market, 1, now, 0).ducats, 60);
+const offline = {
+  ...small,
+  market: {
+    ...small.market,
+    orders: {
+      sell_offers: [{ ...small.market.orders.sell_offers[0], status: 'offline' }]
+    }
+  }
+};
+assert.equal(core.ducatLot(offline, offline.market, 1, now, 0), null);
+assert.deepEqual(core.ducatBundles([offline], 6, 0, now), []);
 assert.deepEqual(core.ducatBundles([], 6, 0, now), []);
 assert.deepEqual(core.ducatBundles([small], 7, 0, now), []);
 assert.deepEqual(core.ducatBundles([small], 6, -1, now), []);
@@ -133,6 +146,7 @@ for (let seed = 1; seed <= 30; seed++) {
         sell_offers: [
           {
             seller: 'same',
+            status: 'ingame',
             price: ((seed * (i + 3)) % 11) + 1,
             quantity: ((seed + i) % 3) + 1
           }

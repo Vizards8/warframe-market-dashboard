@@ -287,6 +287,11 @@ const DeskCore = {
       )
     };
   },
+  // The public collector records WFM's status on each identified seller.
+  // Anonymous or stale orders cannot be used for a purchase recommendation.
+  activeSellOffer(offer) {
+    return offer?.status === 'online' || offer?.status === 'ingame';
+  },
   ducatLot(item, m, slots = 1, now = Date.now(), minYield = 150) {
     if (
       !(item?.ducats > 0) ||
@@ -305,6 +310,7 @@ const DeskCore = {
       .filter(o => {
         if (
           !o.seller ||
+          !this.activeSellOffer(o) ||
           seen.has(o.seller) ||
           !Number.isFinite(o.price) ||
           o.price <= 0 ||
@@ -368,6 +374,7 @@ const DeskCore = {
       for (const offer of row.market?.orders?.sell_offers || []) {
         if (
           !offer?.seller ||
+          !this.activeSellOffer(offer) ||
           !Number.isFinite(offer.price) ||
           offer.price <= 0 ||
           !Number.isInteger(offer.quantity) ||
@@ -378,6 +385,7 @@ const DeskCore = {
           seller: offer.seller,
           name: offer.name || offer.slug || offer.seller,
           slug: offer.slug,
+          status: offer.status,
           items: new Map()
         };
         const old = seller.items.get(row.slug);
@@ -483,6 +491,7 @@ const DeskCore = {
           seller: seller.seller,
           sellerName: seller.name,
           sellerSlug: seller.slug,
+          sellerStatus: seller.status,
           per100: (x.cost / x.ducats) * 100,
           trashGap: trash.lowest - (x.cost / x.ducats) * 100
         }));

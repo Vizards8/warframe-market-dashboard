@@ -253,9 +253,9 @@ const bulkMarket = {
   orders: {
     ...pm.orders,
     sell_offers: [
-      { price: 1, quantity: 1, seller: 'cheap', name: 'A' },
-      { price: 3, quantity: 6, seller: 'bulk', name: 'B' },
-      { price: 5, quantity: 30, seller: 'deep', name: 'C' }
+      { price: 1, quantity: 1, seller: 'cheap', status: 'ingame', name: 'A' },
+      { price: 3, quantity: 6, seller: 'bulk', status: 'ingame', name: 'B' },
+      { price: 5, quantity: 30, seller: 'deep', status: 'ingame', name: 'C' }
     ]
   }
 };
@@ -273,8 +273,8 @@ assert.equal(
       ...bulkMarket,
       orders: {
         sell_offers: [
-          { price: 1, quantity: 3, seller: 'a' },
-          { price: 1, quantity: 3, seller: 'b' }
+          { price: 1, quantity: 3, seller: 'a', status: 'ingame' },
+          { price: 1, quantity: 3, seller: 'b', status: 'ingame' }
         ]
       }
     },
@@ -302,7 +302,7 @@ assert.equal(rounded.buyCovered, 6);
 const set = { kind: 'component', tags: ['prime', 'set'], ducats: 160 };
 const setMarket = {
   ...bulkMarket,
-  orders: { sell_offers: [{ price: 20, quantity: 2, seller: 'set' }] }
+  orders: { sell_offers: [{ price: 20, quantity: 2, seller: 'set', status: 'ingame' }] }
 };
 const setLot = core.ducatLot(set, setMarket, 3, now);
 assert.equal(setLot.units, 2);
@@ -374,8 +374,8 @@ assert.equal(
       ...setMarket,
       orders: {
         sell_offers: [
-          { price: 10, quantity: 1, seller: 'one' },
-          { price: 11, quantity: 2, seller: 'two' }
+          { price: 10, quantity: 1, seller: 'one', status: 'ingame' },
+          { price: 11, quantity: 2, seller: 'two', status: 'ingame' }
         ]
       }
     },
@@ -395,8 +395,8 @@ const bundleRows = [
       orders_at: m.orders_at,
       orders: {
         sell_offers: [
-          { price: 3, quantity: 3, seller: 'combo', name: 'Combo' },
-          { price: 3.1, quantity: 6, seller: 'deep', name: 'Deep' }
+          { price: 3, quantity: 3, seller: 'combo', status: 'ingame', name: 'Combo' },
+          { price: 3.1, quantity: 6, seller: 'deep', status: 'ingame', name: 'Deep' }
         ]
       }
     }
@@ -410,8 +410,8 @@ const bundleRows = [
       orders_at: m.orders_at,
       orders: {
         sell_offers: [
-          { price: 1, quantity: 1, seller: 'combo', name: 'Combo' },
-          { price: 4, quantity: 1, seller: 'deep', name: 'Deep' }
+          { price: 1, quantity: 1, seller: 'combo', status: 'ingame', name: 'Combo' },
+          { price: 4, quantity: 1, seller: 'deep', status: 'ingame', name: 'Deep' }
         ]
       }
     }
