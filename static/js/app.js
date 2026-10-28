@@ -9,6 +9,7 @@ let state,
 let pollTimer,
   wasRunning = false,
   lastJobStart = null;
+let initialLoadingTimer;
 const STORAGE_KEY = window.Hosted
   ? 'void-ledger:hosted:v1'
   : window.Portable
@@ -58,6 +59,46 @@ function notify(message, success = false) {
   $('notice').textContent = message;
   $('notice').className = 'notice' + (success ? ' success' : '');
   $('notice').hidden = false;
+}
+function setInitialLoading(title, percent, detail, waiting = false) {
+  const panel = $('initial-loading');
+  if (!panel) return;
+  panel.hidden = false;
+  panel.classList.toggle('is-waiting', waiting);
+  panel.classList.remove('load-error');
+  $('initial-loading-title').textContent = title;
+  $('initial-loading-percent').textContent = `${Math.round(percent)}%`;
+  $('initial-loading-detail').textContent = detail;
+  $('initial-loading-progress').style.width = `${Math.max(0, Math.min(100, percent))}%`;
+  $('initial-loading-bar').setAttribute('aria-valuenow', String(Math.round(percent)));
+  $('initial-loading-spinner').hidden = false;
+  $('initial-loading-retry').hidden = true;
+}
+function finishInitialLoading() {
+  const panel = $('initial-loading');
+  if (!panel) return;
+  clearTimeout(initialLoadingTimer);
+  setInitialLoading('行情已就绪', 100, '页面已准备完成。');
+  $('initial-loading-spinner').hidden = true;
+  initialLoadingTimer = setTimeout(() => {
+    panel.hidden = true;
+  }, 350);
+}
+function failInitialLoading(error) {
+  const panel = $('initial-loading');
+  if (!panel) return;
+  clearTimeout(initialLoadingTimer);
+  panel.hidden = false;
+  panel.classList.remove('is-waiting');
+  panel.classList.add('load-error');
+  $('initial-loading-title').textContent = '行情读取失败';
+  $('initial-loading-percent').textContent = '—';
+  $('initial-loading-detail').textContent =
+    `${error.message || '网络请求失败'}。可以点击重新读取。`;
+  $('initial-loading-progress').style.width = '100%';
+  $('initial-loading-bar').setAttribute('aria-valuenow', '100');
+  $('initial-loading-spinner').hidden = true;
+  $('initial-loading-retry').hidden = false;
 }
 function wfmTradeButton(item, offer, quantity = 1, label = '复制私聊') {
   return wfmPurchaseButton([{ item, offer, quantity }], label);
@@ -459,7 +500,15 @@ function renderJob() {
   window.Extras?.renderProgress();
 }
 async function loadState(initial = false) {
+  if (initial)
+    setInitialLoading(
+      '正在读取行情',
+      8,
+      '正在连接公开行情快照；在线版读取的是 GitHub Pages 已发布数据。',
+      true
+    );
   const latest = await request('/api/state');
+  if (initial) setInitialLoading('正在整理行情', 68, '快照已读取，正在准备价格、库存和趋势数据。');
   state = latest;
   if (initial) {
     settings = readBrowserSettings(latest.initial_settings);
@@ -473,6 +522,7 @@ async function loadState(initial = false) {
   }
   window.Extras?.update();
   window.Welcome?.update();
+  if (initial) setInitialLoading('正在准备页面', 88, '正在加载各功能页面和本地设置。');
   if (tab === 'ducats') window.Desk?.activate();
   if (wasRunning && !state.job.running && lastJobStart === state.job.started) {
     const failures = state.job.errors.length;
@@ -711,6 +761,7 @@ $('refresh').onclick = () =>
     : tab === 'rivens'
       ? window.Extras?.refreshRivens()
       : refreshItems(visibleItems().map(x => x.slug));
+$('initial-loading-retry').onclick = () => window.location.reload();
 $('drawer-overlay').onclick = closeDrawer;
 $('close-drawer').onclick = closeDrawer;
 document.addEventListener('keydown', e => {
@@ -789,10 +840,12 @@ document
         .filter(x => stale(mrow(x.slug).orders_at) || stale(mrow(x.slug).stats_at));
       if (old.length) await refreshItems(old.map(x => x.slug));
     }
+    finishInitialLoading();
   } catch (error) {
     $('rows').innerHTML =
       '<tr><td colspan="8" class="empty">行情暂时无法读取，请稍后重试。</td></tr>';
     $('welcome-snapshot').textContent = '行情读取失败；请刷新页面重试。';
+    failInitialLoading(error);
     notify(error.message);
   }
 })();

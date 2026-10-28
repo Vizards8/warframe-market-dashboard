@@ -1295,6 +1295,81 @@ dialog p {
   z-index: 12;
   box-shadow: 0 3px 15px #184b2c09;
 }
+.initial-loading {
+  max-width: 1080px;
+  margin: 14px auto 0;
+  padding: 14px 16px;
+  color: #416d58;
+  background: #f4faf6;
+  border: 1px solid #d9ebe0;
+  border-radius: 9px;
+  box-shadow: 0 3px 15px #184b2c09;
+}
+.initial-loading[hidden] {
+  display: none;
+}
+.initial-loading-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.initial-loading-head strong {
+  font-size: 13px;
+}
+#initial-loading-percent {
+  margin-left: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #277451;
+}
+.initial-progress-track {
+  height: 6px;
+  margin-top: 12px;
+  overflow: hidden;
+  background: #d9ece0;
+  border-radius: 4px;
+}
+#initial-loading-progress {
+  width: 0;
+  height: 100%;
+  background: #4d9d78;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+.initial-loading.is-waiting #initial-loading-progress {
+  width: 28% !important;
+  background: linear-gradient(90deg, #4d9d78 20%, #91c8a9 50%, #4d9d78 80%);
+  background-size: 220% 100%;
+  animation: initial-progress-shimmer 1.3s linear infinite;
+}
+.initial-loading-detail {
+  margin: 9px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #729080;
+}
+.initial-loading .plain-button {
+  margin-top: 10px;
+}
+.initial-loading.load-error {
+  color: #8d6941;
+  background: #fff8ed;
+  border-color: #f0dfc2;
+}
+.initial-loading.load-error #initial-loading-percent {
+  color: #a07945;
+}
+.initial-loading.load-error #initial-loading-progress {
+  background: #c69a5a;
+}
+@keyframes initial-progress-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
 .job-panel > div:first-child {
   gap: 10px;
 }

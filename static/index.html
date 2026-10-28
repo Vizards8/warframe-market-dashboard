@@ -43,6 +43,26 @@
           ><span class="market-pill"><i></i> PC · 跨平台交易</span>
         </div>
       </header>
+      <section id="initial-loading" class="initial-loading" role="status" aria-live="polite">
+        <div class="initial-loading-head">
+          <span id="initial-loading-spinner" class="spinner"></span
+          ><strong id="initial-loading-title">正在读取行情</strong
+          ><span id="initial-loading-percent">0%</span>
+        </div>
+        <div
+          id="initial-loading-bar"
+          class="initial-progress-track"
+          role="progressbar"
+          aria-label="初始行情读取进度"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div id="initial-loading-progress"></div>
+        </div>
+        <p id="initial-loading-detail">正在连接公开行情快照，请稍候。</p>
+        <button id="initial-loading-retry" class="plain-button" hidden>重新读取</button>
+      </section>
       <section id="welcome" class="welcome" aria-label="虚空账本首页">
         <div class="home-heading">
           <div>

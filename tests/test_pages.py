@@ -50,6 +50,8 @@ class PagesTests(unittest.TestCase):
             self.assertNotIn('wfm-open', html)
             self.assertNotIn('welcome-wfm', html)
             self.assertIn('查看交易账本', html)
+            self.assertIn('id="initial-loading"', html)
+            self.assertIn('id="initial-loading-progress"', html)
             import re
 
             for asset in re.findall(r'(?:src|href)="\./([^"]+\.(?:js|css))"', html):
