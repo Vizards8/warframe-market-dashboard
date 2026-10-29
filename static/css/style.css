@@ -3086,11 +3086,57 @@ a:focus-visible {
   background: #fff;
   color: var(--ink);
 }
-.ducat-bundle-table tr[data-contact-state]:not([data-contact-state='']) {
-  background: #f3f6f4;
+.ducat-bundle-panel [data-contact-state='contacted'] {
+  --seller-mark-bg: #fff5de;
+  --seller-mark-color: #aa791f;
 }
-.ducat-bundle-table tr[data-contact-state='contacted'] {
-  background: #fff8eb;
+.ducat-bundle-panel [data-contact-state='bought'] {
+  --seller-mark-bg: #e8f4ec;
+  --seller-mark-color: #39835a;
+}
+.ducat-bundle-panel [data-contact-state='offline'] {
+  --seller-mark-bg: #edf0f3;
+  --seller-mark-color: #7a8591;
+}
+.ducat-bundle-panel [data-contact-state='skip'] {
+  --seller-mark-bg: #fbeceb;
+  --seller-mark-color: #b56b66;
+}
+.ducat-bundle-table tr[data-seller-row] {
+  background: var(--seller-mark-bg, #fff);
+  cursor: pointer;
+}
+.ducat-bundle-table tr[data-seller-row] > td:first-child {
+  box-shadow: inset 3px 0 var(--seller-mark-color, transparent);
+}
+.ducat-bundle-table tr[data-seller-row]:focus-visible {
+  outline: 2px solid #7acdb2;
+  outline-offset: -2px;
+}
+.ducat-contact-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.ducat-contact-legend span[data-contact-state] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ducat-contact-legend span[data-contact-state]::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--seller-mark-color, #c7cdd3);
+  border-radius: 2px;
+  background: var(--seller-mark-bg, #fff);
+}
+.ducat-contact-legend i {
+  font-style: normal;
 }
 .quick-market-section > p {
   color: var(--muted);
