@@ -656,12 +656,15 @@ window.Desk = (() => {
   const sellerMarkLabels = {
     contacted: '已联系，等回复',
     bought: '已买',
-    offline: '暂时离线',
-    skip: '不再问'
+    skip: '不在线，不再问'
   };
-  function sellerMarkControl(seller) {
-    const mark = settings.ducatSellerMarks?.[seller];
-    return `<label class="seller-mark-control">本机标记 <select data-seller-mark="${esc(seller)}" aria-label="卖家联系标记">${[['', '未标记'], ...Object.entries(sellerMarkLabels)].map(([k, v]) => `<option value="${k}" ${mark?.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>${mark?.at ? `<small>标记于 ${timeLabel(mark.at)}</small>` : ''}`;
+  function sellerMarkStatus(seller) {
+    const status = settings.ducatSellerMarks?.[seller]?.status;
+    return status === 'offline' ? 'skip' : sellerMarkLabels[status] ? status : '';
+  }
+  function sellerMarkText(seller) {
+    const status = sellerMarkStatus(seller);
+    return status ? `<small class="seller-mark-label">${sellerMarkLabels[status]}</small>` : '';
   }
   function saveSellerMark(seller, status) {
     if (status && !sellerMarkLabels[status]) return;
@@ -672,14 +675,11 @@ window.Desk = (() => {
     activate();
   }
   function bindSellerMarks() {
-    document.querySelectorAll('[data-seller-mark]').forEach(control => {
-      control.onchange = () => saveSellerMark(control.dataset.sellerMark, control.value);
-    });
     document.querySelectorAll('[data-seller-row]').forEach(row => {
       const cycle = () => {
         const seller = row.dataset.sellerRow,
           statuses = ['', ...Object.keys(sellerMarkLabels)],
-          current = settings.ducatSellerMarks?.[seller]?.status || '',
+          current = sellerMarkStatus(seller),
           next = statuses[(statuses.indexOf(current) + 1) % statuses.length];
         saveSellerMark(seller, next);
       };
@@ -748,7 +748,7 @@ window.Desk = (() => {
         .map(b => {
           const oldest = b.entries.map(e => e.at).sort((a, b) => Date.parse(a) - Date.parse(b))[0],
             delta = b.trashGap;
-          return `<tr data-seller-row="${esc(b.seller)}" data-contact-state="${esc(settings.ducatSellerMarks?.[b.seller]?.status || '')}" tabindex="0" aria-label="${esc(b.sellerName)}，${sellerMarkLabels[settings.ducatSellerMarks?.[b.seller]?.status] || '未标记'}。按回车或空格切换标记" title="点击行内空白处循环切换标记"><td>${b.sellerSlug ? `<a class="link" href="https://warframe.market/profile/${encodeURIComponent(b.sellerSlug)}" target="_blank" rel="noopener">${esc(b.sellerName)} ↗</a>` : esc(b.sellerName)}<small>${sellerStatus(b.sellerStatus)} · 本次采集 ${timeLabel(oldest)}</small>${wfmBundleButton(b)}${sellerMarkControl(b.seller)}</td><td>${b.entries.map(e => `<div>${esc(e.name)} × ${e.units}${e.isSet ? ' 套' : ' 件'}<small>${number(e.price)}p / ${e.isSet ? '套' : '件'} · 小计 ${number(e.ducats)}D</small>${orderTimes(e)}</div>`).join('')}</td><td><strong>${number(b.per100, 2)}p</strong><small>${Math.abs(delta) < 0.005 ? '与铜 / 银基准相当' : `${delta > 0 ? '低于' : '高于'}基准 ${number(Math.abs(delta), 2)}p / 100D`}</small></td><td><b>${number(b.ducats)}D / ${number(b.cost, 1)}p</b><small>${b.slots}/6 物品槽 · 1 笔交易</small></td></tr>`;
+          return `<tr data-seller-row="${esc(b.seller)}" data-contact-state="${esc(sellerMarkStatus(b.seller))}" tabindex="0" aria-label="${esc(b.sellerName)}，${sellerMarkLabels[sellerMarkStatus(b.seller)] || '未标记'}。按回车或空格切换标记" title="点击行内空白处循环切换标记"><td>${b.sellerSlug ? `<a class="link" href="https://warframe.market/profile/${encodeURIComponent(b.sellerSlug)}" target="_blank" rel="noopener">${esc(b.sellerName)} ↗</a>` : esc(b.sellerName)}<small>${sellerStatus(b.sellerStatus)} · 本次采集 ${timeLabel(oldest)}</small>${wfmBundleButton(b)}${sellerMarkText(b.seller)}</td><td>${b.entries.map(e => `<div>${esc(e.name)} × ${e.units}${e.isSet ? ' 套' : ' 件'}<small>${number(e.price)}p / ${e.isSet ? '套' : '件'} · 小计 ${number(e.ducats)}D</small>${orderTimes(e)}</div>`).join('')}</td><td><strong>${number(b.per100, 2)}p</strong><small>${Math.abs(delta) < 0.005 ? '与铜 / 银基准相当' : `${delta > 0 ? '低于' : '高于'}基准 ${number(Math.abs(delta), 2)}p / 100D`}</small></td><td><b>${number(b.ducats)}D / ${number(b.cost, 1)}p</b><small>${b.slots}/6 物品槽 · 1 笔交易</small></td></tr>`;
         })
         .join('') || '<tr><td colspan="4">暂无匹配的有效报价。可降低门槛或稍后刷新。</td></tr>'
     }</tbody></table></div><p class="ducat-list-status">显示 ${Math.min(ducatBundleLimit, visible.length)} / ${visible.length} 位卖家。${visible.length > ducatBundleLimit ? '<button id="ducat-bundle-more" class="plain-button">再显示 10 位</button>' : ''}</p><p class="ducat-list-status">标记仅保存在当前浏览器，按卖家保留，不随行情刷新清除；复制私聊不代表已经发送。挂单更新来自 WFM，不代表卖家最近上线。</p><details class="ducat-method"><summary>组合规则与频道参考</summary><p>同一卖家的整套和散件可组合，最多占 6 槽，不必填满。每位卖家保留每百杜卡德成本最低的达标组合。频道金垃圾参考为 ${number(trash.highest, 2)}p / 100D。</p><p>每笔 150D → 每天 4,950D，14 天 69,300D。每笔 200D → 每天 6,600D，14 天 92,400D。这里只是假设每天都收到目标数量，未把同一份挂单库存重复算成每日供应；后续卖出也需要交易次数。</p><p>上面的频道价是你提供的议价参考，不是自动采集的实时行情。组合报价来自 WFM 卖单快照，30 天成交均价可切换到“单商品报价”查看。</p></details></section>`;

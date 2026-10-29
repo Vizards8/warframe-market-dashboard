@@ -3049,42 +3049,9 @@ a:focus-visible {
 .initializing #welcome-snapshot {
   display: none;
 }
-.seller-mark-control {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+.seller-mark-label {
   margin-top: 8px;
-  color: var(--muted);
-  font-size: 11px;
-}
-.seller-mark-control select {
-  appearance: none;
-  min-width: 130px;
-  max-width: 150px;
-  border: 1px solid #e2e9e4;
-  border-radius: 4px;
-  padding: 5px 28px 5px 10px;
-  background: #fff
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%23677580' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
-    no-repeat right 9px center;
-  color: #47545e;
-  font-size: 11px;
-  cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
-}
-.seller-mark-control select:hover {
-  background-color: #f3f8f4;
-  border-color: #b8c8bf;
-}
-.seller-mark-control select:focus-visible {
-  outline: 3px solid #7acdb2;
-  outline-offset: 3px;
-}
-.seller-mark-control option {
-  background: #fff;
-  color: var(--ink);
+  color: var(--seller-mark-color, var(--muted));
 }
 .ducat-bundle-panel [data-contact-state='contacted'] {
   --seller-mark-bg: #fff5de;
@@ -3094,13 +3061,9 @@ a:focus-visible {
   --seller-mark-bg: #e8f4ec;
   --seller-mark-color: #39835a;
 }
-.ducat-bundle-panel [data-contact-state='offline'] {
+.ducat-bundle-panel [data-contact-state='skip'] {
   --seller-mark-bg: #edf0f3;
   --seller-mark-color: #7a8591;
-}
-.ducat-bundle-panel [data-contact-state='skip'] {
-  --seller-mark-bg: #fbeceb;
-  --seller-mark-color: #b56b66;
 }
 .ducat-bundle-table tr[data-seller-row] {
   background: var(--seller-mark-bg, #fff);
