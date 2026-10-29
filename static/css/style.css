@@ -3046,6 +3046,47 @@ a:focus-visible {
     padding-bottom: 3px;
   }
 }
+.initializing #welcome-snapshot {
+  display: none;
+}
+.seller-mark-control {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 11px;
+}
+.seller-mark-control select {
+  max-width: 145px;
+}
+.ducat-bundle-table tr[data-contact-state]:not([data-contact-state='']) {
+  background: #f3f6f4;
+}
+.ducat-bundle-table tr[data-contact-state='contacted'] {
+  background: #fff8eb;
+}
+.quick-market-section > p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.quick-market-tools {
+  flex-wrap: wrap;
+}
+.quick-market-tools input[type='search'] {
+  flex: 1;
+  min-width: 200px;
+}
+.quick-market-table {
+  overflow-x: auto;
+}
+.quick-market-table table {
+  width: 100%;
+}
+.quick-market-table small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
 .home-mode .page-heading,
 .home-mode #data-health,
 .home-mode #stats-controls,

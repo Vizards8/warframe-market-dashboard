@@ -75,6 +75,7 @@ function setInitialLoading(title, percent, detail, waiting = false) {
   $('initial-loading-retry').hidden = true;
 }
 function finishInitialLoading() {
+  document.body.classList.remove('initializing');
   const panel = $('initial-loading');
   if (!panel) return;
   clearTimeout(initialLoadingTimer);
@@ -85,6 +86,7 @@ function finishInitialLoading() {
   }, 350);
 }
 function failInitialLoading(error) {
+  document.body.classList.remove('initializing');
   const panel = $('initial-loading');
   if (!panel) return;
   clearTimeout(initialLoadingTimer);
@@ -144,7 +146,7 @@ function wfmPurchasePanel(item, market) {
 }
 function resolveTradeMessage(selection) {
   const rows = selection.map(p => {
-    const item = state.catalog.find(x => x.slug === p.slug),
+    const item = state.catalog.find(x => x.slug === p.slug) || window.QuickMarket?.item(p.slug),
       market = mrow(p.slug),
       offer = market.orders?.sell_offers?.find(o => o.seller === p.seller && o.price === p.price);
     return {
@@ -409,6 +411,11 @@ function setTab(next) {
   const content = {
     ducats: ['杜卡德兑换', '杜卡德兑换', '比较整批成本和每次交易能收到的杜卡德。'],
     home: ['首页', '首页', ''],
+    'quick-market': [
+      '行情速查',
+      '行情速查',
+      '搜索中英文名称，查看已采集的价格、成交量和卖家报价。'
+    ],
     watch: ['我的关注', '我的关注', '关注商品的价格与成交量。', '关注商品', '数量为零也可关注。'],
     ledger: ['交易记录', '交易记录', '按已记录成本计算买卖差额。'],
     sets: ['散件凑套', '散件凑套', '扣除自用保留，比较整套与散卖报价。'],
@@ -445,6 +452,7 @@ function setTab(next) {
     renderTable();
   }
   window.Extras?.activate(tab);
+  window.QuickMarket?.activate();
   renderJob();
   window.Desk?.activate();
   window.Welcome?.activate();
@@ -521,6 +529,7 @@ async function loadState(initial = false) {
     if (selected && !$('drawer').hidden) renderDrawer(selected);
   }
   window.Extras?.update();
+  window.QuickMarket?.update();
   window.Welcome?.update();
   if (initial) setInitialLoading('正在准备页面', 88, '正在加载各功能页面和本地设置。');
   if (tab === 'ducats') window.Desk?.activate();
@@ -623,10 +632,15 @@ function depth(rows, side) {
     .join('');
 }
 function renderDrawer(slug) {
-  const x = state.catalog.find(x => x.slug === slug),
+  const x = state.catalog.find(x => x.slug === slug) || window.QuickMarket?.item(slug),
     s = srow(slug),
     m = mrow(slug);
   if (!x) return;
+  if (!state.catalog.some(item => item.slug === slug)) {
+    $('drawer-content').innerHTML =
+      `<div class="drawer-label">行情速查 · ${x.kind === 'mod' ? 'R0' : 'PC'}</div><div class="drawer-art">${itemImage(x, true)}</div><h2>${esc(x.name)}</h2><p>${esc(x.english)}</p><div class="detail-metrics"><div><small>30 天成交均价</small><strong>${price(statsFor(m, 30).price)}</strong></div><div><small>在线最低卖价</small><strong>${price(ask(m))}</strong></div><div><small>在线最高买价</small><strong>${price(bid(m))}</strong></div></div>${wfmPurchasePanel(x, m)}<h3>成交均价走势</h3>${chart(m)}<div class="depth"><div>${depth(m.orders?.sell, 'sell')}</div><div>${depth(m.orders?.buy, 'buy')}</div></div><p class="drawer-muted">${m.orders_at || m.stats_at ? '行情为已发布快照；过期价格仅作参考。' : '该商品尚未采集行情，不代表价格为零。'}<br>挂单采集 ${timeLabel(m.orders_at)} / 统计采集 ${timeLabel(m.stats_at)}</p>`;
+    return;
+  }
   const baro = s.baro_date || x.baro_date,
     summary = statsFor(m);
   $('drawer-content').innerHTML =

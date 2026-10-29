@@ -95,6 +95,8 @@ class MarketTests(unittest.TestCase):
                 'platinum': 15,
                 'quantity': 24,
                 'perTrade': 1,
+                'createdAt': '2024-01-01T00:00:00Z',
+                'updatedAt': '2026-10-28T02:00:00Z',
                 'visible': True,
                 'user': {
                     'id': 'bulk',
@@ -117,6 +119,8 @@ class MarketTests(unittest.TestCase):
         self.assertEqual(bulk['quantity'], 24)
         self.assertEqual(bulk['price'], 15)
         self.assertEqual(bulk['slug'], 'bulk')
+        self.assertEqual(bulk['createdAt'], '2024-01-01T00:00:00Z')
+        self.assertEqual(bulk['updatedAt'], '2026-10-28T02:00:00Z')
         self.assertNotIn('pack', [x['seller'] for x in result['sell_offers']])
         self.assertEqual(len(result['sell']), 10)
         self.assertEqual(result['offer_schema'], 1)

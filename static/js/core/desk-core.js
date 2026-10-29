@@ -450,7 +450,9 @@ const DeskCore = {
                 cost: units * offer.price,
                 price: offer.price,
                 isSet: !!row.isSet,
-                at: row.market.orders_at
+                at: row.market.orders_at,
+                createdAt: offer.createdAt,
+                updatedAt: offer.updatedAt
               };
               visit(
                 i + 1,

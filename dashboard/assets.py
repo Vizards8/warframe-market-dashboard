@@ -19,6 +19,7 @@ SCRIPTS = (
     'js/pages/extras.js',
     PORTABLE,
     'js/pages/inventory.js',
+    'js/pages/quick-market.js',
     'js/pages/desk.js',
     'js/pages/welcome.js',
 )

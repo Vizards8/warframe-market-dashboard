@@ -11,6 +11,7 @@ window.Desk = (() => {
     ducatMode = 'market',
     ducatView = 'bundles',
     ducatBundleQuery = '',
+    ducatHideMarked = false,
     ducatKind = 'all',
     ducatMinYield = 150,
     ducatQuery = '',
@@ -652,33 +653,58 @@ window.Desk = (() => {
     const m = mrow(x.slug);
     return `<b>${x.quote.price == null ? '—' : number(x.quote.price, 1) + 'p'}</b><small>${m.stats?.end ? (x.quote.price == null ? '近 30 天无成交记录' : `30 天 ${number(x.quote.volume)} 条 · ${number((x.quote.price / x.ducats) * 100, 2)}p / 百杜卡德`) : m.stats_error ? '统计获取失败' : '成交统计尚未采集'}</small>${!x.quote.valid && m.stats?.end ? '<small class="quality-warning">统计过期 / 获取失败</small>' : ''}`;
   }
+  const sellerMarkLabels = {
+    contacted: '已联系，等回复',
+    bought: '已买',
+    offline: '暂时离线',
+    skip: '不再问'
+  };
+  function sellerMarkControl(seller) {
+    const mark = settings.ducatSellerMarks?.[seller];
+    return `<label class="seller-mark-control">本机标记 <select data-seller-mark="${esc(seller)}" aria-label="卖家联系标记">${[['', '未标记'], ...Object.entries(sellerMarkLabels)].map(([k, v]) => `<option value="${k}" ${mark?.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>${mark?.at ? `<small>标记于 ${timeLabel(mark.at)}</small>` : ''}`;
+  }
+  function orderTime(at) {
+    if (!at || !Number.isFinite(Date.parse(at))) return '未采集';
+    return new Date(at).toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
+  function orderTimes(entry) {
+    return `<small>挂单更新 ${orderTime(entry.updatedAt)}</small><small>挂单创建 ${orderTime(entry.createdAt)}</small>`;
+  }
   function ducatBundlePanel(bundles) {
     const trash = DeskCore.ducatTrashReference(),
       query = ducatBundleQuery.trim().toLowerCase(),
       catalog = new Map(state.catalog.map(x => [x.slug, x])),
       visible = bundles.filter(
         b =>
-          !query ||
-          [
-            b.sellerName,
-            ...b.entries.flatMap(e => [
-              e.name,
-              catalog.get(e.slug)?.english,
-              e.slug,
-              catalog.get(e.slug)?.alias
-            ])
-          ].some(v => (v || '').toLowerCase().includes(query))
+          !(ducatHideMarked && settings.ducatSellerMarks?.[b.seller]) &&
+          (!query ||
+            [
+              b.sellerName,
+              ...b.entries.flatMap(e => [
+                e.name,
+                catalog.get(e.slug)?.english,
+                e.slug,
+                catalog.get(e.slug)?.alias
+              ])
+            ].some(v => (v || '').toLowerCase().includes(query)))
       );
-    return `<section class="ducat-bundle-panel" aria-label="同卖家组合"><div class="desk-actions ducat-list-tools"><input id="ducat-bundle-search" type="search" aria-label="搜索同卖家组合" placeholder="搜卖家或组合内商品" value="${esc(ducatBundleQuery)}"><span>按每百杜卡德成本从低到高 · 同价多收优先</span></div><p class="ducat-benchmark">频道参考：15D / 1p · 45D / 3p · 100D / 10p（铜银 ${number(trash.lowest, 2)}p / 100D）</p><div class="compare-scroll ducat-results"><table class="compare-table ducat-bundle-table"><thead><tr><th>卖家 / 查询时间</th><th>一次买什么</th><th>每百杜卡德成本</th><th>本笔合计</th></tr></thead><tbody>${
+    return `<section class="ducat-bundle-panel" aria-label="同卖家组合"><div class="desk-actions ducat-list-tools"><input id="ducat-bundle-search" type="search" aria-label="搜索同卖家组合" placeholder="搜卖家或组合内商品" value="${esc(ducatBundleQuery)}"><label><input id="ducat-hide-marked" type="checkbox" ${ducatHideMarked ? 'checked' : ''}> 隐藏已标记卖家</label><span>按每百杜卡德成本从低到高</span></div><p class="ducat-benchmark">频道参考：15D / 1p · 45D / 3p · 100D / 10p（铜银 ${number(trash.lowest, 2)}p / 100D）</p><div class="compare-scroll ducat-results"><table class="compare-table ducat-bundle-table"><thead><tr><th>卖家 / 本机标记</th><th>一次买什么</th><th>每百杜卡德成本</th><th>本笔合计</th></tr></thead><tbody>${
       visible
         .slice(0, ducatBundleLimit)
         .map(b => {
           const oldest = b.entries.map(e => e.at).sort((a, b) => Date.parse(a) - Date.parse(b))[0],
             delta = b.trashGap;
-          return `<tr><td>${b.sellerSlug ? `<a class="link" href="https://warframe.market/profile/${encodeURIComponent(b.sellerSlug)}" target="_blank" rel="noopener">${esc(b.sellerName)} ↗</a>` : esc(b.sellerName)}<small>${sellerStatus(b.sellerStatus)} · 最早报价 ${timeLabel(oldest)}</small>${wfmBundleButton(b)}</td><td>${b.entries.map(e => `<div>${esc(e.name)} × ${e.units}${e.isSet ? ' 套' : ' 件'}<small>${number(e.price)}p / ${e.isSet ? '套' : '件'} · 小计 ${number(e.ducats)}D</small></div>`).join('')}</td><td><strong>${number(b.per100, 2)}p</strong><small>${Math.abs(delta) < 0.005 ? '与铜 / 银基准相当' : `${delta > 0 ? '低于' : '高于'}基准 ${number(Math.abs(delta), 2)}p / 100D`}</small></td><td><b>${number(b.ducats)}D / ${number(b.cost, 1)}p</b><small>${b.slots}/6 物品槽 · 1 笔交易</small></td></tr>`;
+          return `<tr data-contact-state="${esc(settings.ducatSellerMarks?.[b.seller]?.status || '')}"><td>${b.sellerSlug ? `<a class="link" href="https://warframe.market/profile/${encodeURIComponent(b.sellerSlug)}" target="_blank" rel="noopener">${esc(b.sellerName)} ↗</a>` : esc(b.sellerName)}<small>${sellerStatus(b.sellerStatus)} · 本次采集 ${timeLabel(oldest)}</small>${wfmBundleButton(b)}${sellerMarkControl(b.seller)}</td><td>${b.entries.map(e => `<div>${esc(e.name)} × ${e.units}${e.isSet ? ' 套' : ' 件'}<small>${number(e.price)}p / ${e.isSet ? '套' : '件'} · 小计 ${number(e.ducats)}D</small>${orderTimes(e)}</div>`).join('')}</td><td><strong>${number(b.per100, 2)}p</strong><small>${Math.abs(delta) < 0.005 ? '与铜 / 银基准相当' : `${delta > 0 ? '低于' : '高于'}基准 ${number(Math.abs(delta), 2)}p / 100D`}</small></td><td><b>${number(b.ducats)}D / ${number(b.cost, 1)}p</b><small>${b.slots}/6 物品槽 · 1 笔交易</small></td></tr>`;
         })
         .join('') || '<tr><td colspan="4">暂无匹配的有效报价。可降低门槛或稍后刷新。</td></tr>'
-    }</tbody></table></div><p class="ducat-list-status">显示 ${Math.min(ducatBundleLimit, visible.length)} / ${visible.length} 位卖家。${visible.length > ducatBundleLimit ? '<button id="ducat-bundle-more" class="plain-button">再显示 10 位</button>' : ''}</p><p class="ducat-list-status">报价来自已采集卖单，联系后请确认仍有货。</p><details class="ducat-method"><summary>组合规则与频道参考</summary><p>同一卖家的整套和散件可组合，最多占 6 槽，不必填满。每位卖家保留每百杜卡德成本最低的达标组合。频道金垃圾参考为 ${number(trash.highest, 2)}p / 100D。</p><p>每笔 150D → 每天 4,950D，14 天 69,300D。每笔 200D → 每天 6,600D，14 天 92,400D。这里只是假设每天都收到目标数量，未把同一份挂单库存重复算成每日供应；后续卖出也需要交易次数。</p><p>上面的频道价是你提供的议价参考，不是自动采集的实时行情。组合报价来自 WFM 卖单快照，30 天成交均价可切换到“单商品报价”查看。</p></details></section>`;
+    }</tbody></table></div><p class="ducat-list-status">显示 ${Math.min(ducatBundleLimit, visible.length)} / ${visible.length} 位卖家。${visible.length > ducatBundleLimit ? '<button id="ducat-bundle-more" class="plain-button">再显示 10 位</button>' : ''}</p><p class="ducat-list-status">标记仅保存在当前浏览器，按卖家保留，不随行情刷新清除；复制私聊不代表已经发送。挂单更新来自 WFM，不代表卖家最近上线。</p><details class="ducat-method"><summary>组合规则与频道参考</summary><p>同一卖家的整套和散件可组合，最多占 6 槽，不必填满。每位卖家保留每百杜卡德成本最低的达标组合。频道金垃圾参考为 ${number(trash.highest, 2)}p / 100D。</p><p>每笔 150D → 每天 4,950D，14 天 69,300D。每笔 200D → 每天 6,600D，14 天 92,400D。这里只是假设每天都收到目标数量，未把同一份挂单库存重复算成每日供应；后续卖出也需要交易次数。</p><p>上面的频道价是你提供的议价参考，不是自动采集的实时行情。组合报价来自 WFM 卖单快照，30 天成交均价可切换到“单商品报价”查看。</p></details></section>`;
   }
   function ducats() {
     const all = ducatRows(),
@@ -791,7 +817,7 @@ window.Desk = (() => {
         .slice(0, ducatLimit)
         .map(
           (x, i) =>
-            `<tr><td><div class="baro-product"><span class="baro-rank">${i + 1}</span>${itemImage(x)}<div><button data-desk-detail="${esc(x.slug)}">${esc(x.name)}</button><small>${x.isSet ? '整套 · ' + x.slots + ' 件部件' : esc(x.english)}</small></div></div></td><td><strong class="baro-efficiency">${number(ratio(x), 2)}p</strong><small>${ducatMode === 'market' ? '同一卖家整批报价' : '30 天成交参考，非收货报价'}</small></td><td>${ducatMode === 'market' ? `<b class="ducat-trade-yield">${x.isSet ? `每套 ${number(x.ducats)}D · 本笔 ${number(x.route.ducats)}D` : `每件 ${number(x.ducats)}D · 本笔 ${number(x.route.ducats)}D`}</b><small>${x.route.units} ${x.isSet ? '套' : '件'} · ${number(x.route.cost)}p / 笔</small><small>${x.route.slots}/6 物品槽${x.isSet ? '，未制作部件' : ''}</small>` : `每件 ${x.ducats} 杜卡德${ducatMode === 'owned' ? `<small>持有 ${srow(x.slug).quantity} / 保留 ${srow(x.slug).reserve || 0}</small><small>可用 ${x.quote.available} 件 → ${number(x.quote.available * x.ducats)} 杜卡德</small>` : ''}`}</td><td>${ducatStatsCell(x)}</td><td>${ducatMode === 'market' ? `<a class="link" href="https://warframe.market/profile/${encodeURIComponent(x.route.offer.slug)}" target="_blank" rel="noopener">${esc(x.route.offer.name || x.route.offer.slug)}</a><small>${sellerStatus(x.route.offer.status)} · ${number(x.route.offer.price)}p / ${x.isSet ? '套' : '件'} · 挂有 ${x.route.stock} ${x.isSet ? '套' : '件'}</small><small>${timeLabel(mrow(x.slug).orders_at)}</small>` : `${ducatProtection(x)}<small>${timeLabel(mrow(x.slug).stats_at)}</small>`}</td><td>${ducatMode === 'market' ? `${wfmTradeButton(x, x.route.offer, x.route.units)}${linked(x)}<button data-ducat-select="${esc(x.slug)}" class="plain-button">${ducatSelected === x.slug ? '已用于测算' : '测算'}</button>` : linked(x)}</td></tr>`
+            `<tr><td><div class="baro-product"><span class="baro-rank">${i + 1}</span>${itemImage(x)}<div><button data-desk-detail="${esc(x.slug)}">${esc(x.name)}</button><small>${x.isSet ? '整套 · ' + x.slots + ' 件部件' : esc(x.english)}</small></div></div></td><td><strong class="baro-efficiency">${number(ratio(x), 2)}p</strong><small>${ducatMode === 'market' ? '同一卖家整批报价' : '30 天成交参考，非收货报价'}</small></td><td>${ducatMode === 'market' ? `<b class="ducat-trade-yield">${x.isSet ? `每套 ${number(x.ducats)}D · 本笔 ${number(x.route.ducats)}D` : `每件 ${number(x.ducats)}D · 本笔 ${number(x.route.ducats)}D`}</b><small>${x.route.units} ${x.isSet ? '套' : '件'} · ${number(x.route.cost)}p / 笔</small><small>${x.route.slots}/6 物品槽${x.isSet ? '，未制作部件' : ''}</small>` : `每件 ${x.ducats} 杜卡德${ducatMode === 'owned' ? `<small>持有 ${srow(x.slug).quantity} / 保留 ${srow(x.slug).reserve || 0}</small><small>可用 ${x.quote.available} 件 → ${number(x.quote.available * x.ducats)} 杜卡德</small>` : ''}`}</td><td>${ducatStatsCell(x)}</td><td>${ducatMode === 'market' ? `<a class="link" href="https://warframe.market/profile/${encodeURIComponent(x.route.offer.slug)}" target="_blank" rel="noopener">${esc(x.route.offer.name || x.route.offer.slug)}</a><small>${sellerStatus(x.route.offer.status)} · ${number(x.route.offer.price)}p / ${x.isSet ? '套' : '件'} · 挂有 ${x.route.stock} ${x.isSet ? '套' : '件'}</small><small>本次采集 ${timeLabel(mrow(x.slug).orders_at)}</small>${orderTimes(x.route.offer)}` : `${ducatProtection(x)}<small>${timeLabel(mrow(x.slug).stats_at)}</small>`}</td><td>${ducatMode === 'market' ? `${wfmTradeButton(x, x.route.offer, x.route.units)}${linked(x)}<button data-ducat-select="${esc(x.slug)}" class="plain-button">${ducatSelected === x.slug ? '已用于测算' : '测算'}</button>` : linked(x)}</td></tr>`
         )
         .join('') ||
       `<tr><td colspan="6">${ducatMode === 'owned' ? '账本中暂无匹配的可用部件。可取消“只看账本持有”，或到“我的库存”手动添加。' : ducatMode === 'market' ? '暂无匹配的有效报价，可降低每笔门槛或清空搜索。' : '暂无匹配部件，请换个名称搜索。'}</td></tr>`
@@ -799,6 +825,23 @@ window.Desk = (() => {
   }
   function bindDucats() {
     const rerender = () => activate();
+    document.querySelectorAll('[data-seller-mark]').forEach(control => {
+      control.onchange = () => {
+        const seller = control.dataset.sellerMark,
+          status = control.value;
+        if (status && !sellerMarkLabels[status]) return;
+        settings.ducatSellerMarks ||= {};
+        if (status) settings.ducatSellerMarks[seller] = { status, at: new Date().toISOString() };
+        else delete settings.ducatSellerMarks[seller];
+        queueSave();
+        rerender();
+      };
+    });
+    if ($('ducat-hide-marked'))
+      $('ducat-hide-marked').onchange = e => {
+        ducatHideMarked = e.target.checked;
+        rerender();
+      };
     const panel = document.querySelector('.ducat-route-panel');
     if (panel)
       panel.ontoggle = () => {

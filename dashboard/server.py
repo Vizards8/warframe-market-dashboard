@@ -131,6 +131,8 @@ def summarize_orders(raw):
             'slug': user.get('slug', ''),
             'status': user.get('status'),
             'order': row.get('id', ''),
+            'createdAt': row.get('createdAt'),
+            'updatedAt': row.get('updatedAt'),
         }
         # One seller must not be counted twice for duplicate orders.
         if seller not in sellers or offer['price'] < sellers[seller]['price']:

@@ -40,6 +40,12 @@ assert.deepEqual(
 );
 const small = row('a', 45, 3, 4);
 assert.equal(core.ducatLot(small, small.market, 1, now, 150).units, 4);
+small.market.orders.sell_offers[0].createdAt = '2024-01-01T00:00:00Z';
+small.market.orders.sell_offers[0].updatedAt = '2026-10-27T18:00:00Z';
+const dated = core.ducatBundles([small], 6, 150, now)[0].entries[0];
+assert.equal(dated.createdAt, '2024-01-01T00:00:00Z');
+assert.equal(dated.updatedAt, '2026-10-27T18:00:00Z');
+assert.equal(dated.at, at); // WFM timestamps must not replace our collection time.
 assert.equal(core.ducatLot(small, small.market, 1, now, 200), null);
 assert.equal(core.ducatLot(row('c', 15, 1), small.market, 1, now, 0).ducats, 60);
 const offline = {

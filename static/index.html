@@ -6,7 +6,7 @@
     <title>虚空账本 · Warframe 行情</title>
     <!-- dashboard:styles -->
   </head>
-  <body class="home-mode">
+  <body class="home-mode initializing">
     <aside class="sidebar">
       <a class="brand" href="/" aria-label="虚空账本首页"
         ><span class="brand-mark">◈</span><span>虚空账本<small>Warframe 行情</small></span></a
@@ -20,6 +20,7 @@
         ><button class="nav-item" data-tab="ducats"><span>◇</span> 杜卡德兑换</button
         ><button class="nav-item" data-tab="relics"><span>◉</span> 开核桃助手</button
         ><button class="nav-item" data-tab="relic-prices"><span>▥</span> 核桃价格</button
+        ><button class="nav-item" data-tab="quick-market"><span>⌕</span> 行情速查</button
         ><button class="nav-item" data-tab="watch"><span>☆</span> 我的关注</button
         ><button class="nav-item" data-tab="frames"><span>◇</span> Prime 战甲</button
         ><button class="nav-item" data-tab="rivens"><span>◈</span> 0 洗紫卡</button
@@ -71,7 +72,7 @@
           </div>
           <button id="welcome-refresh" class="plain-button">检查行情更新</button>
         </div>
-        <p id="welcome-snapshot" class="home-snapshot" aria-live="polite">正在读取行情…</p>
+        <p id="welcome-snapshot" class="home-snapshot" aria-live="polite"></p>
         <div class="home-tools">
           <button data-go="mods">
             <h2>奸商货单 <span>→</span></h2>
