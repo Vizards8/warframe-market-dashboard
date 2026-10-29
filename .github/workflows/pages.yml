@@ -25,19 +25,19 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment:
       name: github-pages
       url: ${{ steps.slow_deployment.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Restore public market cache
         id: market_cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: |
             data/market.json
@@ -49,7 +49,7 @@ jobs:
       # separately when migrating; adding refresh_status changes the version.
       - name: Restore legacy market cache on first upgraded run
         if: steps.market_cache.outputs.cache-matched-key == ''
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: |
             data/market.json
@@ -66,7 +66,7 @@ jobs:
         run: python scripts/refresh_market.py --mode orders
       - name: Cache online orders
         if: steps.orders.outputs.updated == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             data/market.json
@@ -75,13 +75,13 @@ jobs:
           key: market-v2-${{ github.run_id }}-${{ github.run_attempt }}-orders
       - name: Build site with updated orders
         run: python scripts/build_pages.py
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - name: Publish orders without waiting for slow data
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
       - name: Refresh trade statistics when due
         id: stats
         if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'full')
@@ -90,7 +90,7 @@ jobs:
         run: python scripts/refresh_market.py --mode stats $REFRESH_DUE
       - name: Cache refreshed statistics
         if: steps.stats.outputs.updated == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             data/market.json
@@ -105,7 +105,7 @@ jobs:
         run: python scripts/refresh_market.py --mode rivens $REFRESH_DUE
       - name: Cache statistics and Rivens
         if: steps.stats.outputs.updated == 'true' || steps.rivens.outputs.updated == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             data/market.json
@@ -115,7 +115,7 @@ jobs:
       - name: Build site with refreshed statistics and Rivens
         if: steps.stats.outputs.updated == 'true' || steps.rivens.outputs.updated == 'true'
         run: python scripts/build_pages.py
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         if: steps.stats.outputs.updated == 'true' || steps.rivens.outputs.updated == 'true'
         with:
           name: github-pages-slow
@@ -123,6 +123,6 @@ jobs:
       - name: Publish statistics and Rivens
         id: slow_deployment
         if: steps.stats.outputs.updated == 'true' || steps.rivens.outputs.updated == 'true'
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-slow
