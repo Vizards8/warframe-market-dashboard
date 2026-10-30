@@ -46,7 +46,15 @@ def _merge_checked(market, checked):
 def market_snapshot(include_ducat=True):
     # CI restores a scheduled cache before a code deployment. Preserve explicitly
     # checked public quotes if that cache predates the trader's arrival.
-    market = copy.deepcopy(read('market.json', {}))
+    raw_market = read('market.json', {})
+    if include_ducat:
+        market = copy.deepcopy(raw_market)
+    else:
+        # Older CI runs wrote the deferred Ducat payload back into the shared
+        # cache. Remove those entries during the migration so they cannot leak
+        # into the initial state again.
+        deferred = read('ducat_quotes.json', {})
+        market = {slug: copy.deepcopy(value) for slug, value in raw_market.items() if slug not in deferred}
     checked = {}
     source_files = ['baro_quotes.json']
     if include_ducat:

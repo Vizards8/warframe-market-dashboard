@@ -6,6 +6,19 @@ from dashboard import public_data
 
 
 class PublicDataTests(unittest.TestCase):
+    def test_core_snapshot_filters_legacy_deferred_ducat_cache(self):
+        values = {
+            'market.json': {
+                'core': {'orders_at': '2026-10-23T12:00:00Z'},
+                'prime_part': {'orders_at': '2026-10-23T12:00:00Z'},
+            },
+            'baro_quotes.json': {},
+            'ducat_quotes.json': {'prime_part': {}},
+        }
+        with patch.object(public_data, 'read', side_effect=lambda name, default: values.get(name, default)):
+            out = public_data.market_snapshot(include_ducat=False)
+        self.assertEqual(set(out), {'core'})
+
     def test_checked_baro_quotes_survive_older_ci_cache_without_overwriting_newer_sources(
         self,
     ):
