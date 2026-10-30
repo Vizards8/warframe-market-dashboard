@@ -62,7 +62,21 @@ const falling = core.frameSignal(
   now
 );
 assert.equal(falling.rising, false);
-assert.equal(falling.high, true); // A high price is not evidence that it is rising.
+assert.equal(falling.high, false); // A narrow range is not enough to call the price a useful high.
+assert.equal(falling.volatilityValid, false);
+const flat = core.frameSignal(
+  {
+    ...market,
+    stats: {
+      ...market.stats,
+      history: history.map(x => ({ ...x, price: 100 }))
+    }
+  },
+  now
+);
+assert.equal(flat.high, false);
+assert.equal(flat.volatilityValid, false);
+assert.equal(flat.label, '90 天价格波动不足');
 const outlier = core.frameSignal(
   {
     ...market,

@@ -91,8 +91,14 @@ const DeskCore = {
         history.length >= 60 && rolling.length >= 30
           ? Math.max(...rolling.map(x => x.price))
           : null,
+      trough =
+        history.length >= 60 && rolling.length >= 30
+          ? Math.min(...rolling.map(x => x.price))
+          : null,
+      rangePct = peak != null && peak > 0 ? ((peak - trough) / peak) * 100 : null,
+      volatilityValid = rangePct != null && rangePct >= 15,
       rising = comparable && week.change >= 10,
-      high = reliable && peak != null && week.price >= peak * 0.9,
+      high = reliable && volatilityValid && peak != null && week.price >= peak * 0.9,
       rank = !reliable ? -1 : rising && high ? 3 : rising ? 2 : high ? 1 : 0;
     return {
       week,
@@ -100,6 +106,9 @@ const DeskCore = {
       previous,
       premium,
       peak,
+      trough,
+      rangePct,
+      volatilityValid,
       rising,
       high,
       reliable,
@@ -111,6 +120,8 @@ const DeskCore = {
           ? '近期成交缺失'
           : !enough(week)
             ? '近 7 天样本少'
+            : !volatilityValid && !rising
+              ? '90 天价格波动不足'
             : rising && high
               ? '涨价且接近高位'
               : rising
@@ -273,17 +284,20 @@ const DeskCore = {
           .filter(x => x.price != null && x.days >= 4 && x.volume >= 20),
       peaks = rolling(normalRows),
       peak90 = peaks.length ? Math.max(...peaks.map(x => x.price)) : null,
+      trough90 = peaks.length ? Math.min(...peaks.map(x => x.price)) : null,
       before = activation
         ? normalRows.filter(row => row.date < activation).slice(-30)
         : normalRows.slice(-30),
       baseline = aggregate(before).price ?? peak90,
+      rangePct = peak90 != null && peak90 > 0 ? ((peak90 - trough90) / peak90) * 100 : null,
+      volatilityValid = normalRows.length >= 30 && peaks.length >= 4 && rangePct != null && rangePct >= 15,
       target90 = baseline == null ? null : baseline * 0.9,
       eventEnd = expiry ? Date.parse(expiry + 'T00:00:00Z') : NaN,
       recoverySeries = Number.isFinite(eventEnd)
         ? rolling(normalRows.filter(row => Date.parse(row.date + 'T00:00:00Z') >= eventEnd))
         : [],
       recovery =
-        target90 == null
+        target90 == null || !volatilityValid
           ? null
           : recoverySeries.find(x => x.price >= target90)?.date || null,
       recoveryDays =
@@ -302,9 +316,13 @@ const DeskCore = {
           : 0,
       normalVolume = normalRows.reduce((sum, row) => sum + (Number(row.volume) || 0), 0),
       dailyVolume = observedDays ? normalVolume / observedDays : null,
-      highEfficiency = target90 != null && item.ducats > 0 ? (target90 / item.ducats) * 100 : null,
+      highEfficiency =
+        target90 != null && volatilityValid && item.ducats > 0
+          ? (target90 / item.ducats) * 100
+          : null,
       highNet =
         target90 != null &&
+        volatilityValid &&
         item.ducats != null &&
         item.credits != null &&
         settings.ducatCost != null &&
@@ -316,6 +334,12 @@ const DeskCore = {
       decision = (() => {
         if (!statsValid)
           return { label: '数据待更新', tone: 'muted', reason: '成交统计已过期或获取失败' };
+        if (!volatilityValid)
+          return {
+            label: '价格波动不足',
+            tone: 'muted',
+            reason: '90 天正常价格区间太窄，90% 高位回款没有意义'
+          };
         if (target90 == null || highEfficiency == null || dailyVolume == null)
           return { label: '数据不足', tone: 'muted', reason: '缺少历史价格或成交量' };
         if (recoveryDays == null)
@@ -345,6 +369,9 @@ const DeskCore = {
       baseline,
       target90,
       peak90,
+      trough90,
+      rangePct,
+      volatilityValid,
       highEfficiency,
       highNet,
       recoveryDays,

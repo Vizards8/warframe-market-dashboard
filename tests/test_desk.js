@@ -184,14 +184,29 @@ const eventMarket = {
   stats: {
     end: '2026-10-20',
     history: [
-      { date: '2026-09-28', price: 100, volume: 30 },
+      ...Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.parse('2026-09-01T00:00:00Z') + i * 86400000)
+          .toISOString()
+          .slice(0, 10),
+        price: 100,
+        volume: 30
+      })),
       { date: '2026-10-01', price: 40, volume: 80 },
       { date: '2026-10-02', price: 45, volume: 80 },
-      { date: '2026-10-03', price: 90, volume: 30 },
-      { date: '2026-10-04', price: 90, volume: 30 },
-      { date: '2026-10-05', price: 92, volume: 30 },
-      { date: '2026-10-06', price: 95, volume: 30 },
-      { date: '2026-10-07', price: 94, volume: 30 }
+      ...Array.from({ length: 7 }, (_, i) => ({
+        date: new Date(Date.parse('2026-10-03T00:00:00Z') + i * 86400000)
+          .toISOString()
+          .slice(0, 10),
+        price: 60,
+        volume: 30
+      })),
+      ...Array.from({ length: 7 }, (_, i) => ({
+        date: new Date(Date.parse('2026-10-10T00:00:00Z') + i * 86400000)
+          .toISOString()
+          .slice(0, 10),
+        price: 100,
+        volume: 30
+      }))
     ]
   }
 };
@@ -204,7 +219,7 @@ const eventValue = core.baroValue(
 );
 assert.equal(eventValue.baseline, 100);
 assert.equal(eventValue.target90, 90);
-assert.equal(eventValue.recoveryDays, 3);
+assert.equal(eventValue.recoveryDays, 12);
 assert.equal(eventValue.highEfficiency, 30);
 assert.ok(eventValue.dailyVolume > 0);
 assert.equal(eventValue.decision.label, '优先考虑');
