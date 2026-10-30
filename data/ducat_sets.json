@@ -1,6 +1,6 @@
 {
   "source": "WFM item gameRef and ducat values; WFCD exact component recipes; unbuilt tradable parts only",
-  "as_of": "2026-10-24",
+  "as_of": "2026-10-31",
   "sets": [
     {
       "slug": "frost_prime_set",
@@ -1957,7 +1957,7 @@
     {
       "slug": "bronco_prime_set",
       "name": "野马 Prime 一套",
-      "ducats": 75,
+      "ducats": 55,
       "slots": 3,
       "parts": [
         {
