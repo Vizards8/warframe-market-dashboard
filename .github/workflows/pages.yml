@@ -11,7 +11,9 @@ on:
         options: [orders, full, publish]
         default: orders
   schedule:
-    - cron: '23 * * * *'
+    # Extra trigger opportunities compensate for delayed or dropped schedules.
+    # --due below keeps successful order queries at least one hour apart.
+    - cron: '7,27,47 * * * *'
 
 permissions:
   contents: read
@@ -63,7 +65,9 @@ jobs:
       - name: Refresh online orders
         id: orders
         if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'publish')
-        run: python scripts/refresh_market.py --mode orders
+        env:
+          REFRESH_DUE: ${{ github.event_name == 'schedule' && '--due' || '' }}
+        run: python scripts/refresh_market.py --mode orders $REFRESH_DUE
       - name: Cache online orders
         if: steps.orders.outputs.updated == 'true'
         uses: actions/cache/save@v6
@@ -74,13 +78,16 @@ jobs:
             data/refresh_status.json
           key: market-v2-${{ github.run_id }}-${{ github.run_attempt }}-orders
       - name: Build site with updated orders
+        if: github.event_name != 'schedule' || steps.orders.outputs.updated == 'true'
         run: python scripts/build_pages.py
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
+        if: github.event_name != 'schedule' || steps.orders.outputs.updated == 'true'
         with:
           path: _site
       - name: Publish orders without waiting for slow data
         id: deployment
+        if: github.event_name != 'schedule' || steps.orders.outputs.updated == 'true'
         uses: actions/deploy-pages@v5
       - name: Refresh trade statistics when due
         id: stats
