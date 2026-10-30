@@ -656,6 +656,24 @@ window.Desk = (() => {
     const m = mrow(x.slug);
     return `<b>${x.quote.price == null ? '—' : number(x.quote.price, 1) + 'p'}</b><small>${m.stats?.end ? (x.quote.price == null ? '近 30 天无成交记录' : `30 天 ${number(x.quote.volume)} 条 · ${number((x.quote.price / x.ducats) * 100, 2)}p / 百杜卡德`) : m.stats_error ? '统计获取失败' : '成交统计尚未采集'}</small>${!x.quote.valid && m.stats?.end ? '<small class="quality-warning">统计过期 / 获取失败</small>' : ''}`;
   }
+  function ducatProductCell(x, rank) {
+    return `<div class="baro-product"><span class="baro-rank">${rank + 1}</span>${itemImage(x)}<div><button data-desk-detail="${esc(x.slug)}">${esc(x.name)}</button><small class="ducat-english">${esc(x.english || x.slug)}</small><small>${x.isSet ? `整套 · ${x.slots} 个部件` : `${x.ducats} 杜卡德 / 件`}</small></div></div>`;
+  }
+  function ducatRow(x, i) {
+    const ratio = ducatMode === 'market' ? x.route.per100 : x.quote.valid ? x.quote.per100 : Infinity;
+    const product = ducatProductCell(x, i);
+    const priceCell = `<strong class="baro-efficiency">${number(ratio, 2)}p</strong><small>${ducatMode === 'market' ? '本批收货成本 / 100D' : '30 天成交均价 / 100D'}</small>`;
+    const yieldCell = ducatMode === 'market'
+      ? `<b class="ducat-trade-yield">${number(x.route.ducats)}D / ${number(x.route.slots)} 槽</b><small>${x.route.units} ${x.isSet ? '套' : '件'} · ${number(x.route.cost)}p</small>`
+      : `<b class="ducat-trade-yield">${number(x.ducats)}D / 件</b>${ducatMode === 'owned' ? `<small>可用 ${x.quote.available} 件 · 共 ${number(x.quote.available * x.ducats)}D</small>` : ''}`;
+    const sellerCell = ducatMode === 'market'
+      ? `<a class="link" href="https://warframe.market/profile/${encodeURIComponent(x.route.offer.slug)}" target="_blank" rel="noopener">${esc(x.route.offer.name || x.route.offer.slug)} ↗</a><small>${sellerStatus(x.route.offer.status)} · ${x.route.stock} ${x.isSet ? '套' : '件'} · ${number(x.route.offer.price)}p</small><details class="row-details"><summary>报价时间</summary>${orderTimes(x.route.offer)}</details>`
+      : `${ducatProtection(x)}<small>统计 ${timeLabel(mrow(x.slug).stats_at)}</small>`;
+    const action = ducatMode === 'market'
+      ? `${wfmTradeButton(x, x.route.offer, x.route.units)}${linked(x)}<button data-ducat-select="${esc(x.slug)}" class="plain-button">${ducatSelected === x.slug ? '已用于测算' : '测算'}</button>`
+      : linked(x);
+    return `<tr><td>${product}</td><td>${priceCell}</td><td>${yieldCell}</td><td>${ducatStatsCell(x)}</td><td>${sellerCell}</td><td>${action}</td></tr>`;
+  }
   const sellerMarkLabels = {
     contacted: '已联系，等回复',
     bought: '已买',
@@ -862,13 +880,10 @@ window.Desk = (() => {
       .join(
         ''
       )}</select></label>${ducatMode !== 'market' ? `<label class="ducat-owned-filter"><input id="ducat-owned-only" type="checkbox" ${ducatMode === 'owned' ? 'checked' : ''}> 只看账本持有（${parts.filter(x => x.quote.available > 0).length} 种）</label>` : ''}</div>`;
-    return `<div class="ducat-workspace">${header}${views}<section class="ducat-single-panel" aria-label="${ducatMode === 'market' ? '单商品报价' : '分解参考'}">${tools}${ducatMode === 'market' ? `<p class="ducat-list-status">只显示行情快照中处于“在线”或“游戏中”的卖家；状态会变化，联系前请到 WFM 再确认。</p>` : `<p class="ducat-list-status">${ducatMode === 'owned' ? '只显示手动记入账本、扣除自用保留后仍可用的部件。' : `${parts.length} 种散件，${collected} 种有有效成交统计。`} 分解前请核对凑套和自用需求。</p>`}<div class="compare-scroll ducat-table-wrap"><table class="compare-table ducat-table"><thead><tr><th>商品</th><th>${ducatMode === 'market' ? '整批成本 / 百杜卡德' : '成交参考 / 百杜卡德'}</th><th>${ducatMode === 'market' ? '一次交易能收多少' : '单件杜卡德 / 可用数量'}</th><th>30 天成交均价</th><th>${ducatMode === 'market' ? '卖家 / 查询时间' : '持有与用途'}</th><th>操作</th></tr></thead><tbody>${
+    return `<div class="ducat-workspace">${header}${views}<section class="ducat-single-panel" aria-label="${ducatMode === 'market' ? '单商品报价' : '分解参考'}">${tools}${ducatMode === 'market' ? `<p class="ducat-list-status">只显示在线或游戏中的卖家；联系前请再到 WFM 确认状态和库存。</p>` : `<p class="ducat-list-status">${ducatMode === 'owned' ? '只显示账本中扣除自用保留后的可用部件。' : `${parts.length} 种散件，${collected} 种有有效成交统计。`} 分解前先确认不会影响凑套或自用。</p>`}<div class="compare-scroll ducat-table-wrap"><table class="compare-table ducat-table"><thead><tr><th>商品 / WFM 名称</th><th>${ducatMode === 'market' ? '收货成本 / 100D' : '成交均价 / 100D'}</th><th>${ducatMode === 'market' ? '本笔收货' : '杜卡德 / 持有'}</th><th>卖出参考</th><th>${ducatMode === 'market' ? '卖家' : '持有建议'}</th><th>操作</th></tr></thead><tbody>${
       list
         .slice(0, ducatLimit)
-        .map(
-          (x, i) =>
-            `<tr><td><div class="baro-product"><span class="baro-rank">${i + 1}</span>${itemImage(x)}<div><button data-desk-detail="${esc(x.slug)}">${esc(x.name)}</button><small>${x.isSet ? '整套 · ' + x.slots + ' 件部件' : esc(x.english)}</small></div></div></td><td><strong class="baro-efficiency">${number(ratio(x), 2)}p</strong><small>${ducatMode === 'market' ? '同一卖家整批报价' : '30 天成交参考，非收货报价'}</small></td><td>${ducatMode === 'market' ? `<b class="ducat-trade-yield">${x.isSet ? `每套 ${number(x.ducats)}D · 本笔 ${number(x.route.ducats)}D` : `每件 ${number(x.ducats)}D · 本笔 ${number(x.route.ducats)}D`}</b><small>${x.route.units} ${x.isSet ? '套' : '件'} · ${number(x.route.cost)}p / 笔</small><small>${x.route.slots}/6 物品槽${x.isSet ? '，未制作部件' : ''}</small>` : `每件 ${x.ducats} 杜卡德${ducatMode === 'owned' ? `<small>持有 ${srow(x.slug).quantity} / 保留 ${srow(x.slug).reserve || 0}</small><small>可用 ${x.quote.available} 件 → ${number(x.quote.available * x.ducats)} 杜卡德</small>` : ''}`}</td><td>${ducatStatsCell(x)}</td><td>${ducatMode === 'market' ? `<a class="link" href="https://warframe.market/profile/${encodeURIComponent(x.route.offer.slug)}" target="_blank" rel="noopener">${esc(x.route.offer.name || x.route.offer.slug)}</a><small>${sellerStatus(x.route.offer.status)} · ${number(x.route.offer.price)}p / ${x.isSet ? '套' : '件'} · 挂有 ${x.route.stock} ${x.isSet ? '套' : '件'}</small><small>本次采集 ${timeLabel(mrow(x.slug).orders_at)}</small>${orderTimes(x.route.offer)}` : `${ducatProtection(x)}<small>${timeLabel(mrow(x.slug).stats_at)}</small>`}</td><td>${ducatMode === 'market' ? `${wfmTradeButton(x, x.route.offer, x.route.units)}${linked(x)}<button data-ducat-select="${esc(x.slug)}" class="plain-button">${ducatSelected === x.slug ? '已用于测算' : '测算'}</button>` : linked(x)}</td></tr>`
-        )
+        .map(ducatRow)
         .join('') ||
       `<tr><td colspan="6">${ducatMode === 'owned' ? '账本中暂无匹配的可用部件。可取消“只看账本持有”，或到“我的库存”手动添加。' : ducatMode === 'market' ? '暂无匹配的有效报价，可降低每笔门槛或清空搜索。' : '暂无匹配部件，请换个名称搜索。'}</td></tr>`
     }</tbody></table></div><div class="ducat-list-footer">显示 ${Math.min(ducatLimit, list.length)} / ${list.length} 种${list.length > ducatLimit ? '<button id="ducat-more" class="plain-button">再显示 40 种</button>' : ''}</div></section>${ducatMode === 'market' ? `<details class="ducat-route-panel" ${ducatCalcOpen ? 'open' : ''}><summary>收货与囤货测算（可选）</summary>${ducatCalcOpen ? ducatCalculator(all) : ''}</details>` : ''}<details class="ducat-method"><summary>报价、套装与交易次数说明</summary><p>同一卖家供应 1—6 件散件，或一笔可放下的完整套装，达到所选杜卡德门槛即可；先比每百杜卡德成本，同价再多收，不为装满 6 槽选更贵的卖家。套装按已核对配方计算部件杜卡德总和；每件部件占一个交易槽，同一套的重复部件也计数。报价不保证卖家实际履约，购买前请到 WFM 确认。</p><p>例如一套由 100D、45D、15D 组成，就是 160D / 套；三部件套装的理论上限是 300D / 套；同一笔买两套才是 320D / 笔。单件和套装都不能突破“每个部件最多 100D”的规则。</p><p>30 天均价来自 WFM 标记成交的日成交量加权统计，不是在线最低价，也不是保证能买到的价格。记录量不等于全服总量。收货和后续卖出都会占交易次数。</p><p>当前核对 ${state.ducat_sets?.length || 0} 种套装；配方未核实、超过 6 个槽位的整套不参与。同卖家组合按卖家 ID 合并不同商品，最多占 6 个槽，所列每条报价须有效。每位卖家只保留一个最划算的达标组合，各卖家之间不拼单；单商品测算不把组合当作可重复购买的库存。</p></details></div>`;

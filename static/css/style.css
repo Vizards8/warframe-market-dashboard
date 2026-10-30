@@ -4020,6 +4020,20 @@ button.drop-row:hover {
 .ducat-table .baro-efficiency {
   font-size: 21px;
 }
+.ducat-table .ducat-english {
+  color: #4f6f5a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+.ducat-table .row-details {
+  margin-top: 4px;
+  font-size: 10px;
+}
+.ducat-table .row-details summary {
+  color: #6d8474;
+  cursor: pointer;
+}
 .ducat-table td:last-child button {
   display: block;
   margin-top: 10px;
