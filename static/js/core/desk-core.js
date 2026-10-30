@@ -595,6 +595,7 @@ const DeskCore = {
               const entry = {
                 slug: row.slug,
                 name: row.name,
+                english: row.english || '',
                 units,
                 slots: units * row.slots,
                 ducats: units * row.ducats,
