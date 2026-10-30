@@ -4,7 +4,25 @@
   async function get(name) {
     const r = await fetch('data/' + name + '.json', { cache: 'no-store' });
     if (!r.ok) throw new Error('公开行情快照读取失败 ' + r.status);
-    return r.json();
+    const report = typeof window.__voidLedgerLoadProgress === 'function' && name === 'state';
+    if (!report || !r.body?.getReader) return r.json();
+    const reader = r.body.getReader(),
+      decoder = new TextDecoder(),
+      compressed = !!r.headers.get('content-encoding'),
+      total = compressed ? 0 : Number(r.headers.get('content-length')) || 0;
+    let loaded = 0,
+      text = '';
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      loaded += part.value.byteLength;
+      text += decoder.decode(part.value, { stream: true });
+      window.__voidLedgerLoadProgress({ loaded, total });
+    }
+    text += decoder.decode();
+    window.__voidLedgerLoadProgress({ loaded, total, phase: 'parsing' });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    return JSON.parse(text);
   }
   window.Hosted = {
     async request(path, body) {

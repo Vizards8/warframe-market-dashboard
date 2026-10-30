@@ -10,6 +10,8 @@ let pollTimer,
   wasRunning = false,
   lastJobStart = null;
 let initialLoadingTimer;
+let initialLoadingProgressTimer;
+let initialLoadingStartedAt;
 const STORAGE_KEY = window.Hosted
   ? 'void-ledger:hosted:v1'
   : window.Portable
@@ -73,6 +75,45 @@ function setInitialLoading(title, percent, detail, waiting = false) {
   $('initial-loading-bar').setAttribute('aria-valuenow', String(Math.round(percent)));
   $('initial-loading-spinner').hidden = false;
   $('initial-loading-retry').hidden = true;
+}
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '';
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.round(bytes / 1024)} KB`;
+}
+function updateInitialDownloadProgress(progress = {}) {
+  if (!initialLoadingStartedAt || !$('initial-loading') || $('initial-loading').hidden) return;
+  const loaded = Number(progress.loaded) || 0,
+    total = Number(progress.total) || 0,
+    elapsed = Math.max(0, Date.now() - initialLoadingStartedAt),
+    estimated = total
+      ? 8 + Math.min(55, (loaded / total) * 55)
+      : Math.min(58, 8 + Math.floor(Math.log1p(elapsed / 700) * 11));
+  if (progress.phase === 'parsing') {
+    setInitialLoading('正在解析行情', 64, `快照下载完成${loaded ? `（${formatBytes(loaded)}）` : ''}，正在解析商品与历史数据。`, true);
+    return;
+  }
+  setInitialLoading(
+    '正在下载行情',
+    Math.max(8, estimated),
+    total
+      ? `已读取 ${formatBytes(loaded)} / ${formatBytes(total)}，网络速度取决于 GitHub Pages。`
+      : `已读取 ${formatBytes(loaded) || '部分数据'}，正在等待公开快照。`,
+    true
+  );
+}
+function startInitialDownloadProgress() {
+  initialLoadingStartedAt = Date.now();
+  window.__voidLedgerLoadProgress = updateInitialDownloadProgress;
+  clearInterval(initialLoadingProgressTimer);
+  initialLoadingProgressTimer = setInterval(() => updateInitialDownloadProgress(), 350);
+}
+function stopInitialDownloadProgress() {
+  clearInterval(initialLoadingProgressTimer);
+  initialLoadingProgressTimer = null;
+  initialLoadingStartedAt = null;
+  delete window.__voidLedgerLoadProgress;
 }
 function finishInitialLoading() {
   document.body.classList.remove('initializing');
@@ -515,13 +556,20 @@ async function loadState(initial = false) {
       '正在连接公开行情快照；在线版读取的是 GitHub Pages 已发布数据。',
       true
     );
-  const latest = await request('/api/state');
+    startInitialDownloadProgress();
+  let latest;
+  try {
+    latest = await request('/api/state');
+  } finally {
+    if (initial) stopInitialDownloadProgress();
+  }
   if (initial) setInitialLoading('正在整理行情', 68, '快照已读取，正在准备价格、库存和趋势数据。');
   state = latest;
   if (initial) {
     settings = readBrowserSettings(latest.initial_settings);
     $('stats-window').value = String(statsDays());
   }
+  if (initial) setInitialLoading('正在整理行情', 74, '正在建立库存、商品和行情索引。');
   renderMetrics();
   renderJob();
   if (!document.activeElement?.matches('input,textarea,select')) {
