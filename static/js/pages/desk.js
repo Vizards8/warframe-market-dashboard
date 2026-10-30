@@ -905,7 +905,12 @@ window.Desk = (() => {
     });
     for (const id of ['ducat-search', 'ducat-bundle-search']) {
       if (!$(id)) continue;
-      $(id).oninput = e => {
+      let composing = false;
+      const applySearch = e => {
+        // Re-rendering during an IME composition replaces the input node and
+        // turns Chinese text into an unfinished Latin sequence. Wait for the
+        // committed composition before filtering.
+        if (composing || e.isComposing) return;
         const value = e.target.value,
           start = e.target.selectionStart,
           end = e.target.selectionEnd;
@@ -920,6 +925,14 @@ window.Desk = (() => {
         $(id).focus({ preventScroll: true });
         $(id).setSelectionRange(start, end);
       };
+      $(id).addEventListener('compositionstart', () => {
+        composing = true;
+      });
+      $(id).addEventListener('compositionend', e => {
+        composing = false;
+        applySearch(e);
+      });
+      $(id).oninput = applySearch;
     }
     if ($('ducat-sort'))
       $('ducat-sort').onchange = e => {
