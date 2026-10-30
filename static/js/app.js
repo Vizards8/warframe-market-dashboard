@@ -606,6 +606,10 @@ async function loadState(initial = false) {
   }
   if (initial) setInitialLoading('正在整理行情', 68, '快照已读取，正在准备价格、库存和趋势数据。');
   state = latest;
+  // The deferred Ducat snapshot is merged into state.market only when the
+  // Ducat page is opened. A hosted reload replaces state, so allow that
+  // deferred snapshot to be merged again instead of retaining the old flag.
+  if (window.Hosted) ducatMarketLoaded = false;
   if (initial) {
     settings = readBrowserSettings(latest.initial_settings);
     $('stats-window').value = String(statsDays());
