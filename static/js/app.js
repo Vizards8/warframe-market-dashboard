@@ -459,6 +459,9 @@ function renderTable() {
 function setTab(next) {
   if (!state || !settings) return;
   window.scrollTo(0, 0);
+  // Clear transient action feedback when the user changes context. A copy
+  // confirmation belongs to the previous page and should not follow them.
+  $('notice').hidden = true;
   tab = next;
   query = '';
   filter = 'all';
