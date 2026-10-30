@@ -309,3 +309,63 @@ def public_state(include_history=True):
     if include_history:
         state['history'] = history
     return state
+
+
+def previous_baro_recovery(catalog, history, current=None):
+    """Estimate the last observed post-Baro recovery for each known item.
+
+    This is deliberately a small reference snapshot. It never substitutes for
+    the current visit's recovery measurement.
+    """
+    current_start = str((current or {}).get('activation', ''))[:10]
+    result = {}
+    for item in catalog:
+        dates = sorted(str(x)[:10] for x in item.get('baro_dates', []) if x)
+        visits = [x for x in dates if not current_start or x < current_start]
+        if not visits:
+            continue
+        visit = visits[-1]
+        rows = history.get('items', {}).get(item.get('slug'), [])
+        rows = [x for x in rows if isinstance(x, dict) and x.get('date')]
+        if not rows:
+            continue
+        def weighted(values):
+            volume = sum(float(x.get('volume', 0) or 0) for x in values)
+            return (
+                sum(float(x.get('price', 0) or 0) * float(x.get('volume', 0) or 0) for x in values) / volume
+                if volume
+                else None
+            )
+        visit_at = dt.date.fromisoformat(visit)
+        before = [
+            x for x in rows
+            if visit_at - dt.timedelta(days=30) <= dt.date.fromisoformat(x['date']) < visit_at
+        ]
+        baseline = weighted(before)
+        if baseline is None or baseline <= 0:
+            continue
+        target = baseline * 0.9
+        end = visit_at + dt.timedelta(days=2)
+        candidates = []
+        for row in rows:
+            date = dt.date.fromisoformat(row['date'])
+            if date < end:
+                continue
+            window = [
+                x for x in rows
+                if end <= dt.date.fromisoformat(x['date']) <= date
+                and (date - dt.date.fromisoformat(x['date'])).days < 7
+            ]
+            volume = sum(float(x.get('volume', 0) or 0) for x in window)
+            days = len(window)
+            if days >= 4 and volume >= 20 and weighted(window) >= target:
+                candidates.append(date)
+        if candidates:
+            recovery = candidates[0]
+            result[item['slug']] = {
+                'visit': visit,
+                'days': (recovery - end).days,
+                'baseline': round(baseline, 2),
+                'target': round(target, 2),
+            }
+    return result

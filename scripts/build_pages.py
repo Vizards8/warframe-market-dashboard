@@ -45,6 +45,9 @@ def _build(output):
         **public_data.public_state(include_history=False),
         'server_time': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
     }
+    state['baro_recovery'] = public_data.previous_baro_recovery(
+        catalog, public_data.read('history.json', {'items': {}}), state.get('baro')
+    )
     known = sorted(
         [
             x

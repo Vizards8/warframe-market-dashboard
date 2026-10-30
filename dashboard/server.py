@@ -336,6 +336,9 @@ class Handler(BaseHTTPRequestHandler):
                         'server_time': now(),
                     }
                 )
+                state['baro_recovery'] = public_data.previous_baro_recovery(
+                    CATALOG, state.get('history', {'items': {}}), state.get('baro')
+                )
             if path == '/portable.html':
                 return self.respond(
                     portable.build(state, features.ITEMS, features.RELICS).encode(),

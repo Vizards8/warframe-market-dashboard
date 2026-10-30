@@ -6,6 +6,27 @@ from dashboard import public_data
 
 
 class PublicDataTests(unittest.TestCase):
+    def test_previous_baro_recovery_uses_last_visit_as_reference(self):
+        catalog = [{'slug': 'x', 'baro_dates': ['2026-10-01', '2026-08-01']}]
+        rows = []
+        for i in range(30):
+            day = dt.date(2026, 7, 1) + dt.timedelta(days=i)
+            rows.append({'date': str(day), 'price': 100, 'volume': 30})
+        rows += [
+            {'date': '2026-08-03', 'price': 50, 'volume': 30},
+            {'date': '2026-08-04', 'price': 100, 'volume': 30},
+            {'date': '2026-08-05', 'price': 100, 'volume': 30},
+            {'date': '2026-08-06', 'price': 100, 'volume': 30},
+            {'date': '2026-08-07', 'price': 100, 'volume': 30},
+        ]
+        out = public_data.previous_baro_recovery(
+            catalog,
+            {'items': {'x': rows}},
+            {'activation': '2026-10-01T13:00:00Z'},
+        )
+        self.assertEqual(out['x']['visit'], '2026-08-01')
+        self.assertEqual(out['x']['days'], 4)
+
     def test_core_snapshot_filters_legacy_deferred_ducat_cache(self):
         values = {
             'market.json': {
