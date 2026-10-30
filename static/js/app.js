@@ -12,6 +12,8 @@ let pollTimer,
 let initialLoadingTimer;
 let initialLoadingProgressTimer;
 let initialLoadingStartedAt;
+let ducatMarketLoading;
+let ducatMarketLoaded = false;
 const STORAGE_KEY = window.Hosted
   ? 'void-ledger:hosted:v1'
   : window.Portable
@@ -243,6 +245,21 @@ async function request(path, body) {
   if (!r.ok) throw new Error(data.error || `请求失败 ${r.status}`);
   return data;
 }
+async function ensureDucatMarket() {
+  if (!window.Hosted || ducatMarketLoaded) return;
+  if (!ducatMarketLoading) {
+    ducatMarketLoading = request('/api/ducat-market').then(extra => {
+      state.market = { ...state.market, ...extra };
+      ducatMarketLoaded = true;
+      window.__voidLedgerDucatLoaded = true;
+    }).catch(error => {
+      ducatMarketLoading = null;
+      throw error;
+    });
+  }
+  return ducatMarketLoading;
+}
+window.ensureDucatMarket = ensureDucatMarket;
 function readBrowserSettings(seed) {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -496,6 +513,13 @@ function setTab(next) {
   window.QuickMarket?.activate();
   renderJob();
   window.Desk?.activate();
+  if (tab === 'ducats' && window.Hosted && !ducatMarketLoaded) {
+    ensureDucatMarket()
+      .then(() => {
+        if (tab === 'ducats') window.Desk?.activate();
+      })
+      .catch(error => notify('杜卡德市场明细读取失败：' + error.message));
+  }
   window.Welcome?.activate();
 }
 function renderJob() {

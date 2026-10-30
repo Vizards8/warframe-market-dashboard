@@ -28,7 +28,10 @@ def _build(output):
     catalog = json.loads((ROOT / 'data/catalog.json').read_text())
     for item in catalog:
         item['fallback_image'] = features.IMAGE_SOURCES.get(item['slug'])
-    cache = public_data.market_snapshot()
+    # Keep the initial document small.  Detailed Ducat seller offers and the
+    # long quote history are fetched only when that page is opened.
+    cache = public_data.market_snapshot(include_ducat=False)
+    ducat_cache = public_data.ducat_snapshot()
     idle = {'running': False, 'done': 0, 'total': 0, 'errors': [], 'current': ''}
     state = {
         'catalog': catalog,
@@ -55,6 +58,7 @@ def _build(output):
     for x in state['weapons']:
         x['candidate'] = x['slug'] in candidates
     write_json(output / 'data/state.json', state)
+    write_json(output / 'data/ducat-market.json', ducat_cache)
     write_json(output / 'data/items.json', features.ITEMS)
     write_json(output / 'data/relics.json', features.RELICS)
     write_json(output / 'data/history.json', state['history'])

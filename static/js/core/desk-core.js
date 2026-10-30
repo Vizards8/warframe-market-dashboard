@@ -331,9 +331,20 @@ const DeskCore = {
             (item.ducats / 100) * settings.ducatCost -
             (item.credits / 1e6) * settings.creditCost
           : null,
+      eventActive =
+        Number.isFinite(Date.parse(event.activation)) &&
+        Number.isFinite(Date.parse(event.expiry)) &&
+        now >= Date.parse(event.activation) &&
+        now < Date.parse(event.expiry),
       decision = (() => {
         if (!statsValid)
           return { label: '数据待更新', tone: 'muted', reason: '成交统计已过期或获取失败' };
+        if (eventActive)
+          return {
+            label: '活动进行中',
+            tone: 'muted',
+            reason: '奸商尚未离场，离场后才开始统计恢复时间'
+          };
         if (!volatilityValid)
           return {
             label: '价格波动不足',
@@ -378,11 +389,7 @@ const DeskCore = {
       dailyVolume,
       normalVolume,
       statsValid,
-      eventActive:
-        Number.isFinite(Date.parse(event.activation)) &&
-        Number.isFinite(Date.parse(event.expiry)) &&
-        now >= Date.parse(event.activation) &&
-        now < Date.parse(event.expiry),
+      eventActive,
       decision,
       valid,
       eligible: valid && efficiency != null && month.volume >= 30 && week.volume >= 5

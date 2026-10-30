@@ -1,8 +1,9 @@
 'use strict';
 (() => {
   let cached;
-  async function get(name) {
-    const r = await fetch('data/' + name + '.json', { cache: 'no-store' });
+  let forceStateReload = false;
+  async function get(name, cache = 'default') {
+    const r = await fetch('data/' + name + '.json', { cache });
     if (!r.ok) throw new Error('公开行情快照读取失败 ' + r.status);
     const report = typeof window.__voidLedgerLoadProgress === 'function' && name === 'state';
     if (!report || !r.body?.getReader) return r.json();
@@ -29,15 +30,18 @@
       if (body !== undefined)
         throw new Error('在线版读取 GitHub 定时发布的行情，不能启动实时查询。');
       if (path === '/api/state') {
-        cached = await get('state');
+        cached = await get('state', forceStateReload ? 'no-store' : 'default');
+        forceStateReload = false;
         return structuredClone(cached);
       }
+      if (path === '/api/ducat-market') return get('ducat-market');
       if (path === '/api/items') return get('items');
       if (path === '/api/relics') return get('relics');
       throw new Error('在线版不支持该接口');
     },
     async reload() {
       try {
+        forceStateReload = true;
         const before = state?.server_time,
           previousRefresh = JSON.stringify(state?.refresh_status);
         await loadState();

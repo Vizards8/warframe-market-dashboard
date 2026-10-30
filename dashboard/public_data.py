@@ -22,17 +22,8 @@ def now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
 
 
-def market_snapshot():
-    # CI restores a scheduled cache before a code deployment. Preserve explicitly
-    # checked public quotes if that cache predates the trader's arrival.
-    market = copy.deepcopy(read('market.json', {}))
-    checked = {}
-    for source_file in ('baro_quotes.json', 'ducat_quotes.json'):
-        for slug, quote in read(source_file, {}).items():
-            target = checked.setdefault(slug, {})
-            for source in ('orders', 'stats'):
-                if quote.get(source + '_at', '') > target.get(source + '_at', ''):
-                    target.update({source: quote[source], source + '_at': quote[source + '_at']})
+def _merge_checked(market, checked):
+    """Merge source snapshots without letting an older cache replace newer data."""
     for slug, quote in checked.items():
         for source in ('orders', 'stats'):
             at = quote.get(source + '_at')
@@ -50,6 +41,36 @@ def market_snapshot():
                 target.update({source: quote[source], source + '_at': at})
                 target.pop(source + '_error', None)
     return market
+
+
+def market_snapshot(include_ducat=True):
+    # CI restores a scheduled cache before a code deployment. Preserve explicitly
+    # checked public quotes if that cache predates the trader's arrival.
+    market = copy.deepcopy(read('market.json', {}))
+    checked = {}
+    source_files = ['baro_quotes.json']
+    if include_ducat:
+        source_files.append('ducat_quotes.json')
+    for source_file in source_files:
+        for slug, quote in read(source_file, {}).items():
+            target = checked.setdefault(slug, {})
+            for source in ('orders', 'stats'):
+                if quote.get(source + '_at', '') > target.get(source + '_at', ''):
+                    target.update({source: quote[source], source + '_at': quote[source + '_at']})
+    return _merge_checked(market, checked)
+
+
+def ducat_snapshot():
+    """Build the deferred market payload used only by the Ducat page."""
+    base = read('market.json', {})
+    market = {slug: copy.deepcopy(base[slug]) for slug in read('ducat_quotes.json', {}) if slug in base}
+    checked = {}
+    for slug, quote in read('ducat_quotes.json', {}).items():
+        target = checked.setdefault(slug, {})
+        for source in ('orders', 'stats'):
+            if quote.get(source + '_at', '') > target.get(source + '_at', ''):
+                target.update({source: quote[source], source + '_at': quote[source + '_at']})
+    return _merge_checked(market, checked)
 
 
 def fetch(url):

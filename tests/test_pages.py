@@ -34,7 +34,7 @@ class PagesTests(unittest.TestCase):
             self.assertEqual(state['initial_settings']['items'], {})
             self.assertEqual(
                 set(p.name for p in (out / 'data').iterdir()),
-                {'state.json', 'items.json', 'relics.json', 'history.json'},
+                {'state.json', 'ducat-market.json', 'items.json', 'relics.json', 'history.json'},
             )
             self.assertFalse((out / 'data/initial_holdings.json').exists())
             self.assertFalse((out / 'data/settings.json').exists())
