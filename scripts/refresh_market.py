@@ -17,15 +17,24 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from dashboard import server, features, public_data
 
+ORDERS_INTERVAL = 3600
 SLOW_INTERVAL = 6 * 3600
 
 
-def recent(at, now):
+def recent(at, now, interval=SLOW_INTERVAL):
     try:
         age = now - dt.datetime.fromisoformat(at.replace('Z', '+00:00')).timestamp()
-        return 0 <= age < SLOW_INTERVAL
+        return 0 <= age < interval
     except (ValueError, TypeError, AttributeError):
         return False
+
+
+def orders_due(market, now):
+    return (
+        not recent(market.get('orders_at'), now, ORDERS_INTERVAL)
+        or bool(market.get('orders_error'))
+        or not isinstance(market.get('orders'), dict)
+    )
 
 
 def stats_due(market, now):
@@ -126,6 +135,8 @@ def refresh(mode='orders', due=False):
                 ):
                     continue
                 slug = item['slug']
+                if phase == 'orders' and due and not orders_due(server.CACHE.get(slug, {}), clock):
+                    continue
                 if phase == 'stats' and due and not stats_due(server.CACHE.get(slug, {}), clock):
                     continue
                 url = (
@@ -181,7 +192,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mode', choices=('orders', 'stats', 'rivens', 'full'), default='orders')
     parser.add_argument(
-        '--due', action='store_true', help='Only query slow data missing or older than 6 hours'
+        '--due',
+        action='store_true',
+        help='Only query missing, failed or expired data (orders: 1 hour; slow data: 6 hours)',
     )
     args = parser.parse_args()
     changed = refresh(args.mode, args.due)

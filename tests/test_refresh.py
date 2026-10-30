@@ -20,6 +20,7 @@ class RefreshCoverageTests(unittest.TestCase):
     def test_cli_default_orders_and_github_update_output(self):
         for argv, expected, changed in [
             (['refresh_market.py'], ('orders', False), True),
+            (['refresh_market.py', '--mode', 'orders', '--due'], ('orders', True), False),
             (['refresh_market.py', '--mode', 'stats', '--due'], ('stats', True), False),
             (['refresh_market.py', '--mode', 'full'], ('full', False), True),
         ]:
@@ -129,6 +130,66 @@ class RefreshCoverageTests(unittest.TestCase):
         self.assertEqual(cache['part']['stats_at'], OLD)
         self.assertEqual(status['sources']['stats'], stats)
         self.assertEqual(status['finished'], status['sources']['orders']['finished'])
+
+    def test_orders_due_hour_boundary_invalid_dates_and_failed_or_missing_data(self):
+        good = {'orders_at': '2026-10-28T07:00:01Z', 'orders': {'sell': []}}
+        self.assertFalse(refresh_market.orders_due(good, NOW))
+        for change in (
+            {'orders_at': FRESH},
+            {'orders_at': OLD},
+            {'orders_at': '2026-10-29T00:00:00Z'},
+            {'orders_at': 'invalid'},
+            {'orders_at': None},
+            {'orders_error': 'HTTP 429'},
+            {'orders': None},
+        ):
+            self.assertTrue(refresh_market.orders_due({**good, **change}, NOW))
+        self.assertTrue(refresh_market.orders_due({}, NOW))
+
+    def test_scheduled_orders_skip_recent_success_without_writes_or_timestamp_changes(self):
+        good = {'orders_at': '2026-10-28T07:40:00Z', 'orders': {'sell': []}}
+        before = {'finished': OLD, 'sources': {'orders': {'finished': OLD}}}
+        _, seen, status, changed, writes = self.run_refresh(
+            mode='orders', due=True, cache={'part': good, 'set': copy.deepcopy(good)},
+            status=copy.deepcopy(before),
+        )
+        self.assertEqual(seen, [])
+        self.assertFalse(changed)
+        self.assertEqual(writes, [])
+        self.assertEqual(status, before)
+
+    def test_scheduled_orders_retry_only_failed_or_missing_items_and_manual_forces_all(self):
+        good = {'orders_at': '2026-10-28T07:40:00Z', 'orders': {'sell': []}}
+        for broken in ({**good, 'orders_error': '429'}, {}):
+            cache, seen, _, changed, _ = self.run_refresh(
+                mode='orders', due=True,
+                cache={'part': copy.deepcopy(good), 'set': copy.deepcopy(broken)},
+            )
+            self.assertEqual(seen, ['https://api.warframe.market/v2/orders/item/set'])
+            self.assertTrue(changed)
+            self.assertEqual(cache['part'], good)
+            self.assertNotIn('orders_error', cache['set'])
+            self.assertFalse(refresh_market.orders_due(cache['set'], NOW))
+        _, seen, _, changed, _ = self.run_refresh(
+            mode='orders', cache={'part': good, 'set': copy.deepcopy(good)}
+        )
+        self.assertEqual(len(seen), 2)
+        self.assertTrue(changed)
+
+    def test_failed_scheduled_orders_keep_old_success_and_remain_due(self):
+        cache = {
+            slug: {'orders_at': OLD, 'orders': {'sell': []}}
+            for slug in ('part', 'set')
+        }
+        status = {'finished': OLD, 'sources': {}}
+        with self.assertRaisesRegex(SystemExit, 'All orders requests failed'):
+            self.run_refresh(mode='orders', due=True, cache=cache, status=status,
+                             fail_source='/v2/orders/')
+        self.assertEqual(status['finished'], OLD)
+        for item in cache.values():
+            self.assertEqual(item['orders_at'], OLD)
+            self.assertEqual(item['orders_error'], 'HTTP 429')
+            self.assertTrue(refresh_market.orders_due(item, NOW))
 
     def test_due_statistics_skip_recent_success_and_refetch_missing_failed_or_old_cutoff(self):
         good = {'stats_at': FRESH, 'stats': {'end': '2026-10-27', 'history': ['keep']}}
