@@ -178,6 +178,38 @@ assert.equal(
 );
 assert.equal(core.baroValue({ ducats: null }, baroMarket, {}, now).efficiency, null);
 console.log('奸商购买参考：历史/挂价分离、双资源成本、报价过期与低记录量不推荐');
+
+const eventMarket = {
+  ...baroMarket,
+  stats: {
+    end: '2026-10-20',
+    history: [
+      { date: '2026-09-28', price: 100, volume: 30 },
+      { date: '2026-10-01', price: 40, volume: 80 },
+      { date: '2026-10-02', price: 45, volume: 80 },
+      { date: '2026-10-03', price: 90, volume: 30 },
+      { date: '2026-10-04', price: 90, volume: 30 },
+      { date: '2026-10-05', price: 92, volume: 30 },
+      { date: '2026-10-06', price: 95, volume: 30 },
+      { date: '2026-10-07', price: 94, volume: 30 }
+    ]
+  }
+};
+const eventValue = core.baroValue(
+  { ducats: 300, credits: 150000 },
+  eventMarket,
+  {},
+  now,
+  { activation: '2026-10-01T00:00:00Z', expiry: '2026-10-03T00:00:00Z' }
+);
+assert.equal(eventValue.baseline, 100);
+assert.equal(eventValue.target90, 90);
+assert.equal(eventValue.recoveryDays, 3);
+assert.equal(eventValue.highEfficiency, 30);
+assert.ok(eventValue.dailyVolume > 0);
+assert.equal(eventValue.decision.label, '优先考虑');
+assert.equal(eventValue.eventActive, false);
+console.log('奸商简化判断：活动周末排除、90% 回款、恢复时间、长期日均成交和综合判断验证通过');
 // Ducat route: whole-item rounding, finite order depth, and separate historical/instant outcomes.
 const part = { kind: 'component', tags: ['prime', 'component'], ducats: 45 };
 const target = { ducats: 100, credits: 200000 };

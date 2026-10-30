@@ -210,9 +210,10 @@ const DeskCore = {
     if (!Number.isFinite(a) || !Number.isFinite(e)) return 'unknown';
     return now < a ? 'upcoming' : now < e ? 'active' : 'departed';
   },
-  baroValue(item, market, settings = {}, now = Date.now()) {
+  baroValue(item, market, settings = {}, now = Date.now(), event = {}) {
     const month = MarketStats.window(market, 30),
-      week = MarketStats.window(market, 7);
+      week = MarketStats.window(market, 7),
+      statsValid = this.statsFresh(market, now);
     // This is a historical resale scenario, not a forecast or an immediately executable price.
     const history =
       month.price != null && week.price != null ? Math.min(month.price, week.price) : null;
@@ -232,6 +233,107 @@ const DeskCore = {
           (item.ducats / 100) * settings.ducatCost -
           (item.credits / 1e6) * settings.creditCost
         : null;
+    const rows = MarketStats.history(market, 90),
+      day = 86400000,
+      dateOnly = value => {
+        const parsed = Date.parse(value);
+        return Number.isFinite(parsed) ? new Date(parsed).toISOString().slice(0, 10) : null;
+      },
+      activation = dateOnly(event.activation),
+      expiry = dateOnly(event.expiry),
+      eventDates = new Set();
+    if (activation && expiry) {
+      for (
+        let cursor = Date.parse(activation + 'T00:00:00Z');
+        cursor < Date.parse(expiry + 'T00:00:00Z');
+        cursor += day
+      )
+        eventDates.add(new Date(cursor).toISOString().slice(0, 10));
+    }
+    const normalRows = rows.filter(row => !eventDates.has(row.date)),
+      aggregate = list => {
+        const volume = list.reduce((sum, row) => sum + (Number(row.volume) || 0), 0);
+        return {
+          price: volume ? list.reduce((sum, row) => sum + row.price * row.volume, 0) / volume : null,
+          volume,
+          days: list.length
+        };
+      },
+      rolling = list =>
+        list
+          .map(row => {
+            const end = Date.parse(row.date + 'T00:00:00Z'),
+              start = end - 6 * day,
+              window = list.filter(x => {
+                const at = Date.parse(x.date + 'T00:00:00Z');
+                return at >= start && at <= end;
+              });
+            return { ...aggregate(window), date: row.date };
+          })
+          .filter(x => x.price != null && x.days >= 4 && x.volume >= 20),
+      peaks = rolling(normalRows),
+      peak90 = peaks.length ? Math.max(...peaks.map(x => x.price)) : null,
+      before = activation
+        ? normalRows.filter(row => row.date < activation).slice(-30)
+        : normalRows.slice(-30),
+      baseline = aggregate(before).price ?? peak90,
+      target90 = baseline == null ? null : baseline * 0.9,
+      eventEnd = expiry ? Date.parse(expiry + 'T00:00:00Z') : NaN,
+      recoverySeries = Number.isFinite(eventEnd)
+        ? rolling(normalRows.filter(row => Date.parse(row.date + 'T00:00:00Z') >= eventEnd))
+        : [],
+      recovery =
+        target90 == null
+          ? null
+          : recoverySeries.find(x => x.price >= target90)?.date || null,
+      recoveryDays =
+        recovery && Number.isFinite(eventEnd)
+          ? Math.round((Date.parse(recovery + 'T00:00:00Z') - eventEnd) / day)
+          : null,
+      first = rows.length ? Date.parse(rows[0].date + 'T00:00:00Z') : NaN,
+      last = rows.length ? Date.parse(rows.at(-1).date + 'T00:00:00Z') : NaN,
+      eventDaysInRange = [...eventDates].filter(date => {
+        const at = Date.parse(date + 'T00:00:00Z');
+        return Number.isFinite(first) && Number.isFinite(last) && at >= first && at <= last;
+      }).length,
+      observedDays =
+        Number.isFinite(first) && Number.isFinite(last)
+          ? Math.max(1, Math.round((last - first) / day) + 1 - eventDaysInRange)
+          : 0,
+      normalVolume = normalRows.reduce((sum, row) => sum + (Number(row.volume) || 0), 0),
+      dailyVolume = observedDays ? normalVolume / observedDays : null,
+      highEfficiency = target90 != null && item.ducats > 0 ? (target90 / item.ducats) * 100 : null,
+      highNet =
+        target90 != null &&
+        item.ducats != null &&
+        item.credits != null &&
+        settings.ducatCost != null &&
+        settings.creditCost != null
+          ? target90 -
+            (item.ducats / 100) * settings.ducatCost -
+            (item.credits / 1e6) * settings.creditCost
+          : null,
+      decision = (() => {
+        if (!statsValid)
+          return { label: '数据待更新', tone: 'muted', reason: '成交统计已过期或获取失败' };
+        if (target90 == null || highEfficiency == null || dailyVolume == null)
+          return { label: '数据不足', tone: 'muted', reason: '缺少历史价格或成交量' };
+        if (recoveryDays == null)
+          return {
+            label: '等待返场后判断',
+            tone: 'muted',
+            reason: '返场后的恢复天数还没有足够记录'
+          };
+        const priceScore = highEfficiency >= 8 ? 2 : highEfficiency >= 5 ? 1 : 0,
+          timeScore = recoveryDays <= 14 ? 2 : recoveryDays <= 30 ? 1 : 0,
+          volumeScore = dailyVolume >= 5 ? 2 : dailyVolume >= 1 ? 1 : 0,
+          score = priceScore + timeScore + volumeScore;
+        return score >= 5
+          ? { label: '优先考虑', tone: 'good', reason: '回款、恢复速度和成交量都较好' }
+          : score >= 3
+            ? { label: '可以考虑', tone: 'mid', reason: '三项指标中有一项偏弱' }
+            : { label: '暂缓', tone: 'bad', reason: '回款、恢复速度或成交量偏弱' };
+      })();
     return {
       history,
       current,
@@ -240,6 +342,21 @@ const DeskCore = {
       net,
       volume: month.volume,
       weekVolume: week.volume,
+      baseline,
+      target90,
+      peak90,
+      highEfficiency,
+      highNet,
+      recoveryDays,
+      dailyVolume,
+      normalVolume,
+      statsValid,
+      eventActive:
+        Number.isFinite(Date.parse(event.activation)) &&
+        Number.isFinite(Date.parse(event.expiry)) &&
+        now >= Date.parse(event.activation) &&
+        now < Date.parse(event.expiry),
+      decision,
       valid,
       eligible: valid && efficiency != null && month.volume >= 30 && week.volume >= 5
     };
