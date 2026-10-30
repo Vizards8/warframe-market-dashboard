@@ -298,12 +298,14 @@ def prepare_release(catalog):
     refresh_baro(catalog)
 
 
-def public_state():
+def public_state(include_history=True):
     history = read('history.json', {'items': {}})
-    return {
+    state = {
         'baro': read('baro_current.json', {}),
         'refresh_status': read('refresh_status.json', history.get('refresh_status', {})),
         'prime_sets': read('prime_sets.json', {}).get('sets', []),
         'ducat_sets': read('ducat_sets.json', {}).get('sets', []),
-        'history': history,
     }
+    if include_history:
+        state['history'] = history
+    return state

@@ -42,7 +42,7 @@ def _build(output):
         'compare_job': copy.deepcopy(idle),
         'weapons': features.WEAPONS,
         'rivens': features.RIVENS,
-        **public_data.public_state(),
+        **public_data.public_state(include_history=False),
         'server_time': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
     }
     known = sorted(
@@ -61,7 +61,7 @@ def _build(output):
     write_json(output / 'data/ducat-market.json', ducat_cache)
     write_json(output / 'data/items.json', features.ITEMS)
     write_json(output / 'data/relics.json', features.RELICS)
-    write_json(output / 'data/history.json', state['history'])
+    write_json(output / 'data/history.json', public_data.read('history.json', {'items': {}}))
     html = assets.render_html(hosted=True)
     for name in (assets.STYLESHEET, *assets.scripts(hosted=True)):
         content = (ROOT / 'static' / name).read_bytes()

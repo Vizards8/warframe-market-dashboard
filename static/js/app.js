@@ -14,6 +14,7 @@ let initialLoadingProgressTimer;
 let initialLoadingStartedAt;
 let ducatMarketLoading;
 let ducatMarketLoaded = false;
+let historyLoading;
 const STORAGE_KEY = window.Hosted
   ? 'void-ledger:hosted:v1'
   : window.Portable
@@ -260,6 +261,19 @@ async function ensureDucatMarket() {
   return ducatMarketLoading;
 }
 window.ensureDucatMarket = ensureDucatMarket;
+async function ensureHistory() {
+  if (!window.Hosted || state.history) return;
+  if (!historyLoading) {
+    historyLoading = request('/api/history').then(history => {
+      state.history = history;
+    }).catch(error => {
+      historyLoading = null;
+      throw error;
+    });
+  }
+  return historyLoading;
+}
+window.ensureHistory = ensureHistory;
 function readBrowserSettings(seed) {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -708,6 +722,13 @@ function renderDrawer(slug) {
     s = srow(slug),
     m = mrow(slug);
   if (!x) return;
+  if (window.Hosted && !state.history) {
+    $('drawer-content').innerHTML = '<section class="loading-card"><h3>正在读取历史走势</h3><p>历史记录按需加载，不影响首页打开速度。</p><div class="loading-line"><span></span></div></section>';
+    window.ensureHistory?.().then(() => renderDrawer(slug)).catch(error => {
+      $('drawer-content').innerHTML = `<section class="loading-card"><h3>历史走势读取失败</h3><p>${esc(error.message)}</p></section>`;
+    });
+    return;
+  }
   if (!state.catalog.some(item => item.slug === slug)) {
     $('drawer-content').innerHTML =
       `<div class="drawer-label">行情速查 · ${x.kind === 'mod' ? 'R0' : 'PC'}</div><div class="drawer-art">${itemImage(x, true)}</div><h2>${esc(x.name)}</h2><p>${esc(x.english)}</p><div class="detail-metrics"><div><small>30 天成交均价</small><strong>${price(statsFor(m, 30).price)}</strong></div><div><small>在线最低卖价</small><strong>${price(ask(m))}</strong></div><div><small>在线最高买价</small><strong>${price(bid(m))}</strong></div></div>${wfmPurchasePanel(x, m)}<h3>成交均价走势</h3>${chart(m)}<div class="depth"><div>${depth(m.orders?.sell, 'sell')}</div><div>${depth(m.orders?.buy, 'buy')}</div></div><p class="drawer-muted">${m.orders_at || m.stats_at ? '行情为已发布快照；过期价格仅作参考。' : '该商品尚未采集行情，不代表价格为零。'}<br>挂单采集 ${timeLabel(m.orders_at)} / 统计采集 ${timeLabel(m.stats_at)}</p>`;

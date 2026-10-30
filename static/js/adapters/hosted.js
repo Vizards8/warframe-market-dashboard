@@ -35,6 +35,7 @@
         return structuredClone(cached);
       }
       if (path === '/api/ducat-market') return get('ducat-market');
+      if (path === '/api/history') return get('history');
       if (path === '/api/items') return get('items');
       if (path === '/api/relics') return get('relics');
       throw new Error('在线版不支持该接口');
