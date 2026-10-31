@@ -16,6 +16,12 @@ class PagesTests(unittest.TestCase):
         extras = (ROOT / 'static/js/pages/extras.js').read_text(encoding='utf-8')
         self.assertNotIn("if (next !== 'relics') {\n      window.RewardOcr?.leave();", extras)
 
+    def test_baro_page_has_fixed_ducat_holdings_rank(self):
+        desk = (ROOT / 'static/js/pages/desk.js').read_text(encoding='utf-8')
+        self.assertIn("['rank', '囤货总榜']", desk)
+        self.assertIn('baroDucatCostPer100', desk)
+        self.assertIn('netPer100', desk)
+
     def test_public_build_does_not_read_private_files_or_ship_them(self):
         original = Path.read_text
 

@@ -221,9 +221,22 @@ assert.equal(eventValue.baseline, 100);
 assert.equal(eventValue.target90, 90);
 assert.equal(eventValue.recoveryDays, 12);
 assert.equal(eventValue.highEfficiency, 30);
+assert.ok(Math.abs(eventValue.netPer100 - (30 - 100 / 15)) < 1e-10);
 assert.ok(eventValue.dailyVolume > 0);
 assert.equal(eventValue.decision.label, '优先考虑');
 assert.equal(eventValue.eventActive, false);
+assert.equal(
+  core.baroHolding(eventValue, null).label,
+  '值得囤'
+);
+assert.equal(
+  core.baroHolding({ ...eventValue, netPer100: -1 }, { days: 10 }).label,
+  '不建议囤'
+);
+assert.equal(
+  core.baroHolding({ ...eventValue, statsValid: false }, { days: 10 }).label,
+  '数据不足'
+);
 console.log('奸商简化判断：活动周末排除、90% 回款、恢复时间、长期日均成交和综合判断验证通过');
 // Ducat route: whole-item rounding, finite order depth, and separate historical/instant outcomes.
 const part = { kind: 'component', tags: ['prime', 'component'], ducats: 45 };

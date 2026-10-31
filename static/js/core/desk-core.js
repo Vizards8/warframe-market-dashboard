@@ -1,7 +1,10 @@
 'use strict';
 const MARKET_FRESH_MS = 2 * 3600000;
 const STATS_FRESH_MS = 8 * 3600000;
+// User's fixed exchange basis for Baro investment decisions: 15 Ducats = 1p.
+const BARO_DUCAT_COST_PER_100 = 100 / 15;
 const DeskCore = {
+  baroDucatCostPer100: BARO_DUCAT_COST_PER_100,
   fresh(at, error, now = Date.now()) {
     return (
       !!at &&
@@ -320,6 +323,8 @@ const DeskCore = {
         target90 != null && volatilityValid && item.ducats > 0
           ? (target90 / item.ducats) * 100
           : null,
+      netPer100 =
+        highEfficiency == null ? null : highEfficiency - BARO_DUCAT_COST_PER_100,
       highNet =
         target90 != null &&
         volatilityValid &&
@@ -384,6 +389,7 @@ const DeskCore = {
       rangePct,
       volatilityValid,
       highEfficiency,
+      netPer100,
       highNet,
       recoveryDays,
       dailyVolume,
@@ -393,6 +399,56 @@ const DeskCore = {
       decision,
       valid,
       eligible: valid && efficiency != null && month.volume >= 30 && week.volume >= 5
+    };
+  },
+  baroHolding(value, previousRecovery = null) {
+    const recoveryDays =
+        Number.isFinite(value?.recoveryDays) && value.recoveryDays >= 0
+          ? value.recoveryDays
+          : Number.isFinite(previousRecovery?.days) && previousRecovery.days >= 0
+            ? previousRecovery.days
+            : null,
+      recoverySource = Number.isFinite(value?.recoveryDays)
+        ? '本次实测'
+        : Number.isFinite(previousRecovery?.days)
+          ? '历史估计'
+          : null,
+      net = Number.isFinite(value?.netPer100) ? value.netPer100 : null,
+      volume = Number.isFinite(value?.dailyVolume) ? value.dailyVolume : null;
+    if (!value?.statsValid || net == null || volume == null)
+      return {
+        tier: 0,
+        label: '数据不足',
+        tone: 'muted',
+        reason: '缺少有效历史价格或成交统计',
+        recoveryDays,
+        recoverySource
+      };
+    if (net >= 2 && recoveryDays != null && recoveryDays <= 30 && volume >= 1)
+      return {
+        tier: 3,
+        label: '值得囤',
+        tone: 'good',
+        reason: '扣除杜卡德成本后仍有空间，恢复和成交量都可接受',
+        recoveryDays,
+        recoverySource
+      };
+    if (net > 0 && volume >= 0.5 && (recoveryDays == null || recoveryDays <= 60))
+      return {
+        tier: 2,
+        label: '少量试囤',
+        tone: 'mid',
+        reason: '有正回款空间，但恢复时间或成交量偏弱',
+        recoveryDays,
+        recoverySource
+      };
+    return {
+      tier: 1,
+      label: '不建议囤',
+      tone: 'bad',
+      reason: net <= 0 ? '预计回款不足以覆盖杜卡德成本' : '成交量低或恢复时间过长',
+      recoveryDays,
+      recoverySource
     };
   },
   liquidity(m, now = Date.now()) {

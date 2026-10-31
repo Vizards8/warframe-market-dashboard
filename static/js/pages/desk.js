@@ -3,7 +3,7 @@ window.Desk = (() => {
   let initialized = false,
     undo = [],
     addSelection = null,
-    baroMode = 'current',
+    baroMode = 'rank',
     baroQuery = '',
     baroSort = 'hold',
     baroKind = 'all',
@@ -393,9 +393,11 @@ window.Desk = (() => {
       active = rows.filter(x => x.current),
       plan = settings.baroPlan || {},
       planned = rows.filter(x => plan[x.slug] > 0),
-      tot = DeskCore.budget(rows, plan);
+      tot = DeskCore.budget(rows, plan),
+      baroDucatCost = number(DeskCore.baroDucatCostPer100, 2);
     const scope = rows.filter(
       x =>
+        baroMode === 'rank' ||
         baroMode === 'all' ||
         (baroMode === 'plan' && plan[x.slug] > 0) ||
         (baroMode === 'current' && (status === 'active' ? x.current : x.manual))
@@ -412,6 +414,8 @@ window.Desk = (() => {
     list.sort((a, b) => {
       const av = DeskCore.baroValue(a, mrow(a.slug), settings, Date.now(), state.baro),
         bv = DeskCore.baroValue(b, mrow(b.slug), settings, Date.now(), state.baro),
+        ah = DeskCore.baroHolding(av, a.previousRecovery),
+        bh = DeskCore.baroHolding(bv, b.previousRecovery),
         key =
           baroSort === 'volume'
             ? 'volume'
@@ -419,10 +423,16 @@ window.Desk = (() => {
               ? 'currentEfficiency'
               : 'highEfficiency';
       return (
-        (baroSort === 'liquid'
+        (baroSort === 'hold' || baroMode === 'rank'
+          ? bh.tier - ah.tier
+          : baroSort === 'liquid'
           ? DeskCore.liquidity(mrow(b.slug)).tier - DeskCore.liquidity(mrow(a.slug)).tier
           : 0) ||
-        (bv[key] ?? -Infinity) - (av[key] ?? -Infinity) ||
+        (baroSort === 'hold' || baroMode === 'rank'
+          ? (bv.netPer100 ?? -Infinity) - (av.netPer100 ?? -Infinity)
+          : (bv[key] ?? -Infinity) - (av[key] ?? -Infinity)) ||
+        (ah.recoveryDays ?? Infinity) - (bh.recoveryDays ?? Infinity) ||
+        (bv.dailyVolume ?? -Infinity) - (av.dailyVolume ?? -Infinity) ||
         a.name.localeCompare(b.name)
       );
     });
@@ -437,10 +447,11 @@ window.Desk = (() => {
     const modeText = {
       current: '',
       plan: '填写补货数量后，在这里汇总；实际购买后再录入库存。',
-      all: '历史可交易商品，非本次货单。日期为人工核对记录。'
+      all: '历史可交易商品，非本次货单。日期为人工核对记录。',
+      rank: '全部奸商 MOD 与武器，按囤货建议排序；本次在售商品会单独标记。'
     }[baroMode];
     $('table-title').innerHTML =
-      { current: '本次武器与 MOD', plan: '我的购买计划', all: '奸商历史目录' }[baroMode] +
+      { current: '本次武器与 MOD', plan: '我的购买计划', all: '奸商历史目录', rank: '囤货总榜' }[baroMode] +
       ' <span id="table-count">' +
       list.length +
       ' 种</span>';
@@ -449,7 +460,8 @@ window.Desk = (() => {
   <div class="desk-actions baro-tabs">${[
     ['current', '本次全部商品'],
     ['plan', '我的购买计划'],
-    ['all', '历史目录']
+    ['all', '历史目录'],
+    ['rank', '囤货总榜']
   ]
     .map(
       ([k, v]) =>
@@ -465,7 +477,7 @@ window.Desk = (() => {
     .map(([k, v]) => `<option value="${k}" ${k === baroKind ? 'selected' : ''}>${v}</option>`)
     .join(
       ''
-    )}</select><label>排序 <select id="baro-sort" aria-label="奸商商品排序"><option value="hold" ${baroSort === 'hold' ? 'selected' : ''}>综合判断 / 90% 回款 ↓</option><option value="current" ${baroSort === 'current' ? 'selected' : ''}>当前卖价 / 百杜卡德 ↓</option><option value="liquid" ${baroSort === 'liquid' ? 'selected' : ''}>长期日均成交 ↓</option><option value="volume" ${baroSort === 'volume' ? 'selected' : ''}>30 天成交量 ↓</option></select></label><label>近 7 天 <select id="baro-min-volume" aria-label="最低七天成交记录">${[
+    )}</select><label>排序 <select id="baro-sort" aria-label="奸商商品排序"><option value="hold" ${baroSort === 'hold' ? 'selected' : ''}>囤货建议 ↓</option><option value="current" ${baroSort === 'current' ? 'selected' : ''}>当前卖价 / 百杜卡德 ↓</option><option value="liquid" ${baroSort === 'liquid' ? 'selected' : ''}>长期日均成交 ↓</option><option value="volume" ${baroSort === 'volume' ? 'selected' : ''}>30 天成交量 ↓</option></select></label><label>近 7 天 <select id="baro-min-volume" aria-label="最低七天成交记录">${[
     [0, '不限成交量'],
     [14, '至少 14 条（约 2 条 / 天）'],
     [70, '至少 70 条（约 10 条 / 天）']
@@ -473,23 +485,23 @@ window.Desk = (() => {
     .map(([k, v]) => `<option value="${k}" ${baroMinWeek === k ? 'selected' : ''}>${v}</option>`)
     .join(
       ''
-    )}</select></label><span>显示 ${list.length} / ${scope.length} 种</span></div><div class="baro-ranking-note"><span>按“基准 90% 回款”排序；回款是历史情景，不是保证价。</span><button class="plain-button" data-open-ducats>杜卡德成本测算 ↗</button></div>
+    )}</select></label><span>显示 ${list.length} / ${scope.length} 种</span></div><div class="baro-ranking-note"><span>${baroMode === 'rank' ? `按囤货建议排序；每 100D 按 ${baroDucatCost}p 成本计算，现金成本忽略。` : `预计回款为历史正常价的 90%，每 100D 扣除 ${baroDucatCost}p 杜卡德成本。`}</span><button class="plain-button" data-open-ducats>杜卡德成本测算 ↗</button></div>
   ${state.baro.character?.startsWith('EvilBaro') || state.baro.inventory?.some(x => /^(Evil Baro |Eskhatos )/.test(x.name)) ? '<p class="quality-warning">本次为 Eskhatos 特别货单，供应可能更频繁；历史均价尚未充分反映本轮补货。</p>' : ''}
-  <div class="baro-decision-note"><b>怎么看：</b>投入杜卡德 → 基准价的 90% 回款；再看恢复需要几天、长期每天能成交多少条。活动中会优先显示“上次返场恢复天数”作为参考，离场后再替换为本次实测。三项都好才显示“优先考虑”。</div>
+  <div class="baro-decision-note"><b>怎么看：</b>先看“囤货总榜”。每 100D 按 ${baroDucatCost}p 计算成本，现金成本忽略；再看预计净回款、历史恢复天数和长期成交量。当前货单只标记“本次在售”，不改变总榜排序。</div>
   <div class="compare-scroll baro-full-list"><table class="compare-table baro-table"><thead><tr><th>商品</th><th>投入 → 预计回款</th><th>恢复时间</th><th>长期成交</th><th>综合判断</th><th>已有 / 计划补货</th></tr></thead><tbody>${
     list
       .map((x, i) => {
         const v = statsFor(mrow(x.slug), 30),
           value = DeskCore.baroValue(x, mrow(x.slug), settings, Date.now(), state.baro),
-          liq = DeskCore.liquidity(mrow(x.slug));
-        const previousRecovery = x.previousRecovery;
-        return `<tr data-baro-slug="${esc(x.slug)}"><td><div class="baro-product"><span class="baro-rank">${i + 1}</span>${itemImage(x)}<div><button data-desk-detail="${esc(x.slug)}">${esc(x.name)}</button><small>${kindLabel[x.kind]}${x.kind === 'mod' ? ' · R0' : ''} · ${x.current ? '本次在售' : x.manual ? '手动已核对' : '本次未确认在售'}</small></div></div>${!x.current ? `<label><input type="checkbox" data-baro-confirm="${esc(x.slug)}" ${x.manual ? 'checked' : ''}> 备用：按游戏货单核对在售</label>` : ''}<details class="row-details"><summary>返场记录</summary><small>${x.baro_date ? '最近常规 ' + x.baro_date : '历史返场未核实'}</small>${x.supply_note ? `<small>${esc(x.supply_note)}</small>` : ''}</details></td><td><strong class="baro-efficiency">${value.target90 == null ? '待查询' : value.volatilityValid ? number(value.target90, 1) + 'p' : '波动不足'}</strong><small>投入 ${x.ducats != null ? number(x.ducats) + 'D' : '成本未知'} · ${value.highEfficiency != null ? number(value.highEfficiency, 1) + 'p / 100D' : value.volatilityValid ? '效率待查询' : `90 天区间波动 ${number(value.rangePct, 1)}%`}</small>${value.baseline != null ? `<small>基准 ${number(value.baseline, 1)}p · ${value.peak90 != null ? '90 天高位 ' + number(value.peak90, 1) + 'p' : ''}</small>` : ''}</td><td><strong class="baro-recovery">${value.eventActive ? previousRecovery ? '上次 ' + previousRecovery.days + ' 天' : '活动中' : value.recoveryDays == null ? previousRecovery ? '上次 ' + previousRecovery.days + ' 天' : '未知' : value.recoveryDays === 0 ? '已达到' : value.recoveryDays + ' 天'}</strong><small>${value.eventActive || value.recoveryDays == null ? previousRecovery ? `上次返场 ${previousRecovery.visit}；本次离场后再实测` : value.decision.reason : '返场后滚动 7 天均价达到基准 90%'}</small></td><td><div class="baro-volume"><strong>${number(value.dailyVolume, 1)}</strong><span>条 / 天</span></div><span class="liquidity-badge liquidity-${liq.tier}">${liq.label}</span><small>近 7 天 ${number(liq.week)} 条 · 30 天 ${number(liq.month)} 条</small><small class="${value.statsValid ? '' : 'quality-warning'}">${value.statsValid ? '' : '成交统计过期 / 缺失'}</small>${linked(x)}</td><td><strong class="baro-decision baro-decision-${value.decision.tone}">${value.decision.label}</strong><small>${esc(value.decision.reason)}</small></td><td>${x.current ? `${number(x.ducats)} 杜卡德<small>+ ${number(x.credits)} 现金</small>` : `<label>杜卡德<input type="number" min="0" data-exchange="ducats" data-exchange-slug="${esc(x.slug)}" value="${x.ducats ?? ''}"></label><label>现金<input type="number" min="0" data-exchange="credits" data-exchange-slug="${esc(x.slug)}" value="${x.credits ?? ''}"></label>`}<small>已有 ${srow(x.slug).quantity} 份${srow(x.slug).quantity >= 10 ? ' · 持仓较多' : ''}</small><label class="baro-plan-label">计划补货<input class="plan-quantity" type="number" min="0" max="100000" step="1" data-baro-plan="${esc(x.slug)}" aria-label="${esc(x.name)} 补货数量" value="${plan[x.slug] || 0}" ${!x.manual && !x.current ? 'disabled' : ''}></label></td></tr>`;
+          liq = DeskCore.liquidity(mrow(x.slug)),
+          hold = DeskCore.baroHolding(value, x.previousRecovery);
+        return `<tr data-baro-slug="${esc(x.slug)}"><td><div class="baro-product"><span class="baro-rank">${i + 1}</span>${itemImage(x)}<div><button data-desk-detail="${esc(x.slug)}">${esc(x.name)}</button><small>${kindLabel[x.kind]}${x.kind === 'mod' ? ' · R0' : ''} · ${x.current ? '本次在售' : x.manual ? '手动已核对' : '历史商品'}</small></div></div>${!x.current && baroMode !== 'rank' ? `<label><input type="checkbox" data-baro-confirm="${esc(x.slug)}" ${x.manual ? 'checked' : ''}> 备用：按游戏货单核对在售</label>` : ''}<details class="row-details"><summary>返场记录</summary><small>${x.baro_date ? '最近常规 ' + x.baro_date : '历史返场未核实'}</small>${x.supply_note ? `<small>${esc(x.supply_note)}</small>` : ''}</details></td><td><strong class="baro-efficiency">${value.target90 == null ? '—' : number(value.target90, 1) + 'p / 件'}</strong><small>预计回款 ${value.highEfficiency == null ? '—' : number(value.highEfficiency, 2) + 'p / 100D'}</small><small>杜卡德成本 ${baroDucatCost}p / 100D · 净回款 ${value.netPer100 == null ? '—' : number(value.netPer100, 2) + 'p / 100D'}</small></td><td><strong class="baro-recovery">${hold.recoveryDays == null ? '未知' : hold.recoveryDays === 0 ? '已达到' : hold.recoveryDays + ' 天'}</strong><small>${hold.recoverySource ? hold.recoverySource : hold.reason}</small></td><td><div class="baro-volume"><strong>${number(value.dailyVolume, 1)}</strong><span>份 / 天</span></div><span class="liquidity-badge liquidity-${liq.tier}">${liq.label}</span><small>近 7 天 ${number(liq.week)} 条 · 30 天 ${number(liq.month)} 条</small><small class="${value.statsValid ? '' : 'quality-warning'}">${value.statsValid ? '' : '成交统计过期 / 缺失'}</small>${linked(x)}</td><td><strong class="baro-decision baro-decision-${hold.tone}">${hold.label}</strong><small>${esc(hold.reason)}</small></td><td>${x.current ? `${number(x.ducats)} 杜卡德<small>现金成本不计</small>` : `<label>杜卡德<input type="number" min="0" data-exchange="ducats" data-exchange-slug="${esc(x.slug)}" value="${x.ducats ?? ''}"></label><label>现金<input type="number" min="0" data-exchange="credits" data-exchange-slug="${esc(x.slug)}" value="${x.credits ?? ''}"></label>`}<small>已有 ${srow(x.slug).quantity} 份${srow(x.slug).quantity >= 10 ? ' · 持仓较多' : ''}</small><label class="baro-plan-label">计划补货<input class="plan-quantity" type="number" min="0" max="100000" step="1" data-baro-plan="${esc(x.slug)}" aria-label="${esc(x.name)} 计划补货数量" value="${plan[x.slug] || 0}" ${!x.manual && !x.current ? 'disabled' : ''}></label></td></tr>`;
       })
       .join('') ||
-    `<tr><td colspan="6">${baroQuery || baroKind !== 'all' ? '没有匹配的商品，请清除搜索或切换品类。' : baroMode === 'plan' ? '还没有购买计划。回到“本次全部商品”，填写想买的数量即可。' : baroMode === 'current' ? '暂无已确认的本次商品。可检查货单更新；自动来源失败时，在历史目录中核对游戏货单。' : '暂无历史目录商品。'}</td></tr>`
+    `<tr><td colspan="6">${baroQuery || baroKind !== 'all' ? '没有匹配的商品，请清除搜索或切换品类。' : baroMode === 'plan' ? '还没有购买计划。回到“本次全部商品”，填写想买的数量即可。' : baroMode === 'current' ? '暂无已确认的本次商品。可检查货单更新；自动来源失败时，在历史目录中核对游戏货单。' : baroMode === 'rank' ? '暂无可用的奸商 MOD 或武器目录。' : '暂无历史目录商品。'}</td></tr>`
   }</tbody></table></div>
-  <details class="baro-planner" ${plannerOpen ? 'open' : ''}><summary>计划合计：${planned.reduce((n, x) => n + plan[x.slug], 0)} 份 · ${number(tot.ducats)} 杜卡德 + ${number(tot.credits)} 现金${tot.incomplete ? '（有成本未知项）' : ''} · 展开填写预算与机会成本（可选）</summary><div class="baro-budget"><div class="form-grid">${input('budgetD', '可用杜卡德', budget.ducats ?? '', 'type="number" min="0" data-budget="ducats"')}${input('budgetC', '可用现金', budget.credits ?? '', 'type="number" min="0" data-budget="credits"')}${input('ducat-cost', '每百杜卡德机会成本 / p', settings.ducatCost ?? '', 'type="number" min="0" step="0.1" data-cost="ducatCost"')}${input('credit-cost', '每百万现金机会成本 / p', settings.creditCost ?? '', 'type="number" min="0" step="0.1" data-cost="creditCost"')}</div><p class="${(budget.ducats != null && tot.ducats > budget.ducats) || (budget.credits != null && tot.credits > budget.credits) ? 'negative' : ''}">${tot.incomplete ? `${tot.incomplete} 份成本未知，合计不完整。` : ''}${budget.ducats != null ? '剩余 ' + number(budget.ducats - tot.ducats) + ' 杜卡德。' : ''}${budget.credits != null ? '剩余 ' + number(budget.credits - tot.credits) + ' 现金。' : ''}填写两项机会成本后，表内显示每份资源差额，未计交易税与交易耗时。</p></div></details>
-  <details class="baro-guide"><summary>指标说明与货单来源</summary><p>基准价取本次奸商活动前的正常成交均价；预计回款取基准价的 90%，排除活动周末的成交记录。恢复时间是活动结束后，首次连续 7 天成交均价达到基准 90% 的日期；没有足够的本次返场后数据就显示未知。若有记录，会同时显示上一次返场的实际恢复天数作为参考，不把它冒充本次结果。</p><p>综合判断只看三项：基准 90% 回款效率（≥ 8p / 100D 较好）、恢复时间（≤ 14 天较好）和长期日均成交（≥ 5 条较好）。三项分别计分，合计 5 分以上显示“优先考虑”，3—4 分显示“可以考虑”，其余显示“暂缓”。</p><p><b>本次全部商品：</b>自动货单匹配的可交易武器与 MOD。计划数量仍可填写；实际购买后再录入库存。历史目录用于补充查看旧货单，不代表本次在售。</p><p>成交记录来自 WFM 标记成交，不等于全服总量或独立买家数。行情过期、活动供应变化、交易税和出售占用的交易次数都没有被当成确定利润。</p><button id="baro-reset" class="plain-button">清空计划与手动核对（保留库存）</button></details>`;
+  <details class="baro-planner" ${plannerOpen ? 'open' : ''}><summary>计划合计：${planned.reduce((n, x) => n + plan[x.slug], 0)} 份 · ${number(tot.ducats)} 杜卡德 + ${number(tot.credits)} 现金${tot.incomplete ? '（有成本未知项）' : ''} · 展开填写预算</summary><div class="baro-budget"><div class="form-grid">${input('budgetD', '可用杜卡德', budget.ducats ?? '', 'type="number" min="0" data-budget="ducats"')}${input('budgetC', '可用现金', budget.credits ?? '', 'type="number" min="0" data-budget="credits"')}</div><p class="${(budget.ducats != null && tot.ducats > budget.ducats) || (budget.credits != null && tot.credits > budget.credits) ? 'negative' : ''}">${tot.incomplete ? `${tot.incomplete} 份成本未知，合计不完整。` : ''}${budget.ducats != null ? '剩余 ' + number(budget.ducats - tot.ducats) + ' 杜卡德。' : ''}${budget.credits != null ? '剩余 ' + number(budget.credits - tot.credits) + ' 现金。' : ''}囤货榜统一按 15D = 1p 折算杜卡德，现金成本忽略。</p></div></details>
+  <details class="baro-guide"><summary>指标说明与货单来源</summary><p>基准价取本次奸商活动前的正常成交均价；预计回款取基准价的 90%，排除活动周末的成交记录。恢复时间是活动结束后，首次连续 7 天成交均价达到基准 90% 的日期；没有足够的本次返场后数据就显示未知。若有记录，会同时显示上一次返场的实际恢复天数作为参考，不把它冒充本次结果。</p><p>囤货总榜按每 100D 成本 ${baroDucatCost}p 计算，现金成本忽略。预计净回款 = 历史正常价 90% 的回款 − ${baroDucatCost}p。恢复时间优先使用本次实测，没有时使用上次返场的历史估计。</p><p>“值得囤”要求预计净回款至少 2p / 100D、恢复不超过 30 天、长期日均成交至少 1 份；“少量试囤”表示仍有正回款空间但恢复或成交量偏弱；其余显示“不建议囤”或“数据不足”。</p><p><b>囤货总榜：</b>覆盖目录中全部奸商 MOD 与武器，不要求本次在售。本次货单只显示标记，方便你在奸商到访时直接取榜单靠前商品。</p><p><b>本次全部商品：</b>只展示当前货单中已确认的可交易武器与 MOD。计划数量仍可填写；实际购买后再录入库存。</p><p>成交记录来自 WFM 标记成交，不等于全服总量或独立买家数。行情过期、活动供应变化、交易税和出售占用的交易次数都没有被当成确定利润。</p><button id="baro-reset" class="plain-button">清空计划与手动核对（保留库存）</button></details>`;
     el.querySelector('[data-open-ducats]').onclick = () => setTab('ducats');
     $('baro-min-volume').onchange = e => {
       baroMinWeek = Number(e.target.value);
