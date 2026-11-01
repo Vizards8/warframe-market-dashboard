@@ -23,6 +23,8 @@ class PagesTests(unittest.TestCase):
         self.assertIn('netPer100', desk)
         self.assertIn('<th>净回款 / 100D</th>', desk)
         self.assertIn("number(value.netPer100, 2) + 'p / 100D'", desk)
+        self.assertIn("baroMode === 'rank' ? ' baro-table-compact' : ''", desk)
+        self.assertIn("baroMode === 'rank' ? '' : `<details class=\"baro-planner\"", desk)
 
     def test_public_build_does_not_read_private_files_or_ship_them(self):
         original = Path.read_text
