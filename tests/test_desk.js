@@ -237,6 +237,29 @@ assert.equal(
   core.baroHolding({ ...eventValue, statsValid: false }, { days: 10 }).label,
   '数据不足'
 );
+// A rising/falling trend should use the qualified 90-day high, not flatten to
+// one long average. The high is a rolling 7-day VWAP with a volume floor.
+const trendHistory = Array.from({ length: 45 }, (_, i) => ({
+  date: new Date(Date.parse('2026-09-01T00:00:00Z') + i * 86400000)
+    .toISOString()
+    .slice(0, 10),
+  price: i < 7 ? 100 : i < 20 ? 50 : i < 39 ? 70 : 80,
+  volume: 30
+}));
+const trendValue = core.baroValue(
+  { ducats: 300, credits: 0 },
+  {
+    ...m,
+    stats_at: '2026-10-15T07:00:00Z',
+    stats: { end: '2026-10-15', history: trendHistory }
+  },
+  {},
+  Date.parse('2026-10-16T08:00:00Z'),
+  { activation: '2026-10-10T00:00:00Z', expiry: '2026-10-12T00:00:00Z' }
+);
+assert.equal(trendValue.peak90, 100);
+assert.equal(trendValue.target90, 90);
+assert.equal(trendValue.peak90Volume, 210);
 console.log('奸商简化判断：活动周末排除、90% 回款、恢复时间、长期日均成交和综合判断验证通过');
 // Ducat route: whole-item rounding, finite order depth, and separate historical/instant outcomes.
 const part = { kind: 'component', tags: ['prime', 'component'], ducats: 45 };

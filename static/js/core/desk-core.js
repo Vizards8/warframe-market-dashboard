@@ -286,7 +286,18 @@ const DeskCore = {
           })
           .filter(x => x.price != null && x.days >= 4 && x.volume >= 20),
       peaks = rolling(normalRows),
-      peak90 = peaks.length ? Math.max(...peaks.map(x => x.price)) : null,
+      peakWindow = peaks.length
+        ? peaks.reduce(
+            (best, row) =>
+              !best || row.price > best.price || (row.price === best.price && row.volume > best.volume)
+                ? row
+                : best,
+            null
+          )
+        : null,
+      peak90 = peakWindow?.price ?? null,
+      peak90Volume = peakWindow?.volume ?? null,
+      peak90Days = peakWindow?.days ?? null,
       trough90 = peaks.length ? Math.min(...peaks.map(x => x.price)) : null,
       before = activation
         ? normalRows.filter(row => row.date < activation).slice(-30)
@@ -294,7 +305,10 @@ const DeskCore = {
       baseline = aggregate(before).price ?? peak90,
       rangePct = peak90 != null && peak90 > 0 ? ((peak90 - trough90) / peak90) * 100 : null,
       volatilityValid = normalRows.length >= 30 && peaks.length >= 4 && rangePct != null && rangePct >= 15,
-      target90 = baseline == null ? null : baseline * 0.9,
+      // Use the highest qualified rolling 7-day VWAP as the recovery target.
+      // Each window must contain at least four days and 20 trades, so one
+      // unusually high order cannot define the target by itself.
+      target90 = peak90 == null ? null : peak90 * 0.9,
       eventEnd = expiry ? Date.parse(expiry + 'T00:00:00Z') : NaN,
       recoverySeries = Number.isFinite(eventEnd)
         ? rolling(normalRows.filter(row => Date.parse(row.date + 'T00:00:00Z') >= eventEnd))
@@ -385,6 +399,8 @@ const DeskCore = {
       baseline,
       target90,
       peak90,
+      peak90Volume,
+      peak90Days,
       trough90,
       rangePct,
       volatilityValid,
