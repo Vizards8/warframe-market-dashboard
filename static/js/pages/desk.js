@@ -186,7 +186,7 @@ window.Desk = (() => {
         ? timeLabel(phases.rivens.finished)
         : '批次时间未记录，见商品详情';
     $('data-health').innerHTML =
-      `<span>${snapshotLabel()}</span><details><summary>数据状态${fail ? ' · ' + fail + ' 项失败' : ''}</summary><p>${focus.length ? '持仓 / 关注' : '主要目录'}：${good}/${scope.length} 项报价在 2 小时内，${unknown} 项未查询，${fail} 项失败；${statsGood}/${scope.length} 项历史统计在 24 小时内有效（统计截止日通过检查）。</p><p>在线卖单 / 买单只用于即时交易和联系卖家，超过 2 小时会标记为旧值；成交统计、P 甲走势和囤货判断允许使用 24 小时内快照。成交统计最近抓取：${statsTime}；紫卡最近批次：${rivenTime}。挂单每小时更新，成交统计 / 紫卡每 6 小时检查更新。</p><p>网页发布不代表重新抓取行情；行情抓取完成也不代表所有商品查询成功。每项查询时间见商品详情，过期或缺价不按零计算。货单：${b?.at ? age(b.at) : '未查询'}${b?.error ? '，获取失败' : ''}。</p><a class="link" href="https://github.com/Vizards8/warframe-market-dashboard/actions/workflows/pages.yml" target="_blank" rel="noopener">更新记录 / 手动抓取 ↗</a></details>`;
+      `<span>${snapshotLabel()}</span><details><summary>数据状态${fail ? ' · ' + fail + ' 项失败' : ''}</summary><p>${focus.length ? '持仓 / 关注' : '主要目录'}：${good}/${scope.length} 项报价在 2 小时内，${unknown} 项未查询，${fail} 项失败；${statsGood}/${scope.length} 项历史统计在 24 小时内更新。</p><p>在线卖单 / 买单只用于即时交易和联系卖家，超过 2 小时会标记为旧值；成交统计、P 甲走势和囤货判断不因快照变旧停止使用；超过 24 小时提示旧快照，按统计截止日参考。成交统计最近抓取：${statsTime}；紫卡最近批次：${rivenTime}。挂单每小时更新，成交统计 / 紫卡每 6 小时检查更新。</p><p>网页发布不代表重新抓取行情；行情抓取完成也不代表所有商品查询成功。每项查询时间见商品详情，过期或缺价不按零计算。货单：${b?.at ? age(b.at) : '未查询'}${b?.error ? '，获取失败' : ''}。</p><a class="link" href="https://github.com/Vizards8/warframe-market-dashboard/actions/workflows/pages.yml" target="_blank" rel="noopener">更新记录 / 手动抓取 ↗</a></details>`;
   }
   function render() {
     if (!initialized) return;
@@ -508,8 +508,8 @@ window.Desk = (() => {
             ? `<div class="baro-volume"><strong>${number(value.dailyVolume, 1)}</strong><span>份 / 天</span></div><span class="liquidity-badge liquidity-${liq.tier}">${liq.label}</span><small>近 7 天 ${number(liq.week)} · 30 天 ${number(liq.month)}</small>`
             : `<div class="baro-volume"><strong>${number(value.dailyVolume, 1)}</strong><span>份 / 天</span></div><span class="liquidity-badge liquidity-${liq.tier}">${liq.label}</span><small>近 7 天 ${number(liq.week)} 条 · 30 天 ${number(liq.month)} 条</small><small class="${value.statsValid ? '' : 'quality-warning'}">${value.statsValid ? '' : '成交统计过期 / 缺失'}</small>${linked(x)}`,
           decisionCell = compact
-            ? `<strong class="baro-decision baro-decision-${hold.tone}" title="${esc(hold.reason)}">${hold.label}</strong>`
-            : `<strong class="baro-decision baro-decision-${hold.tone}">${hold.label}</strong><small>${esc(hold.reason)}</small>`,
+            ? `<strong class="baro-decision baro-decision-${hold.tone}" title="${esc(hold.reason)}">${hold.label}</strong>${value.statsOutdated && value.statsValid ? `<small>旧快照 · 截至 ${esc(value.asOf)}</small>` : ''}`
+            : `<strong class="baro-decision baro-decision-${hold.tone}">${hold.label}</strong><small>${esc(hold.reason)}</small>${value.statsOutdated && value.statsValid ? `<small>旧快照 · 截至 ${esc(value.asOf)}</small>` : ''}`,
           inventoryCell = compact
             ? `<small>${x.ducats == null ? '成本未知' : number(x.ducats) + 'D'} · 已有 ${srow(x.slug).quantity}</small>`
             : `${x.current ? `${number(x.ducats)} 杜卡德<small>现金成本不计</small>` : `<label>杜卡德<input type="number" min="0" data-exchange="ducats" data-exchange-slug="${esc(x.slug)}" value="${x.ducats ?? ''}"></label><label>现金<input type="number" min="0" data-exchange="credits" data-exchange-slug="${esc(x.slug)}" value="${x.credits ?? ''}"></label>`}<small>已有 ${srow(x.slug).quantity} 份${srow(x.slug).quantity >= 10 ? ' · 持仓较多' : ''}</small><label class="baro-plan-label">计划补货<input class="plan-quantity" type="number" min="0" max="100000" step="1" data-baro-plan="${esc(x.slug)}" aria-label="${esc(x.name)} 计划补货数量" value="${plan[x.slug] || 0}" ${!x.manual && !x.current ? 'disabled' : ''}></label>`;

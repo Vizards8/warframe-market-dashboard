@@ -61,7 +61,7 @@ window.QuickMarket = (() => {
           const statsState = DeskCore.analysisStatsFresh(m)
             ? ''
             : m.stats_at
-              ? '统计过期 / 读取失败'
+              ? `旧快照 · 成交截至 ${esc(m.stats?.end || '未知')}`
               : '成交统计未采集';
           const orderState = DeskCore.fresh(m.orders_at, m.orders_error)
             ? ''

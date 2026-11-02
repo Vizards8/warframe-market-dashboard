@@ -114,6 +114,13 @@ const sixHourStats = { ...m, stats_at: '2026-10-21T02:00:00Z', orders_at: '2026-
 assert.equal(core.statsFresh(sixHourStats, now), true);
 assert.equal(core.analysisStatsFresh({ ...m, stats_at: '2026-10-20T09:00:00Z' }, now), true);
 assert.equal(core.analysisStatsFresh({ ...m, stats_at: '2026-10-19T07:59:59Z' }, now), false);
+const delayedNow = now + 10 * 86400000;
+assert.equal(core.analysisStatsUsable(m, delayedNow), true);
+assert.equal(core.analysisStatsFresh(m, delayedNow), false);
+assert.equal(core.target(m, 'mean30', delayedNow).valid, true);
+assert.equal(core.target(m, 'sell', delayedNow).valid, false);
+assert.equal(core.analysisStatsUsable({ ...m, stats: {} }, delayedNow), false);
+assert.equal(core.analysisStatsUsable({ ...m, stats: { ...m.stats, history: [] } }, delayedNow), false);
 assert.equal(core.target(sixHourStats, 'mean30', now).valid, true);
 assert.equal(core.rewardQuote(sixHourStats, now).valid, true);
 assert.equal(core.target(sixHourStats, 'sell', now).valid, false);
@@ -166,7 +173,7 @@ assert.equal(
 );
 assert.equal(
   core.baroValue(baroItem, { ...baroMarket, stats_at: '2026-10-20T07:00:00Z' }, {}, now).eligible,
-  false
+  true
 );
 assert.equal(
   core.baroValue(
@@ -229,6 +236,14 @@ assert.ok(Math.abs(eventValue.netPer100 - (30 - 100 / 15)) < 1e-10);
 assert.ok(eventValue.dailyVolume > 0);
 assert.equal(eventValue.decision.label, '优先考虑');
 assert.equal(eventValue.eventActive, false);
+const delayedBaro = core.baroValue(
+  { ducats: 300, credits: 150000 }, eventMarket, {}, delayedNow,
+  { activation: '2026-10-01T00:00:00Z', expiry: '2026-10-03T00:00:00Z' }
+);
+assert.equal(delayedBaro.statsValid, true);
+assert.equal(delayedBaro.statsOutdated, true);
+assert.equal(delayedBaro.netPer100, eventValue.netPer100);
+assert.equal(core.baroHolding(delayedBaro).label, '值得囤');
 assert.equal(
   core.baroHolding(eventValue, null).label,
   '值得囤'

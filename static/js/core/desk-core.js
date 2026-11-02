@@ -45,14 +45,26 @@ const DeskCore = {
   analysisStatsFresh(m, now = Date.now()) {
     const at = Date.parse(m?.stats_at),
       end = Date.parse(m?.stats?.end + 'T00:00:00Z') + 86400000;
+    return this.analysisStatsUsable(m, now) && now - at < ANALYSIS_STATS_FRESH_MS &&
+      now - end < 3 * 86400000;
+  },
+  // Age affects the reminder, not whether historical windows can be compared.
+  // Windows remain anchored to stats.end; never relabel them as current data.
+  analysisStatsUsable(m, now = Date.now()) {
+    const at = Date.parse(m?.stats_at),
+      end = Date.parse(m?.stats?.end + 'T00:00:00Z') + 86400000;
     return (
       !m?.stats_error &&
       Number.isFinite(at) &&
       now >= at &&
-      now - at < ANALYSIS_STATS_FRESH_MS &&
       Number.isFinite(end) &&
       now >= end &&
-      now - end < 7 * 86400000
+      Array.isArray(m?.stats?.history) &&
+      m.stats.history.some(row =>
+        Number.isFinite(row.price) && row.price > 0 &&
+        Number.isFinite(row.volume) && row.volume > 0 &&
+        Number.isFinite(Date.parse(row.date)) && Date.parse(row.date) < end
+      )
     );
   },
   target(m, basis = 'sell', now = Date.now()) {
@@ -67,7 +79,7 @@ const DeskCore = {
       value: value ?? null,
       valid:
         (source === 'stats'
-          ? this.analysisStatsFresh(m, now)
+          ? this.analysisStatsUsable(m, now)
           : this.fresh(m?.orders_at, m?.orders_error, now)) && value != null,
       label:
         { sell: '在线最低卖价', buy: '在线最高买价', mean30: '30 天成交均价' }[basis] ||
@@ -109,12 +121,9 @@ const DeskCore = {
         7
       ),
       enough = x => x.price > 0 && x.days >= 4 && x.volume >= 20,
-      fresh = this.analysisStatsFresh(m, now),
-      recent =
-        Number.isFinite(end) &&
-        now - (end + 86400000) >= 0 &&
-        now - (end + 86400000) < 3 * 86400000,
-      reliable = fresh && recent && enough(week),
+      usable = this.analysisStatsUsable(m, now),
+      outdated = !this.analysisStatsFresh(m, now),
+      reliable = usable && enough(week),
       comparable = reliable && enough(previous),
       premium = week.price != null && month.price > 0 ? (week.price / month.price - 1) * 100 : null;
     // Compare like with like: rolling weekly means, not a single day's outlier.
@@ -147,11 +156,11 @@ const DeskCore = {
       high,
       reliable,
       comparable,
+      outdated,
+      asOf: m?.stats?.end || null,
       rank,
-      label: !fresh
-        ? '行情过期 / 缺失'
-        : !recent
-          ? '近期成交缺失'
+      label: !usable
+        ? '成交数据缺失 / 异常'
           : !enough(week)
             ? '近 7 天样本少'
             : !volatilityValid && !rising
@@ -258,13 +267,13 @@ const DeskCore = {
   baroValue(item, market, settings = {}, now = Date.now(), event = {}) {
     const month = MarketStats.window(market, 30),
       week = MarketStats.window(market, 7),
-      statsValid = this.analysisStatsFresh(market, now);
+      statsValid = this.analysisStatsUsable(market, now);
     // This is a historical resale scenario, not a forecast or an immediately executable price.
     const history =
       month.price != null && week.price != null ? Math.min(month.price, week.price) : null;
     const current = market?.orders?.sell?.[0]?.price ?? null;
     const valid =
-      this.analysisStatsFresh(market, now) && this.fresh(market?.orders_at, market?.orders_error, now);
+      this.analysisStatsUsable(market, now) && this.fresh(market?.orders_at, market?.orders_error, now);
     const efficiency = history != null && item.ducats > 0 ? (history / item.ducats) * 100 : null;
     const currentEfficiency =
       current != null && item.ducats > 0 ? (current / item.ducats) * 100 : null;
@@ -442,6 +451,8 @@ const DeskCore = {
       dailyVolume,
       normalVolume,
       statsValid,
+      statsOutdated: !this.analysisStatsFresh(market, now),
+      asOf: market?.stats?.end || null,
       eventActive,
       decision,
       valid,
@@ -502,7 +513,7 @@ const DeskCore = {
     const known = !!m?.stats?.end,
       week = MarketStats.window(m, 7),
       month = MarketStats.window(m, 30);
-    const valid = known && this.analysisStatsFresh(m, now);
+    const valid = known && this.analysisStatsUsable(m, now);
     const tier = !valid ? -1 : week.volume >= 70 ? 2 : week.volume >= 14 ? 1 : 0;
     return {
       week: known ? week.volume : null,
@@ -527,7 +538,7 @@ const DeskCore = {
       !item.tags.includes('set');
     const summary = MarketStats.window(m, 30),
       price = summary.price;
-    const valid = eligible && Number.isFinite(price) && price > 0 && this.analysisStatsFresh(m, now);
+    const valid = eligible && Number.isFinite(price) && price > 0 && this.analysisStatsUsable(m, now);
     return {
       eligible,
       valid,
@@ -859,7 +870,7 @@ const DeskCore = {
     const sellValid =
       this.fresh(targetMarket?.orders_at, targetMarket?.orders_error, now) && sellDepth.left === 0;
     const history = this.baroValue(target, targetMarket, {}, now).history;
-    const historyValid = this.analysisStatsFresh(targetMarket, now) && history != null;
+    const historyValid = this.analysisStatsUsable(targetMarket, now) && history != null;
     const credits = target.credits * copies,
       creditP =
         Number.isFinite(creditCost) && creditCost >= 0 ? (credits / 1e6) * creditCost : null;

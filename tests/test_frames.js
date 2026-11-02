@@ -26,14 +26,20 @@ assert.equal(q.high, true);
 assert.equal(q.rank, 3);
 assert.equal(core.frameSignal({ ...market, stats_at: '2026-10-27T20:00:00Z' }, now).rank, 3);
 const old = core.frameSignal({ ...market, stats_at: '2026-10-27T01:30:00Z' }, now);
-assert.equal(old.rank, -1);
-assert.equal(old.rising, false);
-assert.equal(old.high, false);
+assert.equal(old.rank, 3);
+assert.equal(old.outdated, true);
+assert.equal(old.rising, true);
+assert.equal(old.high, true);
+const delayed = core.frameSignal(market, now + 10 * 86400000);
+assert.equal(delayed.rank, q.rank);
+assert.equal(delayed.week.price, q.week.price);
+assert.equal(delayed.outdated, true);
+assert.equal(delayed.asOf, '2026-10-27');
 assert.equal(core.frameSignal({ ...market, stats_error: '429' }, now).rank, -1);
 assert.equal(core.frameSignal({}, now).rank, -1);
 assert.equal(
   core.frameSignal({ ...market, stats: { end: '2026-10-20', history } }, now).reliable,
-  false
+  true
 );
 assert.equal(
   core.frameSignal({ ...market, stats_at: '2026-10-29T01:30:00Z' }, now).reliable,
