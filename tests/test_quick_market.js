@@ -48,7 +48,7 @@ const context = {
   }),
   ask: m => (m.slug === 'a' ? 4 : m.slug === 'b' ? 2 : null),
   bid: () => null,
-  DeskCore: { fresh: () => true, statsFresh: () => true },
+  DeskCore: { fresh: () => true, statsFresh: () => true, analysisStatsFresh: () => true },
   esc: String,
   number: x => (x == null ? '—' : String(x)),
   itemImage: () => '',

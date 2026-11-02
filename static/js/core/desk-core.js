@@ -1,6 +1,8 @@
 'use strict';
 const MARKET_FRESH_MS = 2 * 3600000;
 const STATS_FRESH_MS = 8 * 3600000;
+const ANALYSIS_MARKET_FRESH_MS = 24 * 3600000;
+const ANALYSIS_STATS_FRESH_MS = 24 * 3600000;
 // User's fixed exchange basis for Baro investment decisions: 15 Ducats = 1p.
 const BARO_DUCAT_COST_PER_100 = 100 / 15;
 const DeskCore = {
@@ -14,11 +16,22 @@ const DeskCore = {
       now - Date.parse(at) < MARKET_FRESH_MS
     );
   },
+  // Historical prices and long-term signals do not require a live order
+  // snapshot. Keep this separate from fresh(), which protects purchases.
+  analysisFresh(at, error, now = Date.now()) {
+    return (
+      !!at &&
+      !error &&
+      Number.isFinite(Date.parse(at)) &&
+      now >= Date.parse(at) &&
+      now - Date.parse(at) < ANALYSIS_MARKET_FRESH_MS
+    );
+  },
   statsFresh(m, now = Date.now()) {
     const at = Date.parse(m?.stats_at),
       end = Date.parse(m?.stats?.end + 'T00:00:00Z') + 86400000;
-    // Daily closed trades refresh every six hours, with two hours of grace.
-    // A newly fetched response with an old or unfinished cutoff is still invalid.
+    // Strict recent-stat check used by refresh diagnostics. Long-term views use
+    // analysisStatsFresh() so a delayed scheduled run does not blank the page.
     return (
       !m?.stats_error &&
       Number.isFinite(at) &&
@@ -27,6 +40,19 @@ const DeskCore = {
       Number.isFinite(end) &&
       now >= end &&
       now - end < 3 * 86400000
+    );
+  },
+  analysisStatsFresh(m, now = Date.now()) {
+    const at = Date.parse(m?.stats_at),
+      end = Date.parse(m?.stats?.end + 'T00:00:00Z') + 86400000;
+    return (
+      !m?.stats_error &&
+      Number.isFinite(at) &&
+      now >= at &&
+      now - at < ANALYSIS_STATS_FRESH_MS &&
+      Number.isFinite(end) &&
+      now >= end &&
+      now - end < 7 * 86400000
     );
   },
   target(m, basis = 'sell', now = Date.now()) {
@@ -41,7 +67,7 @@ const DeskCore = {
       value: value ?? null,
       valid:
         (source === 'stats'
-          ? this.statsFresh(m, now)
+          ? this.analysisStatsFresh(m, now)
           : this.fresh(m?.orders_at, m?.orders_error, now)) && value != null,
       label:
         { sell: '在线最低卖价', buy: '在线最高买价', mean30: '30 天成交均价' }[basis] ||
@@ -51,7 +77,12 @@ const DeskCore = {
   // Shared by relic drops and screenshot rewards. Never label an order as a mean.
   rewardQuote(m, now = Date.now()) {
     const mean = this.target(m, 'mean30', now),
-      ask = this.target(m, 'sell', now);
+      askValue = m?.orders?.sell?.[0]?.price ?? null,
+      ask = {
+        value: askValue,
+        valid: this.analysisFresh(m?.orders_at, m?.orders_error, now) && askValue != null,
+        label: '在线最低卖价'
+      };
     const q = mean.valid
       ? { ...mean, basis: 'mean30', at: m.stats_at }
       : ask.valid
@@ -78,7 +109,7 @@ const DeskCore = {
         7
       ),
       enough = x => x.price > 0 && x.days >= 4 && x.volume >= 20,
-      fresh = this.statsFresh(m, now),
+      fresh = this.analysisStatsFresh(m, now),
       recent =
         Number.isFinite(end) &&
         now - (end + 86400000) >= 0 &&
@@ -227,13 +258,13 @@ const DeskCore = {
   baroValue(item, market, settings = {}, now = Date.now(), event = {}) {
     const month = MarketStats.window(market, 30),
       week = MarketStats.window(market, 7),
-      statsValid = this.statsFresh(market, now);
+      statsValid = this.analysisStatsFresh(market, now);
     // This is a historical resale scenario, not a forecast or an immediately executable price.
     const history =
       month.price != null && week.price != null ? Math.min(month.price, week.price) : null;
     const current = market?.orders?.sell?.[0]?.price ?? null;
     const valid =
-      this.statsFresh(market, now) && this.fresh(market?.orders_at, market?.orders_error, now);
+      this.analysisStatsFresh(market, now) && this.fresh(market?.orders_at, market?.orders_error, now);
     const efficiency = history != null && item.ducats > 0 ? (history / item.ducats) * 100 : null;
     const currentEfficiency =
       current != null && item.ducats > 0 ? (current / item.ducats) * 100 : null;
@@ -471,7 +502,7 @@ const DeskCore = {
     const known = !!m?.stats?.end,
       week = MarketStats.window(m, 7),
       month = MarketStats.window(m, 30);
-    const valid = known && this.statsFresh(m, now);
+    const valid = known && this.analysisStatsFresh(m, now);
     const tier = !valid ? -1 : week.volume >= 70 ? 2 : week.volume >= 14 ? 1 : 0;
     return {
       week: known ? week.volume : null,
@@ -496,7 +527,7 @@ const DeskCore = {
       !item.tags.includes('set');
     const summary = MarketStats.window(m, 30),
       price = summary.price;
-    const valid = eligible && Number.isFinite(price) && price > 0 && this.statsFresh(m, now);
+    const valid = eligible && Number.isFinite(price) && price > 0 && this.analysisStatsFresh(m, now);
     return {
       eligible,
       valid,
@@ -828,7 +859,7 @@ const DeskCore = {
     const sellValid =
       this.fresh(targetMarket?.orders_at, targetMarket?.orders_error, now) && sellDepth.left === 0;
     const history = this.baroValue(target, targetMarket, {}, now).history;
-    const historyValid = this.statsFresh(targetMarket, now) && history != null;
+    const historyValid = this.analysisStatsFresh(targetMarket, now) && history != null;
     const credits = target.credits * copies,
       creditP =
         Number.isFinite(creditCost) && creditCost >= 0 ? (credits / 1e6) * creditCost : null;

@@ -53,7 +53,9 @@ const srow = slug =>
 const mrow = slug => state.market[slug] || {};
 const held = x => srow(x.slug).quantity > 0;
 const watched = x => held(x) || srow(x.slug).watch;
-const stale = at => !at || Date.now() - Date.parse(at) > 6 * 3600 * 1000;
+// Historical/recommendation snapshots can be a day old. Purchase actions use
+// DeskCore.fresh() separately and still require the two-hour order window.
+const stale = at => !DeskCore.analysisFresh(at);
 const ask = m => m.orders?.sell?.[0]?.price ?? null;
 const bid = m => m.orders?.buy?.[0]?.price ?? null;
 const mean = m => statsFor(m).price;
@@ -433,7 +435,7 @@ function renderTable() {
                 ? '无等长前窗对比'
                 : `${change >= 0 ? '+' : ''}${number(change, 1)}% 较前 ${statsDays()} 天`;
             const inventory = tab === 'inventory' || tab === 'watch' || watched(x);
-            return `<tr data-slug="${esc(x.slug)}"><td><div class="item-cell">${itemImage(x)}<div><button class="item-name" data-detail="${esc(x.slug)}">${esc(x.name)}${x.alias ? ` <span class="neutral">· ${esc(x.alias)}</span>` : ''}</button><div class="item-meta"><span class="pill">${esc(kindLabel[x.kind] || '商品')}</span><span title="${esc(updateTitle)}">${!DeskCore.statsFresh(m) || !DeskCore.fresh(m.orders_at, m.orders_error) ? '<i class="stale-dot"></i> ' : ''}${m.stats_error || m.orders_error ? '刷新失败 · 保留旧值' : !m.orders_at ? '挂单待刷新' : timeLabel(m.orders_at)}</span></div></div></div></td>
+            return `<tr data-slug="${esc(x.slug)}"><td><div class="item-cell">${itemImage(x)}<div><button class="item-name" data-detail="${esc(x.slug)}">${esc(x.name)}${x.alias ? ` <span class="neutral">· ${esc(x.alias)}</span>` : ''}</button><div class="item-meta"><span class="pill">${esc(kindLabel[x.kind] || '商品')}</span><span title="${esc(updateTitle)}">${!DeskCore.analysisStatsFresh(m) || !DeskCore.fresh(m.orders_at, m.orders_error) ? '<i class="stale-dot"></i> ' : ''}${m.stats_error || m.orders_error ? '刷新失败 · 保留旧值' : !m.orders_at ? '挂单待刷新' : timeLabel(m.orders_at)}</span></div></div></div></td>
     <td>${inventory ? `<div class="quantity-stepper"><button data-step="-1" data-item="${esc(x.slug)}" aria-label="减少 ${esc(x.name)} 持有数量" ${s.quantity <= 0 ? 'disabled' : ''}>−</button><input class="number-input" data-quantity="${esc(x.slug)}" type="number" min="0" max="100000" step="1" value="${s.quantity}" aria-label="${esc(x.name)} 持有数量"><button data-step="1" data-item="${esc(x.slug)}" aria-label="增加 ${esc(x.name)} 持有数量">＋</button></div>` : '<span class="neutral">—</span>'}</td>
     <td><div class="price">${price(p)}</div><div class="subline ${change == null ? '' : change >= 0 ? 'positive' : 'negative'}" title="相邻两个 ${statsDays()} 天窗口的成交量加权均价对比；低样本涨幅参考价值有限">${changeText}</div></td>
     <td title="${esc(updateTitle)}"><div class="order-pair"><span class="price">${price(ask(m))}</span><span class="slash">/</span><span class="buy">${number(bid(m))}</span></div><div class="subline">${m.orders ? `${m.orders.sell_count} 卖家 · ${m.orders.buy_count} 买家` : '尚未查询，请到 WFM 核价'}</div></td>
@@ -450,7 +452,7 @@ function renderTable() {
     .sort();
   const staleCount = rows.filter(
     x =>
-      !DeskCore.statsFresh(mrow(x.slug)) ||
+      !DeskCore.analysisStatsFresh(mrow(x.slug)) ||
       !DeskCore.fresh(mrow(x.slug).orders_at, mrow(x.slug).orders_error)
   ).length;
   $('freshness').textContent =

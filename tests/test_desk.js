@@ -107,9 +107,13 @@ assert.equal(core.manualCurrent(undefined, now), false);
 assert.equal(core.fresh('2026-10-21T07:30:00Z', null, now), true);
 assert.equal(core.fresh('2026-10-21T05:00:00Z', null, now), false);
 assert.equal(core.fresh('2026-10-22T08:00:00Z', null, now), false);
+assert.equal(core.analysisFresh('2026-10-20T09:00:00Z', null, now), true);
+assert.equal(core.analysisFresh('2026-10-19T07:59:59Z', null, now), false);
 // Six-hour statistics cadence must not extend the two-hour executable quote window.
 const sixHourStats = { ...m, stats_at: '2026-10-21T02:00:00Z', orders_at: '2026-10-21T02:00:00Z' };
 assert.equal(core.statsFresh(sixHourStats, now), true);
+assert.equal(core.analysisStatsFresh({ ...m, stats_at: '2026-10-20T09:00:00Z' }, now), true);
+assert.equal(core.analysisStatsFresh({ ...m, stats_at: '2026-10-19T07:59:59Z' }, now), false);
 assert.equal(core.target(sixHourStats, 'mean30', now).valid, true);
 assert.equal(core.rewardQuote(sixHourStats, now).valid, true);
 assert.equal(core.target(sixHourStats, 'sell', now).valid, false);

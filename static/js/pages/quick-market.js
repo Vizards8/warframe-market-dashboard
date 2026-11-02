@@ -58,7 +58,7 @@ window.QuickMarket = (() => {
         .map(x => {
           const m = mrow(x.slug),
             stats = statsFor(m, 30);
-          const statsState = DeskCore.statsFresh(m)
+          const statsState = DeskCore.analysisStatsFresh(m)
             ? ''
             : m.stats_at
               ? '统计过期 / 读取失败'
