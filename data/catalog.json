@@ -582,11 +582,28 @@
     "alias": "",
     "kind": "weapon",
     "baro_date": "2026-06-26",
-    "baro_verified": "2026-10-20",
-    "ducats": null,
+    "baro_verified": "2026-11-11",
+    "ducats": 475,
     "image": "https://warframe.market/static/assets/items/images/en/thumbs/prisma_angstrum.d35c4cf543441592a43b32ef44d251c1.128x128.png",
     "icon": "https://warframe.market/static/assets/items/images/en/prisma_angstrum.d35c4cf543441592a43b32ef44d251c1.png",
-    "baro": true
+    "baro": true,
+    "credits": 210000,
+    "baro_dates": [
+      "2017-12-29",
+      "2022-09-09",
+      "2023-02-24",
+      "2023-07-28",
+      "2024-03-22",
+      "2024-11-01",
+      "2024-12-27",
+      "2025-04-11",
+      "2025-04-18",
+      "2025-10-17",
+      "2026-01-09",
+      "2026-06-26"
+    ],
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "primed_morphic_transformer",
@@ -1349,11 +1366,27 @@
     "alias": "",
     "kind": "weapon",
     "baro_date": "2026-09-18",
-    "baro_verified": "2026-10-20",
-    "ducats": null,
+    "baro_verified": "2026-11-11",
+    "ducats": 475,
     "image": "https://warframe.market/static/assets/items/images/en/thumbs/glaxion_vandal.6014173d9027f07df11bf4bd68f5eeb8.128x128.png",
     "icon": "https://warframe.market/static/assets/items/images/en/glaxion_vandal.6014173d9027f07df11bf4bd68f5eeb8.png",
-    "baro": true
+    "baro": true,
+    "credits": 250000,
+    "baro_dates": [
+      "2022-10-21",
+      "2023-04-07",
+      "2023-11-17",
+      "2024-05-17",
+      "2024-11-15",
+      "2025-04-18",
+      "2025-06-27",
+      "2025-10-03",
+      "2025-10-31",
+      "2026-04-17",
+      "2026-09-18"
+    ],
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "primed_rubedo_lined_barrel",
@@ -2364,12 +2397,29 @@
     "english": "Prisma Ohma",
     "alias": "",
     "kind": "weapon",
-    "baro_date": "2026-06-12",
-    "baro_verified": "2026-10-20",
-    "ducats": null,
+    "baro_date": "2026-10-30",
+    "baro_verified": "2026-11-11",
+    "ducats": 450,
     "image": "https://warframe.market/static/assets/items/images/en/thumbs/prisma_ohma.05f66ed2cfd4c0c6dfdb19ec4498cf54.128x128.png",
     "icon": "https://warframe.market/static/assets/items/images/en/prisma_ohma.05f66ed2cfd4c0c6dfdb19ec4498cf54.png",
-    "baro": true
+    "baro": true,
+    "credits": 175000,
+    "baro_dates": [
+      "2023-08-11",
+      "2024-02-09",
+      "2024-10-18",
+      "2024-11-15",
+      "2024-12-27",
+      "2025-03-07",
+      "2025-04-11",
+      "2025-08-22",
+      "2025-12-26",
+      "2026-02-20",
+      "2026-06-12",
+      "2026-10-30"
+    ],
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "grendel_prime_set",
@@ -2390,12 +2440,26 @@
     "english": "Gotva Prime",
     "alias": "",
     "kind": "weapon",
-    "baro_date": "2026-06-26",
-    "baro_verified": "2026-10-20",
-    "ducats": null,
+    "baro_date": "2026-11-06",
+    "baro_verified": "2026-11-11",
+    "ducats": 675,
     "image": "https://warframe.market/static/assets/items/images/en/thumbs/gotva_prime.323e7113fa10a54ab363496770917b19.128x128.png",
     "icon": "https://warframe.market/static/assets/items/images/en/gotva_prime.323e7113fa10a54ab363496770917b19.png",
-    "baro": true
+    "baro": true,
+    "credits": 625000,
+    "baro_dates": [
+      "2023-11-03",
+      "2024-04-05",
+      "2024-10-04",
+      "2025-02-07",
+      "2025-06-13",
+      "2025-10-03",
+      "2026-03-06",
+      "2026-06-26",
+      "2026-11-06"
+    ],
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "primed_redirection",
@@ -4005,10 +4069,32 @@
       "weapon",
       "secondary"
     ],
-    "ducats": null,
+    "ducats": 400,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 75000,
+    "baro_date": "2026-10-23",
+    "baro_dates": [
+      "2022-12-02",
+      "2023-05-19",
+      "2023-10-20",
+      "2024-04-19",
+      "2024-05-03",
+      "2024-10-18",
+      "2024-11-01",
+      "2025-02-21",
+      "2025-05-16",
+      "2025-06-13",
+      "2025-09-19",
+      "2025-10-24",
+      "2026-01-09",
+      "2026-06-12",
+      "2026-10-23"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "zephyr_prime_chassis_blueprint",
@@ -5295,10 +5381,27 @@
       "primary",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 450,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 300000,
+    "baro_date": "2026-10-02",
+    "baro_dates": [
+      "2022-10-07",
+      "2023-02-24",
+      "2023-07-28",
+      "2024-05-31",
+      "2024-12-27",
+      "2025-05-16",
+      "2025-08-22",
+      "2025-12-12",
+      "2026-05-15",
+      "2026-10-02"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "sybaris_prime_barrel",
@@ -5773,10 +5876,30 @@
       "weapon",
       "melee"
     ],
-    "ducats": null,
+    "ducats": 490,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 200000,
+    "baro_date": "2026-08-21",
+    "baro_dates": [
+      "2023-01-13",
+      "2023-06-16",
+      "2023-12-29",
+      "2024-08-23",
+      "2024-12-27",
+      "2025-01-24",
+      "2025-04-11",
+      "2025-10-31",
+      "2026-02-06",
+      "2026-04-03",
+      "2026-04-10",
+      "2026-07-24",
+      "2026-08-21"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "saryn_prime_blueprint",
@@ -5808,10 +5931,32 @@
       "weapon",
       "melee"
     ],
-    "ducats": null,
+    "ducats": 500,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 175000,
+    "baro_date": "2026-10-30",
+    "baro_dates": [
+      "2022-07-29",
+      "2022-08-12",
+      "2022-08-26",
+      "2023-01-13",
+      "2023-06-30",
+      "2023-12-01",
+      "2024-05-31",
+      "2024-12-13",
+      "2024-12-27",
+      "2025-04-04",
+      "2025-04-11",
+      "2025-08-08",
+      "2025-11-28",
+      "2026-05-29",
+      "2026-10-30"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "ballistica_prime_receiver",
@@ -6135,10 +6280,30 @@
       "primary",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 610,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 100000,
+    "baro_date": "2026-07-10",
+    "baro_dates": [
+      "2016-12-02",
+      "2022-11-04",
+      "2023-04-21",
+      "2023-09-22",
+      "2024-02-23",
+      "2024-09-06",
+      "2024-12-27",
+      "2025-01-24",
+      "2025-04-11",
+      "2025-08-08",
+      "2025-12-26",
+      "2026-03-20",
+      "2026-07-10"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "vectis_prime_receiver",
@@ -6206,10 +6371,33 @@
       "primary",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 400,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 50000,
+    "baro_date": "2026-10-16",
+    "baro_dates": [
+      "2017-12-29",
+      "2022-07-29",
+      "2022-08-12",
+      "2022-08-26",
+      "2022-12-02",
+      "2023-06-02",
+      "2023-10-20",
+      "2024-04-05",
+      "2024-10-04",
+      "2024-12-27",
+      "2025-03-07",
+      "2025-04-11",
+      "2025-07-25",
+      "2025-11-28",
+      "2026-05-01",
+      "2026-10-16"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "sybaris_prime_blueprint",
@@ -6583,9 +6771,29 @@
     "baro": true,
     "catalog_source": "WFM item directory",
     "credits": 300000,
-    "baro_verified": "2026-10-24",
+    "baro_verified": "2026-11-11",
     "baro_source": "https://api.warframe.com/cdn/worldState.php",
-    "supply_note": "奸商返场增加供应；未使用且满足游戏交易条件的成品才可交易"
+    "supply_note": "奸商返场增加供应；未使用且满足游戏交易条件的成品才可交易",
+    "baro_date": "2026-10-23",
+    "baro_dates": [
+      "2022-07-29",
+      "2022-08-12",
+      "2022-08-26",
+      "2022-12-30",
+      "2023-06-30",
+      "2023-12-15",
+      "2024-06-28",
+      "2024-12-13",
+      "2025-04-18",
+      "2025-05-02",
+      "2025-09-19",
+      "2025-10-17",
+      "2026-01-09",
+      "2026-05-29",
+      "2026-10-23"
+    ],
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "bronco_prime_receiver",
@@ -6674,10 +6882,25 @@
       "archwing",
       "melee"
     ],
-    "ducats": null,
+    "ducats": 550,
     "alias": "",
-    "baro": false,
-    "catalog_source": "WFM item directory"
+    "baro": true,
+    "catalog_source": "WFM item directory",
+    "credits": 150000,
+    "baro_date": "2026-04-17",
+    "baro_dates": [
+      "2022-10-21",
+      "2023-05-05",
+      "2023-11-17",
+      "2024-06-28",
+      "2024-12-27",
+      "2025-04-11",
+      "2026-01-23",
+      "2026-04-17"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "volt_prime_blueprint",
@@ -7263,10 +7486,32 @@
       "primary",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 600,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 50000,
+    "baro_date": "2026-09-04",
+    "baro_dates": [
+      "2015-04-03",
+      "2016-09-23",
+      "2016-10-07",
+      "2022-11-04",
+      "2023-04-07",
+      "2023-11-03",
+      "2024-06-14",
+      "2024-11-29",
+      "2024-12-27",
+      "2025-03-21",
+      "2025-04-11",
+      "2025-07-25",
+      "2025-10-24",
+      "2026-03-20",
+      "2026-09-04"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "ash_prime_blueprint",
@@ -7316,10 +7561,31 @@
       "weapon",
       "melee"
     ],
-    "ducats": null,
+    "ducats": 410,
     "alias": "",
-    "baro": false,
-    "catalog_source": "WFM item directory"
+    "baro": true,
+    "catalog_source": "WFM item directory",
+    "credits": 250000,
+    "baro_date": "2026-08-21",
+    "baro_dates": [
+      "2022-09-23",
+      "2023-03-10",
+      "2023-08-11",
+      "2024-01-12",
+      "2024-07-12",
+      "2025-02-21",
+      "2025-06-13",
+      "2025-10-03",
+      "2025-10-31",
+      "2026-01-23",
+      "2026-04-03",
+      "2026-04-10",
+      "2026-08-07",
+      "2026-08-21"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "prova_vandal",
@@ -7333,10 +7599,33 @@
       "weapon",
       "melee"
     ],
-    "ducats": null,
+    "ducats": 410,
     "alias": "",
-    "baro": false,
-    "catalog_source": "WFM item directory"
+    "baro": true,
+    "catalog_source": "WFM item directory",
+    "credits": 250000,
+    "baro_date": "2026-08-21",
+    "baro_dates": [
+      "2022-07-29",
+      "2022-08-12",
+      "2022-08-26",
+      "2022-12-30",
+      "2023-06-16",
+      "2023-12-01",
+      "2024-05-31",
+      "2024-11-15",
+      "2025-03-21",
+      "2025-06-27",
+      "2025-11-07",
+      "2026-01-23",
+      "2026-02-06",
+      "2026-04-03",
+      "2026-04-10",
+      "2026-08-21"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "vauban_prime_blueprint",
@@ -7900,10 +8189,30 @@
       "primary",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 500,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 220000,
+    "baro_date": "2026-10-02",
+    "baro_dates": [
+      "2022-10-21",
+      "2023-06-02",
+      "2023-11-03",
+      "2024-05-17",
+      "2024-11-29",
+      "2024-12-27",
+      "2025-04-04",
+      "2025-04-11",
+      "2025-07-11",
+      "2025-11-14",
+      "2026-02-06",
+      "2026-05-15",
+      "2026-10-02"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "equinox_prime_chassis_blueprint",
@@ -9187,10 +9496,24 @@
       "weapon",
       "primary"
     ],
-    "ducats": null,
+    "ducats": 525,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 175000,
+    "baro_date": "2026-02-20",
+    "baro_dates": [
+      "2022-09-23",
+      "2023-06-02",
+      "2023-12-15",
+      "2024-08-09",
+      "2024-12-27",
+      "2025-04-11",
+      "2026-02-20"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "mirage_prime_chassis_blueprint",
@@ -9721,10 +10044,31 @@
       "weapon",
       "secondary"
     ],
-    "ducats": null,
+    "ducats": 500,
     "alias": "",
-    "baro": false,
-    "catalog_source": "WFM item directory"
+    "baro": true,
+    "catalog_source": "WFM item directory",
+    "credits": 220000,
+    "baro_date": "2026-10-16",
+    "baro_dates": [
+      "2022-07-29",
+      "2022-08-12",
+      "2022-08-26",
+      "2023-01-27",
+      "2023-09-08",
+      "2024-03-08",
+      "2024-11-29",
+      "2024-12-27",
+      "2025-03-21",
+      "2025-04-11",
+      "2025-08-08",
+      "2025-12-12",
+      "2026-05-29",
+      "2026-10-16"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "akjagara_prime_barrel",
@@ -9996,10 +10340,28 @@
       "primary",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 500,
     "alias": "",
-    "baro": false,
-    "catalog_source": "WFM item directory"
+    "baro": true,
+    "catalog_source": "WFM item directory",
+    "credits": 275000,
+    "baro_date": "2026-07-10",
+    "baro_dates": [
+      "2022-11-18",
+      "2023-04-21",
+      "2023-09-22",
+      "2024-03-08",
+      "2024-09-20",
+      "2025-02-07",
+      "2025-05-30",
+      "2025-10-17",
+      "2025-12-26",
+      "2026-03-06",
+      "2026-07-10"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "limbo_prime_blueprint",
@@ -10196,10 +10558,33 @@
       "weapon",
       "melee"
     ],
-    "ducats": null,
+    "ducats": 510,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 175000,
+    "baro_date": "2026-09-18",
+    "baro_dates": [
+      "2022-07-29",
+      "2022-08-12",
+      "2022-08-26",
+      "2022-12-16",
+      "2023-05-05",
+      "2023-10-06",
+      "2024-03-22",
+      "2024-09-20",
+      "2024-12-27",
+      "2025-02-21",
+      "2025-04-11",
+      "2025-06-27",
+      "2025-11-14",
+      "2026-02-06",
+      "2026-05-01",
+      "2026-09-18"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "zephyr_prime_systems_blueprint",
@@ -10937,10 +11322,29 @@
       "melee",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 450,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 350000,
+    "baro_date": "2026-10-23",
+    "baro_dates": [
+      "2022-09-23",
+      "2023-02-10",
+      "2023-07-14",
+      "2024-01-12",
+      "2024-07-12",
+      "2025-01-10",
+      "2025-05-30",
+      "2025-09-05",
+      "2025-12-26",
+      "2026-02-20",
+      "2026-06-12",
+      "2026-10-23"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "volnus_prime_handle",
@@ -11157,10 +11561,30 @@
       "melee",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 400,
     "alias": "",
-    "baro": false,
-    "catalog_source": "WFM item directory"
+    "baro": true,
+    "catalog_source": "WFM item directory",
+    "credits": 200000,
+    "baro_date": "2026-09-18",
+    "baro_dates": [
+      "2022-11-18",
+      "2023-05-05",
+      "2023-10-06",
+      "2024-02-23",
+      "2024-09-06",
+      "2024-12-27",
+      "2025-02-07",
+      "2025-04-11",
+      "2025-07-25",
+      "2025-11-14",
+      "2026-04-17",
+      "2026-08-07",
+      "2026-09-18"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "opticor_vandal",
@@ -11174,10 +11598,27 @@
       "primary",
       "weapon"
     ],
-    "ducats": null,
+    "ducats": 650,
     "alias": "",
-    "baro": false,
-    "catalog_source": "WFM item directory"
+    "baro": true,
+    "catalog_source": "WFM item directory",
+    "credits": 550000,
+    "baro_date": "2026-09-04",
+    "baro_dates": [
+      "2022-09-09",
+      "2023-03-10",
+      "2023-09-08",
+      "2024-05-03",
+      "2024-11-01",
+      "2025-03-07",
+      "2025-07-11",
+      "2025-11-07",
+      "2026-04-17",
+      "2026-09-04"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "nidus_prime_blueprint",
@@ -12683,10 +13124,28 @@
       "weapon",
       "primary"
     ],
-    "ducats": null,
+    "ducats": 575,
     "alias": "",
     "baro": true,
-    "catalog_source": "WFCD Baro tag"
+    "catalog_source": "WFCD Baro tag",
+    "credits": 200000,
+    "baro_date": "2026-10-02",
+    "baro_dates": [
+      "2023-05-19",
+      "2023-12-29",
+      "2024-06-28",
+      "2024-12-13",
+      "2024-12-27",
+      "2025-04-04",
+      "2025-04-11",
+      "2025-07-11",
+      "2025-11-07",
+      "2026-05-15",
+      "2026-10-02"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   },
   {
     "slug": "wisp_prime_chassis_blueprint",
@@ -17447,5 +17906,160 @@
     ],
     "ducats": 205,
     "alias": ""
+  },
+  {
+    "id": "54c6860ce7798913933a7a43",
+    "maxRank": null,
+    "slug": "mara_detron",
+    "name": "苦痛·德特昂",
+    "english": "Mara Detron",
+    "image": "https://warframe.market/static/assets/items/images/en/thumbs/mara_detron.40e0e10a54d94f3947e9a07d438e9509.128x128.png",
+    "icon": "https://warframe.market/static/assets/items/images/en/mara_detron.40e0e10a54d94f3947e9a07d438e9509.png",
+    "fallback_image": "https://cdn.warframestat.us/img/MaraDetron.png",
+    "kind": "weapon",
+    "tags": [
+      "weapon",
+      "secondary"
+    ],
+    "ducats": 500,
+    "alias": "",
+    "baro": true,
+    "catalog_source": "WFM item directory + Wiki Baro history",
+    "credits": 200000,
+    "baro_date": "2026-10-30",
+    "baro_dates": [
+      "2022-07-29",
+      "2022-08-12",
+      "2022-08-26",
+      "2023-02-10",
+      "2023-07-14",
+      "2023-12-15",
+      "2024-08-23",
+      "2025-01-10",
+      "2025-05-16",
+      "2025-08-22",
+      "2025-12-12",
+      "2026-06-26",
+      "2026-10-30"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
+  },
+  {
+    "id": "6169ab3bc02a2f0045919275",
+    "maxRank": null,
+    "slug": "vastilok",
+    "name": "瓦斯提枪刃",
+    "english": "Vastilok",
+    "image": "https://warframe.market/static/assets/items/images/en/thumbs/vastilok.0d6a0cdb886e051eab8f6b4e26df3e99.128x128.png",
+    "icon": "https://warframe.market/static/assets/items/images/en/vastilok.0d6a0cdb886e051eab8f6b4e26df3e99.png",
+    "fallback_image": "https://cdn.warframestat.us/img/GrnGunblade.png",
+    "kind": "weapon",
+    "tags": [
+      "melee",
+      "weapon"
+    ],
+    "ducats": 550,
+    "alias": "",
+    "baro": true,
+    "catalog_source": "WFM item directory + Wiki Baro history",
+    "credits": 325000,
+    "baro_date": "2026-11-06",
+    "baro_dates": [
+      "2022-07-29",
+      "2022-08-12",
+      "2022-08-26",
+      "2022-12-16",
+      "2023-05-19",
+      "2023-11-17",
+      "2024-04-19",
+      "2024-08-09",
+      "2025-01-10",
+      "2025-05-16",
+      "2025-09-05",
+      "2025-12-26",
+      "2026-02-20",
+      "2026-07-10",
+      "2026-11-06"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
+  },
+  {
+    "id": "636d085bd6e304004d0be569",
+    "maxRank": null,
+    "slug": "vericres",
+    "name": "真月武扇",
+    "english": "Vericres",
+    "image": "https://warframe.market/static/assets/items/images/en/thumbs/vericres.78fa72dfb0e8a5060eba19ebdf2f3a5b.128x128.png",
+    "icon": "https://warframe.market/static/assets/items/images/en/vericres.78fa72dfb0e8a5060eba19ebdf2f3a5b.png",
+    "fallback_image": "https://cdn.warframestat.us/img/MoonWarfan.png",
+    "kind": "weapon",
+    "tags": [
+      "melee",
+      "weapon"
+    ],
+    "ducats": 410,
+    "alias": "",
+    "baro": true,
+    "catalog_source": "WFM item directory + Wiki Baro history",
+    "credits": 200000,
+    "baro_date": "2026-10-16",
+    "baro_dates": [
+      "2022-11-04",
+      "2023-03-24",
+      "2023-08-25",
+      "2024-01-26",
+      "2024-07-26",
+      "2024-12-27",
+      "2025-05-02",
+      "2025-08-22",
+      "2025-12-26",
+      "2026-05-01",
+      "2026-10-16"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
+  },
+  {
+    "id": "5e4e4a3526753901984c2f24",
+    "maxRank": null,
+    "slug": "zylok",
+    "name": "席尔火枪",
+    "english": "Zylok",
+    "image": "https://warframe.market/static/assets/items/images/en/thumbs/zylok.3cb47888884190e96ec8c08c281b508c.128x128.png",
+    "icon": "https://warframe.market/static/assets/items/images/en/zylok.3cb47888884190e96ec8c08c281b508c.png",
+    "fallback_image": "https://cdn.warframestat.us/img/ConclaveLeverPistol.png",
+    "kind": "weapon",
+    "tags": [
+      "weapon",
+      "secondary"
+    ],
+    "ducats": 500,
+    "alias": "",
+    "baro": true,
+    "catalog_source": "WFM item directory + Wiki Baro history",
+    "credits": 200000,
+    "baro_date": "2026-11-06",
+    "baro_dates": [
+      "2022-10-07",
+      "2023-03-24",
+      "2023-08-11",
+      "2024-01-26",
+      "2024-07-26",
+      "2024-12-27",
+      "2025-05-02",
+      "2025-09-19",
+      "2025-10-24",
+      "2026-06-26",
+      "2026-07-24",
+      "2026-11-06"
+    ],
+    "baro_verified": "2026-11-11",
+    "baro_cost_source": "https://raw.githubusercontent.com/erez252/warframe-baro-history/8cf585ad88302f098cb50abb08f42cb931b08eb8/data/warframe_data.json",
+    "baro_cost_snapshot_at": "2026-11-06T20:37:37.808Z"
   }
 ]

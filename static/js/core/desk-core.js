@@ -451,6 +451,7 @@ const DeskCore = {
       dailyVolume,
       normalVolume,
       statsValid,
+      costValid: Number.isFinite(item.ducats) && item.ducats > 0,
       statsOutdated: !this.analysisStatsFresh(market, now),
       asOf: market?.stats?.end || null,
       eventActive,
@@ -478,7 +479,15 @@ const DeskCore = {
         tier: 0,
         label: '数据不足',
         tone: 'muted',
-        reason: '缺少有效历史价格或成交统计',
+        reason: !value?.statsValid
+          ? '缺少有效成交统计'
+          : value.costValid === false
+            ? '缺少杜卡德兑换成本'
+            : value.peak90 == null
+              ? '高位窗口成交样本不足'
+              : value.volatilityValid === false
+                ? '价格波动不足，暂不估算高位回款'
+                : '缺少有效历史价格或成交量',
         recoveryDays,
         recoverySource
       };

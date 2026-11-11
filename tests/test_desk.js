@@ -236,6 +236,21 @@ assert.ok(Math.abs(eventValue.netPer100 - (30 - 100 / 15)) < 1e-10);
 assert.ok(eventValue.dailyVolume > 0);
 assert.equal(eventValue.decision.label, '优先考虑');
 assert.equal(eventValue.eventActive, false);
+// A missing exchange cost must not be reported as missing trade history.
+const noCostValue = core.baroValue({ ducats: null }, eventMarket, {}, now);
+assert.equal(noCostValue.statsValid, true);
+assert.equal(noCostValue.costValid, false);
+assert.ok(noCostValue.dailyVolume > 0);
+assert.equal(noCostValue.netPer100, null);
+assert.equal(core.baroHolding(noCostValue).reason, '缺少杜卡德兑换成本');
+assert.equal(
+  core.baroHolding({ ...eventValue, netPer100: null, volatilityValid: false }).reason,
+  '价格波动不足，暂不估算高位回款'
+);
+assert.equal(
+  core.baroHolding({ ...eventValue, statsValid: false }).reason,
+  '缺少有效成交统计'
+);
 const delayedBaro = core.baroValue(
   { ducats: 300, credits: 150000 }, eventMarket, {}, delayedNow,
   { activation: '2026-10-01T00:00:00Z', expiry: '2026-10-03T00:00:00Z' }
